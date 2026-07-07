@@ -11,7 +11,7 @@
        correspond bien à la dernière version publiée. -->
   <link href="https://cdn.prod.website-files.com/68ecfda4d9b3270b98426ff5/css/sosgouv.webflow.shared.af7c0b75c.css" rel="stylesheet" type="text/css"/>
   <!-- CSS applicatif (composants dynamiques : cartes, modaux, badges, toasts) -->
-  <link href="css/sosgouv.css" rel="stylesheet" type="text/css"/>
+  <link href="css/sosgouv.css?v=4" rel="stylesheet" type="text/css"/>
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
@@ -206,6 +206,14 @@
     <input type="text" id="infoPrenom" class="champ-texte w-input" placeholder="Prénom"/>
     <input type="text" id="infoEmail" class="champ-texte w-input" placeholder="Email"/>
     <button id="btnSaveInfos" class="submit-button-3 w-button">Enregistrer</button>
+    <div id="espace-perso">
+      <h4>Mon activité</h4>
+      <div class="esp-bloc"><h5>Personnalités likées</h5><div id="esp-likes" class="esp-liste"></div></div>
+      <div class="esp-bloc"><h5>Personnalités épinglées</h5><div id="esp-epingles-perso" class="esp-liste"></div></div>
+      <div class="esp-bloc"><h5>Gouvernements épinglés</h5><div id="esp-epingles-gouv" class="esp-liste"></div></div>
+      <div class="esp-bloc"><h5>Mes votes</h5><div id="esp-votes" class="esp-liste"></div></div>
+      <div class="esp-bloc"><h5>Mes commentaires</h5><div id="esp-commentaires" class="esp-liste"></div></div>
+    </div>
   </div>
 
   <!-- Fiche personnalité -->
@@ -229,6 +237,19 @@
       <option value="2">sous condition</option>
       <option value="3">ok</option>
     </select>
+    <div class="adm-liens-bloc">
+      <h5>Documents en ligne (liens, vidéos)</h5>
+      <div id="admLiensListe"></div>
+      <div class="adm-liens-form">
+        <select id="admLienType" class="select-field-5 w-select">
+          <option value="lien">Lien internet</option>
+          <option value="video">Vidéo</option>
+        </select>
+        <input type="text" id="admLienTitre" class="champ-texte w-input" placeholder="Titre du document"/>
+        <input type="text" id="admLienUrl" class="champ-texte w-input" placeholder="URL (https://...)"/>
+        <button id="admLienAddBtn" class="submit-button-3 w-button btn-secondaire">Ajouter ce document</button>
+      </div>
+    </div>
     <button id="admSaveBtn" class="submit-button-3 w-button">Enregistrer</button>
   </div>
 
@@ -247,10 +268,10 @@
 
   <!-- ==================== SCRIPTS ==================== -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/ui.js"></script>
-  <script src="js/personnalites.js"></script>
-  <script src="js/gouvernement.js"></script>
+  <script src="config.js?v=4"></script>
+  <script src="js/auth.js?v=4"></script>
+  <script src="js/ui.js?v=4"></script>
+  <script src="js/personnalites.js?v=4"></script>
+  <script src="js/gouvernement.js?v=4"></script>
 </body>
 </html>
