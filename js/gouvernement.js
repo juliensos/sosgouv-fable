@@ -169,11 +169,28 @@ const Gouv = {
     const sous = (p.sousSecteurs || []).map(s => Perso.esc(s.nom)).join(' · ');
     const typeLabel = { regalien: 'Régalien', non_regalien: 'Ministère', delegue: 'Délégué ministériel' }[p.type];
     return `
-    <div class="poste-bloc poste-${p.type} _w-bloc-poste" id="poste-${p.uid}">
-      <div class="poste-entete bloc-poste-ligne1">
-        <span class="poste-type _w-courant _w-grey">${typeLabel}</span>
+    <div class="poste-bloc poste-${p.type} _3-bloc-min-r" id="poste-${p.uid}">
+      <div class="_3-gov-line-1 poste-perso-row">
+        <input class="mon-input3 w-input poste-perso-search" maxlength="256" placeholder="nom du ministre" type="text" value="${perso}" autocomplete="off"/>
+        <div class="_3-gov-mini-buttons">
+          <a href="#" class="_2-mini-bouton loupe w-inline-block btn-loupe" title="Parcourir toutes les personnalités">
+            <div class="_2-picto-fontello-bouton ico">&#128269;</div>
+          </a>
+          ${p.type !== 'regalien' ? '<a href="#" class="_2-mini-bouton w-inline-block btn-remove-poste" title="Supprimer ce poste"><div class="_2-picto-fontello-bouton ico">&times;</div></a>' : ''}
+        </div>
+        <div class="autocomplete-results" style="display:none"></div>
+      </div>
+      <div class="_3-gov-line-2">
+        ${p.type === 'regalien'
+          ? '<div class="poste-intitule-verrou"><h3 class="heading-23 intitule-base">' + Perso.esc(p.intitule) + '</h3>' +
+            (p.secteur && p.secteur.nom === 'Matignon'
+              ? ''
+              : '<input type="text" class="mon-input3 w-input poste-suffixe" value="' + Perso.esc(p.suffixe || '') + '" placeholder="Compléter">') +
+            '</div>'
+          : ''}
         ${p.type === 'non_regalien'
-          ? '<select class="poste-secteur-select' + (p.secteur ? '' : ' placeholder') + '">' +
+          ? '<div class="poste-intitule-verrou">' +
+            '<select class="poste-secteur-select mon-inputdrop' + (p.secteur ? '' : ' placeholder') + '">' +
             '<option value="" disabled' + (p.secteur ? '' : ' selected') + '>Secteur</option>' +
             this.nonRegaliens().map(s =>
               '<option value="' + s.id + '"' + (p.secteur && p.secteur.id === s.id ? ' selected' : '') + '>' + Perso.esc(s.nom) + '</option>'
@@ -182,30 +199,27 @@ const Gouv = {
               ? (p.fusion || []).map((s, fi) =>
                   '<span class="fusion-tag">+ ' + Perso.esc(s.nom) + ' <button class="btn-icone btn-fusion-del" data-fi="' + fi + '" title="Retirer">&times;</button></span>'
                 ).join('') +
-                '<select class="poste-fusion-select placeholder">' +
+                '<select class="poste-fusion-select mon-inputdrop placeholder">' +
                 '<option value="" disabled selected>+ fusionner avec…</option>' +
                 this.nonRegaliens()
                   .filter(s => s.id !== p.secteur.id && !(p.fusion || []).some(f => f.id === s.id))
                   .map(s => '<option value="' + s.id + '">' + Perso.esc(s.nom) + '</option>').join('') +
-                '</select>'
+                '</select>' +
+                '<input type="text" class="mon-input3 w-input poste-intitule intitule" value="' + Perso.esc(p.intitule) + '" placeholder="Intitulé du poste">'
               : '')
-          : '<span class="poste-secteur secteur">' + (p.secteur ? Perso.esc(p.secteur.nom) : '') + '</span>'}
-        ${p.type !== 'regalien' ? '<button class="btn-icone btn-remove-poste" title="Supprimer">&times;</button>' : ''}
+            + '</div>'
+          : ''}
+        ${p.type === 'delegue'
+          ? '<div class="poste-intitule-verrou">' +
+            '<input type="text" class="mon-input3 w-input poste-intitule intitule" value="' + Perso.esc(p.intitule) + '" placeholder="Intitulé du poste">' +
+            '<input type="text" class="mon-input3 w-input poste-fonction" value="' + Perso.esc(p.fonction || '') + '" placeholder="Fonction (ex : chargé de la transition énergétique)">' +
+            '</div>'
+          : ''}
+        ${p.type !== 'delegue'
+          ? '<div class="_3-sous-secteur poste-sous-secteurs">' + (sous || '<em>Aucun sous-secteur</em>') +
+            ' <a href="#" class="_2-code-link-button btn-edit-sous">modifier</a></div>'
+          : ''}
       </div>
-      ${p.type === 'regalien'
-        ? '<div class="poste-intitule-verrou"><span class="intitule-base ministre">' + Perso.esc(p.intitule) + '</span>' +
-          (p.secteur && p.secteur.nom === 'Matignon'
-            ? ''
-            : '<input type="text" class="champ-texte poste-suffixe" value="' + Perso.esc(p.suffixe || '') + '" placeholder="Compléter">') +
-          '</div>'
-        : '<input type="text" class="champ-texte poste-intitule intitule" value="' + Perso.esc(p.intitule) + '" placeholder="Intitulé du poste">'}
-      ${p.type === 'delegue' ? '<input type="text" class="champ-texte poste-fonction" value="' + Perso.esc(p.fonction || '') + '" placeholder="Fonction (ex : chargé de la transition énergétique)">' : ''}
-      <div class="poste-perso-row loupe-name">
-        <input type="text" class="champ-texte poste-perso-search" value="${perso}" placeholder="Rechercher une personnalité…" autocomplete="off">
-        <button class="btn-loupe" title="Parcourir toutes les personnalités">&#128269;</button>
-        <div class="autocomplete-results" style="display:none"></div>
-      </div>
-      ${p.type !== 'delegue' ? '<div class="poste-sous-secteurs secteur-sous-secteurs"><span class="sous-lien">' + (sous || '<em>Aucun sous-secteur</em>') + '</span> <button class="mini-boutons white btn-edit-sous">modifier</button></div>' : ''}
     </div>`;
   },
 
@@ -558,36 +572,44 @@ const Gouv = {
       }).join('');
       const pinned = this.epingles.has(g.id);
       const note = st.note_moyenne != null ? String(st.note_moyenne).replace('.', ',') : null;
+      const membresHtml = postes.map((p, i) => {
+        const perso = p.personnalites;
+        const role = p.secteurs ? p.secteurs.nom
+          : (p.type === 'delegue' ? (p.fonction_delegue || 'délégué') : (p.nom_poste_personnalise || ''));
+        return '<div class="fonction-perso gouv-membre">' +
+          '<div class="secteurs gm-secteur">' + Perso.esc(role) + '</div>' +
+          '<a href="#" class="w-inline-block"><div class="_3-name-gov-pub gm-nom">' +
+          (perso ? Perso.esc((perso.prenom || '') + ' ' + perso.nom) : '<em>non attribué</em>') +
+          '</div></a></div>' +
+          (i < postes.length - 1 ? '<div class="bullet">&bull;</div>' : '');
+      }).join('');
       return `
-      <div class="gouv-card _w-gov-bloc" data-id="${g.id}">
-        <div class="infos">
-          <div class="bloc-en-tete-gov">
-            <h3 class="heading-3-gov gouv-titre">${Perso.esc(g.titre)}</h3>
-            <div class="propos-par">
-              <span class="_w-courant _w-grey">proposé par</span>
-              <span class="_w-courant _w-bold gouv-auteur">${Perso.esc(g.users ? g.users.username : '?')}</span>
+      <div class="gouv-card gov-compact-bloc" data-id="${g.id}">
+        <div class="gov-title">
+          <div class="filet">
+            <div class="div-block-326">
+              <a href="#" class="w-inline-block btn-gouv-detail">
+                <h1 class="heading-4-nom-prenom gouv-titre">${Perso.esc(g.titre)}</h1>
+              </a>
+              ${pret ? '<div class="badge-pret">prêt à gouverner</div>' : ''}
             </div>
           </div>
-          ${g.description ? '<p class="paragraph-2 gouv-desc">' + Perso.esc(g.description) + '</p>' : ''}
-          <div class="membres gouv-membres">${membres}</div>
-        </div>
-        <div class="_w-block-gov-infos">
-          ${pret ? '<span class="badge-pret">prêt à gouverner</span>' : ''}
-          <div class="notation">
-            <div class="vote gouv-vote" data-id="${g.id}">
-              ${[1,2,3,4,5].map(n =>
-                '<span class="etoile ' + ((this.votesUser[g.id] || 0) >= n ? 'pleine active' : '') + '" data-note="' + n + '">&#9733;</span>'
-              ).join('')}
-            </div>
-            ${note != null ? '<span class="note-moy">' + note + '</span>' : ''}
+          <div class="_3-star-bloc">
+            ${note != null ? '<div class="_w-courant _w-bold _w-pink note note-moy">' + note + '</div>' : ''}
+            <div class="star ico">&#9733;</div>
             <span class="_w-courant _w-grey gouv-nbvotes">(${st.nb_votes || 0})</span>
           </div>
-          <span class="_w-courant _w-grey gouv-nbcomm">${st.nb_commentaires || 0} commentaire(s)</span>
-          <div class="gouv-actions">
-            <button class="mini-boutons white btn-gouv-pin ${pinned ? 'active' : ''}" title="Épingler"><span class="ico">&#128204;</span>&nbsp;épingler</button>
-            <button class="mini-boutons white btn-gouv-share" title="Partager"><span class="ico">&#128279;</span></button>
-            <button class="mini-boutons btn-gouv-detail detail">détails</button>
-            ${Auth.isAdmin() ? '<button class="mini-boutons white btn-gouv-del" title="Supprimer (admin)"><span class="ico">&#128465;</span></button>' : ''}
+        </div>
+        <div class="div-block-277 gouv-membres">${membresHtml}</div>
+        <div class="filet"></div>
+        ${g.description ? '<p class="gouv-desc">' + Perso.esc(g.description) + '</p>' : ''}
+        <div class="gov-card-boutons">
+          <span class="_w-courant _w-grey">proposé par <strong class="gouv-auteur">${Perso.esc(g.users ? g.users.username : '?')}</strong> &bull; ${st.nb_commentaires || 0} commentaire(s)</span>
+          <div class="flex---gap-10">
+            <a href="#" class="_2-mini-bouton mini w-inline-block btn-gouv-pin ${pinned ? 'active' : ''}" title="Épingler"><div class="_2-picto-fontello-bouton ico">&#128204;</div><h6 class="heading-dyn mini">épingler</h6></a>
+            <a href="#" class="_2-mini-bouton mini w-inline-block btn-gouv-share" title="Partager"><div class="_2-picto-fontello-bouton ico">&#128279;</div></a>
+            <a href="#" class="_2-mini-bouton w-inline-block btn-gouv-detail detail"><h6 class="heading-dyn mini">détails</h6></a>
+            ${Auth.isAdmin() ? '<a href="#" class="_2-mini-bouton mini w-inline-block btn-gouv-del" title="Supprimer (admin)"><div class="_2-picto-fontello-bouton ico">&#128465;</div></a>' : ''}
           </div>
         </div>
       </div>`;
@@ -698,18 +720,26 @@ const Gouv = {
       : '';
 
     cont.innerHTML =
-      '<h3>' + Perso.esc(g.titre) + '</h3>' +
+      '<div class="gov-title"><h1 class="heading-4-nom-prenom">' + Perso.esc(g.titre) + '</h1>' +
+      '<div class="_3-star-bloc"><div class="vote gouv-vote">' +
+      [1,2,3,4,5].map(n =>
+        '<span class="etoile ' + ((this.votesUser[g.id] || 0) >= n ? 'pleine active' : '') + '" data-note="' + n + '">&#9733;</span>'
+      ).join('') + '</div></div></div>' +
+      '<div class="cr-e-par _w-courant _w-grey">créé par <strong>' + Perso.esc(g.users ? g.users.username : '?') + '</strong></div>' +
       (g.description ? '<p class="detail-desc">' + Perso.esc(g.description) + '</p>' : '') +
-      bloc('Postes régaliens', postes.filter(p => p.type === 'regalien')) +
-      bloc('Ministères', postes.filter(p => p.type === 'non_regalien')) +
+      bloc('Ministres régaliens', postes.filter(p => p.type === 'regalien')) +
+      bloc('Ministres', postes.filter(p => p.type === 'non_regalien')) +
       bloc('Délégués ministériels', postes.filter(p => p.type === 'delegue')) +
       '<h4>Commentaires</h4><div id="detail-commentaires"><div class="loading">Chargement…</div></div>' +
-      '<div class="comm-add-row"><input type="text" id="newComment" class="champ-texte" placeholder="Votre commentaire…">' +
-      '<button class="btn-mini" id="btnAddComment">envoyer</button></div>';
+      '<div class="comm-add-row"><input type="text" id="newComment" class="mon-input5 w-input champ-texte" placeholder="Votre commentaire…">' +
+      '<a href="#" class="_2-mini-bouton w-inline-block" id="btnAddComment"><h6 class="heading-dyn mini">envoyer</h6></a></div>';
 
     UI.openModal('modal-detail');
     this.loadComments(id);
-    cont.querySelector('#btnAddComment').addEventListener('click', () => this.addComment(id));
+    cont.querySelector('#btnAddComment').addEventListener('click', (e) => { e.preventDefault(); this.addComment(id); });
+    cont.querySelectorAll('.etoile').forEach(star => {
+      star.addEventListener('click', () => this.vote(id, Number(star.dataset.note)));
+    });
   },
 
   async loadComments(gouvId) {

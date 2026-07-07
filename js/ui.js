@@ -10,7 +10,7 @@ const UI = {
 
   // ---------- Navigation par sections ----------
   showSection(n) {
-    document.querySelectorAll('.section-page').forEach(s => s.style.display = 'none');
+    document.querySelectorAll('[id^="section-"]').forEach(s => s.style.display = 'none');
     const target = document.getElementById('section-' + n);
     if (target) target.style.display = 'block';
     this.currentSection = n;
@@ -34,21 +34,37 @@ const UI = {
   },
 
   closeModals() {
-    const fond = document.querySelector('._3-fond-modal');
-    if (fond) fond.style.display = 'none';
-    document.querySelectorAll('.modal-sosgouv').forEach(m => m.style.display = 'none');
+    document.querySelectorAll('._3-fond-modal').forEach(f => f.style.display = 'none');
+    document.querySelectorAll('.modal-sosgouv, .pm-parent, .bm-parent').forEach(m => m.style.display = 'none');
   },
 
   // ---------- Menu selon connexion ----------
   updateMenu() {
-    const notConnected = document.getElementById('menuNotConnected');
-    const connected = document.getElementById('menuConnected');
-    const userLabel = document.getElementById('connectedUsername');
     const logged = Auth.isLoggedIn();
 
+    // Nom d'utilisateur dans le bouton compte du header
+    const userLabel = document.querySelector('.connected-username');
+    if (userLabel) userLabel.textContent = logged ? Auth.currentUser.username : '';
+    const siConnect = document.querySelector('.si-connect');
+    if (siConnect) siConnect.style.display = logged ? 'flex' : 'none';
+
+    // Liens du menu compte selon l'état de connexion
+    const openConnect = document.getElementById('openConnect');
+    if (openConnect) openConnect.style.display = logged ? 'none' : 'block';
+    const logoutLink = document.getElementById('btnLogoutMenu');
+    if (logoutLink) logoutLink.style.display = logged ? 'block' : 'none';
+    ['openInfosPerso', 'openActivite'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = logged ? 'block' : 'none';
+    });
+
+    // Compat ancienne structure (version classique partage ce fichier)
+    const notConnected = document.getElementById('menuNotConnected');
+    const connected = document.getElementById('menuConnected');
+    const oldLabel = document.getElementById('connectedUsername');
     if (notConnected) notConnected.style.display = logged ? 'none' : 'block';
     if (connected) connected.style.display = logged ? 'block' : 'none';
-    if (userLabel) userLabel.textContent = logged ? Auth.currentUser.username : '';
+    if (oldLabel) oldLabel.textContent = logged ? Auth.currentUser.username : '';
 
     // Footer admin (jaune) visible uniquement pour les admins
     const adminFooter = document.getElementById('adminFooter');
@@ -70,7 +86,30 @@ const UI = {
 
   // ---------- Initialisation ----------
   init() {
-    // Dropdown compte (icône menu) : bascule manuelle, sans webflow.js
+    // Menus du header (compte + général), bascule manuelle
+    const menus = [
+      { btn: document.getElementById('btnCompte'), menu: document.getElementById('menuCompte') },
+      { btn: document.getElementById('btnMenuGeneral'), menu: document.getElementById('menuGeneral') }
+    ];
+    menus.forEach(({ btn, menu }) => {
+      if (!btn || !menu) return;
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const visible = menu.style.display === 'flex';
+        menus.forEach(m => { if (m.menu) m.menu.style.display = 'none'; });
+        menu.style.display = visible ? 'none' : 'flex';
+      });
+    });
+    document.addEventListener('click', (e) => {
+      menus.forEach(({ btn, menu }) => {
+        if (menu && btn && !menu.contains(e.target) && !btn.contains(e.target)) menu.style.display = 'none';
+      });
+    });
+    document.querySelectorAll('#menuCompte a, #menuGeneral a').forEach(a =>
+      a.addEventListener('click', () => menus.forEach(m => { if (m.menu) m.menu.style.display = 'none'; })));
+
+    // Compat version classique : dropdown ☰ (ancienne structure)
     const dd = document.querySelector('.dropdown-menu.w-dropdown');
     if (dd) {
       const toggle = dd.querySelector('.w-dropdown-toggle');
@@ -88,7 +127,6 @@ const UI = {
             toggle.classList.remove('w--open');
           }
         });
-        // Fermer le menu après un clic sur un de ses liens
         list.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
           list.classList.remove('w--open');
           toggle.classList.remove('w--open');
@@ -154,6 +192,28 @@ const UI = {
     // Ouverture du modal de connexion
     document.querySelectorAll('[data-open-connect]').forEach(btn => {
       btn.addEventListener('click', (e) => { e.preventDefault(); this.openModal('modal-connect'); });
+    });
+    const openConnectLink = document.getElementById('openConnect');
+    if (openConnectLink) openConnectLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.openModal('modal-connect');
+    });
+    const openActivite = document.getElementById('openActivite');
+    if (openActivite) openActivite.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!Auth.isLoggedIn()) return this.openModal('modal-connect');
+      this.openModal('modal-infos');
+      this.loadEspacePerso();
+      const act = document.getElementById('espace-perso');
+      if (act && act.scrollIntoView) act.scrollIntoView({ block: 'start' });
+    });
+    const logoutMenu = document.getElementById('btnLogoutMenu');
+    if (logoutMenu) logoutMenu.addEventListener('click', (e) => {
+      e.preventDefault();
+      Auth.logout();
+      this.updateMenu();
+      this.showSection(0);
+      this.toast('Déconnexion réussie.');
     });
 
     // Données personnelles

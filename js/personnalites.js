@@ -98,25 +98,32 @@ const Perso = {
     const pinned = this.epingles.has(p.id);
     const metiers = (p.metiers || []).join(', ');
     return `
-    <div class="perso-card perso-bloc" data-id="${p.id}">
-      <div class="perso-infos infos">
-        <div class="name-line">
-          <div class="nom-secteur">
-            <span class="perso-nom heading-7">${this.esc(p.nom)}</span>
-            <span class="perso-prenom heading-9">${this.esc(p.prenom || '')}</span>
-            <span class="_w-courant _w-grey">&bull;</span>
-            <span class="perso-metier metier">${this.esc(metiers)}</span>
+    <div class="perso-card _3-grid-perso" data-id="${p.id}">
+      <div class="nom-prenom-metier">
+        <a href="#" class="w-inline-block btn-fiche">
+          <div class="nom-pr-nom">
+            <h4 class="heading-4-nom-prenom">${this.esc(p.nom)}</h4>
+            <h4 class="heading-4-nom-prenom">${this.esc(p.prenom || '')}</h4>
           </div>
+        </a>
+        <div class="bloc-metier">
+          <h4 class="heading-4-nom-prenom grey">${this.esc(metiers)}</h4>
         </div>
-        <span class="badge-statut ${this.STATUT_CLASSES[p.statut] || ''}">${this.STATUTS[p.statut] || ''}</span>
+        <div class="fontello-statut"><span class="badge-statut ${this.STATUT_CLASSES[p.statut] || ''}">${this.STATUTS[p.statut] || ''}</span></div>
       </div>
-      <div class="perso-actions send-et-pin-perso">
-        <button class="mini-boutons btn-like ${liked ? 'active' : ''}" title="Like"><span class="ico">&#9829;</span><span class="like-count">${this.likesCount[p.id] || 0}</span></button>
-        <button class="mini-boutons white btn-pin ${pinned ? 'active' : ''}" title="Épingler"><span class="ico">&#128204;</span>&nbsp;épingler</button>
-        <button class="mini-boutons white btn-fiche" title="Voir la fiche">fiche</button>
-        ${Auth.isAdmin() ? '<button class="mini-boutons white btn-edit" title="Modifier (admin)"><span class="ico">&#9998;</span></button>' : ''}
-        ${(Auth.isAdmin() || (Auth.isLoggedIn() && p.ajoute_par === Auth.currentUser.id)) ? '<button class="mini-boutons white btn-del-perso" title="Supprimer"><span class="ico">&#128465;</span></button>' : ''}
+      <div class="boutons-perso-group">
+        <a href="#" class="like-bloc btn-like ${liked ? 'active' : ''}" title="Like">
+          <div class="_2-picto-fontello-bouton black-stroke ico">&#9829;</div>
+          <div class="_w-courant _w-bold _w-pink"><sup class="like-count">${this.likesCount[p.id] || 0}</sup></div>
+        </a>
+        <a href="#" class="_2-mini-bouton mini w-inline-block btn-pin ${pinned ? 'active' : ''}" title="Épingler">
+          <div class="_2-picto-fontello-bouton ico">&#128204;</div>
+          <h6 class="heading-dyn mini">épingler</h6>
+        </a>
+        ${Auth.isAdmin() ? '<a href="#" class="_2-mini-bouton mini w-inline-block btn-edit" title="Modifier (admin)"><div class="_2-picto-fontello-bouton ico">&#9998;</div></a>' : ''}
+        ${(Auth.isAdmin() || (Auth.isLoggedIn() && p.ajoute_par === Auth.currentUser.id)) ? '<a href="#" class="_2-mini-bouton mini w-inline-block btn-del-perso" title="Supprimer"><div class="_2-picto-fontello-bouton ico">&#128465;</div></a>' : ''}
       </div>
+      ${p.short_bio ? '<p class="short-bio">' + this.esc(p.short_bio) + '</p>' : ''}
     </div>`;
   },
 
