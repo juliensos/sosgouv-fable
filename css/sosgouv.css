@@ -179,3 +179,20 @@ body { font-family: 'Lato', sans-serif; }
 .fusion-tag { display: inline-flex; align-items: center; gap: 4px; background: #f2f2f2; border-radius: 4px; padding: 2px 8px; font-size: 13px; margin-left: 6px; }
 .btn-fusion-del { color: #c0392b; font-size: 15px; }
 .poste-fusion-select { margin-left: 6px; padding: 4px 8px; border: 1px dashed #bbb; border-radius: 4px; font-size: 13px; color: #999; background: #fff; }
+
+/* ============================================================
+   Surcharges du CSS Webflow publié (hash 5310d7a46).
+   Dans la maquette, ces blocs sont masqués dans le Designer,
+   mais notre application vit dedans : on les réaffiche.
+   ============================================================ */
+._w-site-container {
+  outline-color: var(--black-100, #000);
+  flex-flow: column;
+  justify-content: flex-start;
+  width: 100vw;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+}
+.fontello-icon-menu { display: block; }
