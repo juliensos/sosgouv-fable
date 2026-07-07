@@ -70,6 +70,32 @@ const UI = {
 
   // ---------- Initialisation ----------
   init() {
+    // Dropdown compte (icône menu) : bascule manuelle, sans webflow.js
+    const dd = document.querySelector('.dropdown-menu.w-dropdown');
+    if (dd) {
+      const toggle = dd.querySelector('.w-dropdown-toggle');
+      const list = dd.querySelector('.w-dropdown-list');
+      if (toggle && list) {
+        toggle.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          list.classList.toggle('w--open');
+          toggle.classList.toggle('w--open');
+        });
+        document.addEventListener('click', (e) => {
+          if (!dd.contains(e.target)) {
+            list.classList.remove('w--open');
+            toggle.classList.remove('w--open');
+          }
+        });
+        // Fermer le menu après un clic sur un de ses liens
+        list.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+          list.classList.remove('w--open');
+          toggle.classList.remove('w--open');
+        }));
+      }
+    }
+
     // Liens de navigation
     document.querySelectorAll('[data-section]').forEach(link => {
       link.addEventListener('click', (e) => {
