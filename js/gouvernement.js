@@ -111,12 +111,21 @@ const Gouv = {
     <div class="poste-bloc poste-${p.type}" id="poste-${p.uid}">
       <div class="poste-entete">
         <span class="poste-type">${typeLabel}</span>
-        <span class="poste-secteur">${p.secteur ? Perso.esc(p.secteur.nom) : ''}</span>
+        ${p.type === 'non_regalien'
+          ? '<select class="poste-secteur-select' + (p.secteur ? '' : ' placeholder') + '">' +
+            '<option value="" disabled' + (p.secteur ? '' : ' selected') + '>Secteur</option>' +
+            this.nonRegaliens().map(s =>
+              '<option value="' + s.id + '"' + (p.secteur && p.secteur.id === s.id ? ' selected' : '') + '>' + Perso.esc(s.nom) + '</option>'
+            ).join('') + '</select>'
+          : '<span class="poste-secteur">' + (p.secteur ? Perso.esc(p.secteur.nom) : '') + '</span>'}
         ${p.type !== 'regalien' ? '<button class="btn-icone btn-remove-poste" title="Supprimer">&times;</button>' : ''}
       </div>
       ${p.type === 'regalien'
         ? '<div class="poste-intitule-verrou"><span class="intitule-base">' + Perso.esc(p.intitule) + '</span>' +
-          '<input type="text" class="champ-texte poste-suffixe" value="' + Perso.esc(p.suffixe || '') + '" placeholder="Complément (ex : et de la Sécurité)"></div>'
+          (p.secteur && p.secteur.nom === 'Matignon'
+            ? ''
+            : '<input type="text" class="champ-texte poste-suffixe" value="' + Perso.esc(p.suffixe || '') + '" placeholder="Compléter">') +
+          '</div>'
         : '<input type="text" class="champ-texte poste-intitule" value="' + Perso.esc(p.intitule) + '" placeholder="Intitulé du poste">'}
       ${p.type === 'delegue' ? '<input type="text" class="champ-texte poste-fonction" value="' + Perso.esc(p.fonction || '') + '" placeholder="Fonction (ex : chargé de la transition énergétique)">' : ''}
       <div class="poste-perso-row">
@@ -134,6 +143,16 @@ const Gouv = {
 
     const intitule = bloc.querySelector('.poste-intitule');
     if (intitule) intitule.addEventListener('input', () => p.intitule = intitule.value);
+
+    const secteurSelect = bloc.querySelector('.poste-secteur-select');
+    if (secteurSelect) secteurSelect.addEventListener('change', () => {
+      const s = this.nonRegaliens().find(x => x.id === secteurSelect.value);
+      if (!s) return;
+      p.secteur = s;
+      p.intitule = s.intitule_poste_defaut || s.nom;
+      p.sousSecteurs = (this.sousSecteursDefaut[s.id] || []).slice();
+      this.renderComposer();
+    });
 
     const suffixe = bloc.querySelector('.poste-suffixe');
     if (suffixe) suffixe.addEventListener('input', () => p.suffixe = suffixe.value);
@@ -229,16 +248,14 @@ const Gouv = {
   // ---------- Ajout de blocs ----------
   addMinistere() {
     if (!this.composerState) return;
-    const nonReg = this.nonRegaliens();
-    if (!nonReg.length) return UI.toast('Aucun secteur non-régalien disponible.');
-    const s = nonReg[0];
+    if (!this.nonRegaliens().length) return UI.toast('Aucun secteur non-régalien disponible.');
     this.composerState.postes.push({
       uid: 'min-' + Date.now(),
       type: 'non_regalien',
-      secteur: s,
-      intitule: s.intitule_poste_defaut || s.nom,
+      secteur: null,
+      intitule: '',
       personnalite: null,
-      sousSecteurs: (this.sousSecteursDefaut[s.id] || []).slice()
+      sousSecteurs: []
     });
     this.renderComposer();
   },
@@ -346,7 +363,7 @@ const Gouv = {
       await this.loadReferentiels();
       const [gRes, statsRes] = await Promise.all([
         sb.from('gouvernements')
-          .select('*, users!created_by(username), postes_gouvernement(*, personnalites!personnalite_id(id, nom, prenom), secteurs!secteur_id(nom))')
+          .select('*, users!created_by(username), postes_gouvernement(*, personnalites!personnalite_id(id, nom, prenom, statut), secteurs!secteur_id(nom))')
           .eq('is_published', true)
           .order('created_at', { ascending: false }),
         sb.from('gouvernements_stats').select('*')
@@ -385,15 +402,18 @@ const Gouv = {
     }
     cont.innerHTML = this.published.map(g => {
       const st = (this.stats && this.stats[g.id]) || {};
-      const postes = g.postes_gouvernement || [];
-      const regaliens = postes.filter(p => p.type === 'regalien');
-      const pret = postes.length > 0 && postes.every(p => p.personnalite_id);
-      const membres = regaliens.slice(0, 5).map(p => {
+      const postes = (g.postes_gouvernement || []).slice().sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+      // Prêt à gouverner : tous les postes pourvus ET tous les membres en statut "ok"
+      const pret = postes.length > 0
+        && postes.every(p => p.personnalite_id)
+        && postes.every(p => p.personnalites && p.personnalites.statut === 3);
+      const membres = postes.map(p => {
         const perso = p.personnalites;
-        const secteur = p.secteurs ? p.secteurs.nom : '';
+        const role = p.secteurs ? p.secteurs.nom
+          : (p.type === 'delegue' ? (p.fonction_delegue || 'Délégué') : (p.nom_poste_personnalise || ''));
         return '<div class="gouv-membre"><span class="gm-nom">' +
           (perso ? Perso.esc((perso.prenom || '') + ' ' + perso.nom) : '<em>non attribué</em>') +
-          '</span><span class="gm-secteur">' + Perso.esc(secteur) + '</span></div>';
+          '</span><span class="gm-secteur">' + Perso.esc(role) + '</span></div>';
       }).join('');
       const pinned = this.epingles.has(g.id);
       return `
@@ -414,6 +434,7 @@ const Gouv = {
           <button class="btn-icone btn-gouv-pin ${pinned ? 'active' : ''}" title="Épingler">&#128204;</button>
           <button class="btn-icone btn-gouv-share" title="Partager">&#128279;</button>
           <button class="btn-mini btn-gouv-detail">Détail</button>
+          ${Auth.isAdmin() ? '<button class="btn-icone btn-gouv-del" title="Supprimer (admin)">&#128465;</button>' : ''}
         </div>
         <div class="gouv-nbcomm">${st.nb_commentaires || 0} commentaire(s)</div>
       </div>`;
@@ -433,7 +454,21 @@ const Gouv = {
       if (share) share.addEventListener('click', () => this.share(id));
       const detail = card.querySelector('.btn-gouv-detail');
       if (detail) detail.addEventListener('click', () => this.openDetail(id));
+      const del = card.querySelector('.btn-gouv-del');
+      if (del) del.addEventListener('click', () => this.deleteGouv(id));
     });
+  },
+
+  async deleteGouv(id) {
+    if (!Auth.isAdmin()) return;
+    const g = this.published.find(x => x.id === id);
+    if (!window.confirm('Supprimer le gouvernement « ' + (g ? g.titre : '') + ' » ? Cette action est définitive (postes, votes et commentaires inclus).')) return;
+    try {
+      const { error } = await sb.from('gouvernements').delete().eq('id', id);
+      if (error) throw error;
+      UI.toast('Gouvernement supprimé.');
+      this.loadPublished();
+    } catch (err) { UI.toast('Erreur : ' + err.message); }
   },
 
   async vote(id, note) {

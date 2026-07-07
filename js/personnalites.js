@@ -102,6 +102,7 @@ const Perso = {
         <button class="btn-icone btn-pin ${pinned ? 'active' : ''}" title="Épingler">&#128204;</button>
         <button class="btn-icone btn-fiche" title="Voir la fiche">&#128196;</button>
         ${Auth.isAdmin() ? '<button class="btn-icone btn-edit" title="Modifier (admin)">&#9998;</button>' : ''}
+        ${(Auth.isAdmin() || (Auth.isLoggedIn() && p.ajoute_par === Auth.currentUser.id)) ? '<button class="btn-icone btn-del-perso" title="Supprimer">&#128465;</button>' : ''}
       </div>
     </div>`;
   },
@@ -117,6 +118,8 @@ const Perso = {
       if (btnPin) btnPin.addEventListener('click', () => this.togglePin(id, btnPin));
       if (btnFiche) btnFiche.addEventListener('click', () => this.openFiche(id));
       if (btnEdit) btnEdit.addEventListener('click', () => this.openAdminEdit(id));
+      const btnDel = card.querySelector('.btn-del-perso');
+      if (btnDel) btnDel.addEventListener('click', () => this.deletePerso(id));
     });
   },
 
@@ -203,6 +206,21 @@ const Perso = {
       document.getElementById('addPrenom').value = '';
       document.getElementById('addMetier').value = '';
       UI.toast('Personnalité ajoutée !');
+    } catch (err) { UI.toast('Erreur : ' + err.message); }
+  },
+
+  // ---------- Suppression ----------
+  async deletePerso(id) {
+    const p = this.all.find(x => x.id === id);
+    if (!p) return;
+    const droit = Auth.isAdmin() || (Auth.isLoggedIn() && p.ajoute_par === Auth.currentUser.id);
+    if (!droit) return UI.toast('Vous ne pouvez supprimer que les personnalités que vous avez ajoutées.');
+    if (!window.confirm('Supprimer ' + ((p.prenom ? p.prenom + ' ' : '') + p.nom) + ' ? Cette action est définitive.')) return;
+    try {
+      const { error } = await sb.from('personnalites').delete().eq('id', id);
+      if (error) throw error;
+      UI.toast('Personnalité supprimée.');
+      this.loadList();
     } catch (err) { UI.toast('Erreur : ' + err.message); }
   },
 

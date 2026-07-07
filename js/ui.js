@@ -218,8 +218,9 @@ const UI = {
         sb.from('gouvernements_votes').select('gouvernement_id, note').eq('user_id', uid),
         sb.from('commentaires').select('*').eq('user_id', uid),
         sb.from('personnalites').select('id, nom, prenom'),
-        sb.from('gouvernements').select('id, titre')
+        sb.from('gouvernements').select('id, titre, is_published, created_by')
       ]);
+      const mesBrouillons = (gouvs.data || []).filter(g => g.created_by === uid && !g.is_published);
       const pName = id => {
         const p = (persos.data || []).find(x => x.id === id);
         return p ? ((p.prenom ? p.prenom + ' ' : '') + p.nom) : null;
@@ -239,6 +240,9 @@ const UI = {
       set('esp-likes', (likes.data || []).map(l => persoItem(l.personnalite_id)).filter(Boolean).join(''));
       set('esp-epingles-perso', (epP.data || []).map(l => persoItem(l.personnalite_id)).filter(Boolean).join(''));
       set('esp-epingles-gouv', (epG.data || []).map(l => gouvItem(l.gouvernement_id)).filter(Boolean).join(''));
+      set('esp-brouillons', mesBrouillons.map(g =>
+        '<div class="esp-brouillon">&#128221; ' + esc(g.titre || 'Sans titre') + '</div>'
+      ).join(''));
       set('esp-votes', (votes.data || []).map(v => gouvItem(v.gouvernement_id, ' <span class="esp-note">' + '&#9733;'.repeat(v.note) + '</span>')).filter(Boolean).join(''));
       set('esp-commentaires', (comms.data || []).map(c => {
         const cible = c.gouvernement_id ? gTitre(c.gouvernement_id) : null;
