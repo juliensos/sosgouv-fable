@@ -296,7 +296,7 @@ const Gouv = {
       await this.loadReferentiels();
       const [gRes, statsRes] = await Promise.all([
         sb.from('gouvernements')
-          .select('*, users(username), postes_gouvernement(*, personnalites(id, nom, prenom), secteurs(nom))')
+          .select('*, users!created_by(username), postes_gouvernement(*, personnalites(id, nom, prenom), secteurs(nom))')
           .eq('is_published', true)
           .order('created_at', { ascending: false }),
         sb.from('gouvernements_stats').select('*')
@@ -468,7 +468,7 @@ const Gouv = {
     try {
       const { data, error } = await sb
         .from('commentaires')
-        .select('*, users(username)')
+        .select('*, users!user_id(username)')
         .eq('gouvernement_id', gouvId)
         .order('created_at', { ascending: true });
       if (error) throw error;
