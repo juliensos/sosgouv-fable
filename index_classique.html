@@ -9,22 +9,20 @@
   <!-- CSS Webflow (graphisme des dernières versions, chargé depuis le CDN Webflow).
        Si vous republiez la maquette sur Webflow, vérifiez que le hash du fichier
        correspond bien à la dernière version publiée. -->
-  <link href="https://cdn.prod.website-files.com/68ecfda4d9b3270b98426ff5/css/sosgouv.webflow.shared.5310d7a46.css" rel="stylesheet" type="text/css"/>
+  <link href="https://cdn.prod.website-files.com/68ecfda4d9b3270b98426ff5/css/sosgouv.webflow.shared.af7c0b75c.css" rel="stylesheet" type="text/css"/>
   <!-- CSS applicatif (composants dynamiques : cartes, modaux, badges, toasts) -->
-  <link href="css/sosgouv.css?v=10" rel="stylesheet" type="text/css"/>
+  <link href="css/sosgouv_classique.css?v=10" rel="stylesheet" type="text/css"/>
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
   <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin="anonymous"/>
   <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js" type="text/javascript"></script>
   <script type="text/javascript">
-    if (window.WebFont) {
-      WebFont.load({
-        google: {
-          families: ["Lato:100,100italic,300,300italic,400,400italic,700,700italic,900,900italic"]
-        }
-      });
-    }
+    if (window.WebFont) WebFont.load({
+      google: {
+        families: ["Lato:100,100italic,300,300italic,400,400italic,700,700italic,900,900italic"]
+      }
+    });
   </script>
 
   <!-- Webflow touch detection -->
@@ -132,12 +130,12 @@
         <textarea id="gouvDescription" class="champ-texte w-input textarea-vision" placeholder="Vision de l'auteur (optionnel)"></textarea>
         <div id="composer-postes"></div>
         <div class="composer-add-row">
-          <button id="btnAddMinistere" class="_w-link-bloc-button add-ministere">+ ajouter un ministère</button>
-          <button id="btnAddDelegue" class="_w-link-bloc-button add-ministere">+ ajouter un délégué</button>
+          <button id="btnAddMinistere" class="submit-button-3 w-button">+ Ajouter un ministère</button>
+          <button id="btnAddDelegue" class="submit-button-3 w-button">+ Ajouter un délégué ministériel</button>
         </div>
         <div class="composer-save-row">
-          <button id="btnBrouillon" class="_w-link-bloc-button bbrouillon">brouillon</button>
-          <button id="btnPublier" class="_w-link-bloc-button publier">publier</button>
+          <button id="btnBrouillon" class="submit-button-3 w-button btn-secondaire">Enregistrer en brouillon</button>
+          <button id="btnPublier" class="submit-button-3 w-button">Publier</button>
         </div>
       </div>
 
@@ -183,7 +181,7 @@
           <a href="#" data-section="4">liste personnalités</a>
         </div>
       </div>
-      <a href="index_classique.html" class="version-switch">version classique</a>
+      <a href="index.html" class="version-switch">version design</a>
     </div>
   </div>
 
@@ -191,7 +189,7 @@
   <div class="_3-fond-modal" style="display:none"></div>
 
   <!-- Connexion / création de compte -->
-  <div id="modal-connect" class="modal-sosgouv m-bloc-base small-500" style="display:none">
+  <div id="modal-connect" class="modal-sosgouv" style="display:none">
     <button class="modal-close" data-close-modal>&times;</button>
     <div class="cont-flex">
       <div class="bloc">
@@ -210,7 +208,7 @@
   </div>
 
   <!-- Données personnelles -->
-  <div id="modal-infos" class="modal-sosgouv m-bloc-base small-500" style="display:none">
+  <div id="modal-infos" class="modal-sosgouv" style="display:none">
     <button class="modal-close" data-close-modal>&times;</button>
     <h4>Mes données personnelles</h4>
     <input type="text" id="infoNom" class="champ-texte w-input" placeholder="Nom"/>
@@ -229,13 +227,13 @@
   </div>
 
   <!-- Fiche personnalité -->
-  <div id="modal-fiche" class="modal-sosgouv m-bloc-base small-500" style="display:none">
+  <div id="modal-fiche" class="modal-sosgouv" style="display:none">
     <button class="modal-close" data-close-modal>&times;</button>
     <div id="fiche-contenu"></div>
   </div>
 
   <!-- Edition admin personnalité -->
-  <div id="modal-admin-perso" class="modal-sosgouv m-bloc-base small-500" style="display:none">
+  <div id="modal-admin-perso" class="modal-sosgouv" style="display:none">
     <button class="modal-close" data-close-modal>&times;</button>
     <h4>Édition (admin)</h4>
     <input type="text" id="admNom" class="champ-texte w-input" placeholder="Nom"/>
@@ -266,14 +264,14 @@
   </div>
 
   <!-- Sous-secteurs d'un poste -->
-  <div id="modal-sous-secteurs" class="modal-sosgouv m-bloc-base small-500" style="display:none">
+  <div id="modal-sous-secteurs" class="modal-sosgouv" style="display:none">
     <button class="modal-close" data-close-modal>&times;</button>
     <div id="sous-secteurs-contenu"></div>
     <button id="btnCloseSous" class="submit-button-3 w-button">Valider</button>
   </div>
 
   <!-- Détail d'un gouvernement -->
-  <div id="modal-detail" class="modal-sosgouv modal-large m-bloc-base" style="display:none">
+  <div id="modal-detail" class="modal-sosgouv modal-large" style="display:none">
     <button class="modal-close" data-close-modal>&times;</button>
     <div id="detail-contenu"></div>
   </div>
@@ -283,7 +281,7 @@
   <script src="config.js?v=10"></script>
   <script src="js/auth.js?v=10"></script>
   <script src="js/ui.js?v=10"></script>
-  <script src="js/personnalites.js?v=10"></script>
-  <script src="js/gouvernement.js?v=10"></script>
+  <script src="js_classique/personnalites.js?v=10"></script>
+  <script src="js_classique/gouvernement.js?v=10"></script>
 </body>
 </html>
