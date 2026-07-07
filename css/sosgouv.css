@@ -166,3 +166,16 @@ body { font-family: 'Lato', sans-serif; }
 
 /* ===== Brouillons dans l'espace perso ===== */
 .esp-brouillon { font-size: 14px; color: #444; }
+
+/* ===== Compteur de likes ===== */
+.like-count { font-size: 12px; margin-left: 3px; vertical-align: 1px; }
+
+/* ===== Fiche : propositions ===== */
+.fiche-sous-titre { margin: 16px 0 6px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
+.fiche-proposition { font-size: 14px; padding: 3px 0; }
+.fp-gouv { font-weight: 700; }
+
+/* ===== Fusion de ministères ===== */
+.fusion-tag { display: inline-flex; align-items: center; gap: 4px; background: #f2f2f2; border-radius: 4px; padding: 2px 8px; font-size: 13px; margin-left: 6px; }
+.btn-fusion-del { color: #c0392b; font-size: 15px; }
+.poste-fusion-select { margin-left: 6px; padding: 4px 8px; border: 1px dashed #bbb; border-radius: 4px; font-size: 13px; color: #999; background: #fff; }
