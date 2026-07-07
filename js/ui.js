@@ -181,10 +181,75 @@ const UI = {
       document.getElementById('infoPrenom').value = Auth.currentUser.prenom || '';
       document.getElementById('infoEmail').value = Auth.currentUser.email || '';
       this.openModal('modal-infos');
+      this.loadEspacePerso();
     });
 
     this.updateMenu();
     this.showSection(0);
+  },
+
+  // ---------- Espace personnel : mon activité ----------
+  async loadEspacePerso() {
+    if (!Auth.isLoggedIn()) return;
+    const uid = Auth.currentUser.id;
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const set = (id, html) => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = html || '<div class="esp-vide">Rien pour le moment.</div>';
+    };
+    try {
+      const [likes, epP, epG, votes, comms, persos, gouvs] = await Promise.all([
+        sb.from('personnalites_likes').select('personnalite_id').eq('user_id', uid),
+        sb.from('personnalites_epingles').select('personnalite_id').eq('user_id', uid),
+        sb.from('gouvernements_epingles').select('gouvernement_id').eq('user_id', uid),
+        sb.from('gouvernements_votes').select('gouvernement_id, note').eq('user_id', uid),
+        sb.from('commentaires').select('*').eq('user_id', uid),
+        sb.from('personnalites').select('id, nom, prenom'),
+        sb.from('gouvernements').select('id, titre')
+      ]);
+      const pName = id => {
+        const p = (persos.data || []).find(x => x.id === id);
+        return p ? ((p.prenom ? p.prenom + ' ' : '') + p.nom) : null;
+      };
+      const gTitre = id => {
+        const g = (gouvs.data || []).find(x => x.id === id);
+        return g ? (g.titre || 'Sans titre') : null;
+      };
+      const persoItem = id => {
+        const n = pName(id);
+        return n ? '<a href="#" class="esp-item" data-esp-perso="' + esc(id) + '">' + esc(n) + '</a>' : '';
+      };
+      const gouvItem = (id, extra) => {
+        const t = gTitre(id);
+        return t ? '<a href="#" class="esp-item" data-esp-gouv="' + esc(id) + '">' + esc(t) + (extra || '') + '</a>' : '';
+      };
+      set('esp-likes', (likes.data || []).map(l => persoItem(l.personnalite_id)).filter(Boolean).join(''));
+      set('esp-epingles-perso', (epP.data || []).map(l => persoItem(l.personnalite_id)).filter(Boolean).join(''));
+      set('esp-epingles-gouv', (epG.data || []).map(l => gouvItem(l.gouvernement_id)).filter(Boolean).join(''));
+      set('esp-votes', (votes.data || []).map(v => gouvItem(v.gouvernement_id, ' <span class="esp-note">' + '&#9733;'.repeat(v.note) + '</span>')).filter(Boolean).join(''));
+      set('esp-commentaires', (comms.data || []).map(c => {
+        const cible = c.gouvernement_id ? gTitre(c.gouvernement_id) : null;
+        return '<div class="esp-comm">' + (cible ? '<span class="esp-comm-cible">sur ' + esc(cible) + ' :</span> ' : '') + esc(c.contenu) + '</div>';
+      }).join(''));
+      // Navigation vers les fiches et détails
+      document.querySelectorAll('[data-esp-perso]').forEach(a => a.addEventListener('click', async (e) => {
+        e.preventDefault();
+        this.closeModals();
+        if (window.Perso) {
+          if (!Perso.all || !Perso.all.length) await Perso.loadList();
+          Perso.openFiche(a.dataset.espPerso);
+        }
+      }));
+      document.querySelectorAll('[data-esp-gouv]').forEach(a => a.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.closeModals();
+        this.showSection(1);
+        if (window.Gouv && Gouv.openDetail) Gouv.openDetail(a.dataset.espGouv);
+      }));
+    } catch (err) {
+      set('esp-likes', '<div class="esp-vide">Erreur de chargement : ' + esc(err.message) + '</div>');
+    }
   }
 };
 

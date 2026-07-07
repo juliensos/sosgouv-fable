@@ -161,15 +161,24 @@ const Perso = {
     if (!p) return;
     const cont = document.getElementById('fiche-contenu');
     if (!cont) return;
-    const liens = (p.liens || []).map(l =>
-      '<a href="' + this.esc(l.url || l) + '" target="_blank" rel="noopener">' + this.esc(l.titre || l.url || l) + '</a>'
-    ).join('<br>');
+    const liensArr = Array.isArray(p.liens) ? p.liens : [];
+    const videos = liensArr.filter(l => l && l.type === 'video');
+    const autres = liensArr.filter(l => !l || l.type !== 'video');
+    const videosHtml = videos.map(l => {
+      const embed = this.videoEmbedUrl(l.url);
+      if (embed) return '<div class="fiche-video"><iframe src="' + this.esc(embed) + '" frameborder="0" allowfullscreen loading="lazy"></iframe><div class="fiche-video-titre">' + this.esc(l.titre || '') + '</div></div>';
+      return '<a class="fiche-lien fiche-lien-video" href="' + this.esc(l.url) + '" target="_blank" rel="noopener">&#127916; ' + this.esc(l.titre || l.url) + '</a>';
+    }).join('');
+    const liens = autres.map(l =>
+      '<a class="fiche-lien" href="' + this.esc(l.url || l) + '" target="_blank" rel="noopener">&#128279; ' + this.esc(l.titre || l.url || l) + '</a>'
+    ).join('');
     cont.innerHTML = `
       <h3>${this.esc(p.prenom || '')} ${this.esc(p.nom)}</h3>
       <div class="badge-statut ${this.STATUT_CLASSES[p.statut] || ''}">${this.STATUTS[p.statut] || ''}</div>
       <p class="fiche-metiers">${this.esc((p.metiers || []).join(', '))}</p>
       ${p.short_bio ? '<p class="fiche-shortbio">' + this.esc(p.short_bio) + '</p>' : ''}
       ${p.bio ? '<div class="fiche-bio">' + this.esc(p.bio) + '</div>' : ''}
+      ${videosHtml ? '<div class="fiche-videos">' + videosHtml + '</div>' : ''}
       ${liens ? '<div class="fiche-liens">' + liens + '</div>' : ''}
     `;
     UI.openModal('modal-fiche');
@@ -198,6 +207,48 @@ const Perso = {
   },
 
   // ---------- Edition admin ----------
+  videoEmbedUrl(url) {
+    if (!url) return null;
+    let m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([\w-]{6,})/);
+    if (m) return 'https://www.youtube.com/embed/' + m[1];
+    m = url.match(/vimeo\.com\/(\d+)/);
+    if (m) return 'https://player.vimeo.com/video/' + m[1];
+    m = url.match(/dailymotion\.com\/video\/([\w]+)/);
+    if (m) return 'https://www.dailymotion.com/embed/video/' + m[1];
+    return null;
+  },
+
+  _admLiens: [],
+
+  renderAdmLiens() {
+    const cont = document.getElementById('admLiensListe');
+    if (!cont) return;
+    cont.innerHTML = this._admLiens.map((l, i) =>
+      '<div class="adm-lien-item">' +
+      '<span class="adm-lien-type">' + (l.type === 'video' ? '&#127916;' : '&#128279;') + '</span> ' +
+      '<span class="adm-lien-titre">' + this.esc(l.titre || l.url) + '</span> ' +
+      '<button class="btn-icone adm-lien-del" data-idx="' + i + '" title="Supprimer">&times;</button>' +
+      '</div>'
+    ).join('') || '<div class="adm-lien-vide">Aucun document pour le moment.</div>';
+    cont.querySelectorAll('.adm-lien-del').forEach(btn => btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      this._admLiens.splice(Number(btn.dataset.idx), 1);
+      this.renderAdmLiens();
+    }));
+  },
+
+  admAddLien() {
+    const type = document.getElementById('admLienType').value;
+    const titre = document.getElementById('admLienTitre').value.trim();
+    let url = document.getElementById('admLienUrl').value.trim();
+    if (!url) return UI.toast('Indiquez une URL.');
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    this._admLiens.push({ type, titre, url });
+    document.getElementById('admLienTitre').value = '';
+    document.getElementById('admLienUrl').value = '';
+    this.renderAdmLiens();
+  },
+
   openAdminEdit(id) {
     if (!Auth.isAdmin()) return;
     const p = this.all.find(x => x.id === id);
@@ -208,6 +259,8 @@ const Perso = {
     document.getElementById('admShortBio').value = p.short_bio || '';
     document.getElementById('admBio').value = p.bio || '';
     document.getElementById('admStatut').value = String(p.statut ?? 0);
+    this._admLiens = Array.isArray(p.liens) ? p.liens.map(l => ({ ...l })) : [];
+    this.renderAdmLiens();
     document.getElementById('admSaveBtn').dataset.id = id;
     UI.openModal('modal-admin-perso');
   },
@@ -222,6 +275,7 @@ const Perso = {
         metiers: document.getElementById('admMetiers').value.split(',').map(s => s.trim()).filter(Boolean),
         short_bio: document.getElementById('admShortBio').value,
         bio: document.getElementById('admBio').value,
+        liens: this._admLiens,
         statut: Number(document.getElementById('admStatut').value)
       }).eq('id', id);
       if (error) throw error;
@@ -255,6 +309,9 @@ const Perso = {
 
     const admSave = document.getElementById('admSaveBtn');
     if (admSave) admSave.addEventListener('click', (e) => { e.preventDefault(); this.adminSave(); });
+
+    const admAddLien = document.getElementById('admLienAddBtn');
+    if (admAddLien) admAddLien.addEventListener('click', (e) => { e.preventDefault(); this.admAddLien(); });
   }
 };
 
