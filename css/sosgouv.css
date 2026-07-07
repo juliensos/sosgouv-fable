@@ -114,3 +114,33 @@ body { font-family: 'Lato', sans-serif; }
 .dropdown-list-menu.w-dropdown-list.w--open { display: block; }
 .dropdown-menu.w-dropdown { position: relative; }
 .dropdown-toogle.w-dropdown-toggle { cursor: pointer; }
+
+/* ===== Espace personnel : mon activité ===== */
+#espace-perso { margin-top: 24px; border-top: 1px solid #e5e5e5; padding-top: 16px; }
+#espace-perso h4 { margin: 0 0 12px; }
+.esp-bloc { margin-bottom: 14px; }
+.esp-bloc h5 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
+.esp-liste { display: flex; flex-direction: column; gap: 4px; }
+.esp-item { color: #1a1a1a; text-decoration: underline; font-size: 14px; }
+.esp-item:hover { color: #f2b01e; }
+.esp-note { color: #f2b01e; text-decoration: none; }
+.esp-comm { font-size: 14px; background: #f7f7f7; padding: 6px 10px; border-radius: 4px; }
+.esp-comm-cible { color: #888; font-style: italic; }
+.esp-vide { color: #999; font-size: 13px; font-style: italic; }
+
+/* ===== Editeur admin : documents en ligne ===== */
+.adm-liens-bloc { margin: 16px 0; border-top: 1px solid #e5e5e5; padding-top: 12px; }
+.adm-liens-bloc h5 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
+.adm-lien-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 14px; }
+.adm-lien-titre { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm-lien-del { color: #c0392b; font-size: 18px; }
+.adm-lien-vide { color: #999; font-size: 13px; font-style: italic; }
+.btn-secondaire { background: #666 !important; }
+
+/* ===== Fiche : vidéos et liens ===== */
+.fiche-videos { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+.fiche-video iframe { width: 100%; aspect-ratio: 16 / 9; border-radius: 6px; }
+.fiche-video-titre { font-size: 13px; color: #666; margin-top: 4px; }
+.fiche-liens { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.fiche-lien { color: #1a1a1a; font-size: 14px; }
+.fiche-lien:hover { color: #f2b01e; }
