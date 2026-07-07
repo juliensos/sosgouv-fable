@@ -36,6 +36,14 @@ const Perso = {
   async loadUserMarks() {
     this.likes = new Set();
     this.epingles = new Set();
+    this.likesCount = {};
+    // Compteur public de likes (toutes personnalités)
+    try {
+      const { data: allLikes } = await sb.from('personnalites_likes').select('personnalite_id');
+      (allLikes || []).forEach(r => {
+        this.likesCount[r.personnalite_id] = (this.likesCount[r.personnalite_id] || 0) + 1;
+      });
+    } catch (err) { /* compteur facultatif */ }
     if (!Auth.isLoggedIn()) return;
     const uid = Auth.currentUser.id;
     const [lk, ep] = await Promise.all([
@@ -98,7 +106,7 @@ const Perso = {
         <span class="badge-statut ${this.STATUT_CLASSES[p.statut] || ''}">${this.STATUTS[p.statut] || ''}</span>
       </div>
       <div class="perso-actions">
-        <button class="btn-icone btn-like ${liked ? 'active' : ''}" title="Like">&#9829;</button>
+        <button class="btn-icone btn-like ${liked ? 'active' : ''}" title="Like">&#9829;<span class="like-count">${this.likesCount[p.id] || 0}</span></button>
         <button class="btn-icone btn-pin ${pinned ? 'active' : ''}" title="Épingler">&#128204;</button>
         <button class="btn-icone btn-fiche" title="Voir la fiche">&#128196;</button>
         ${Auth.isAdmin() ? '<button class="btn-icone btn-edit" title="Modifier (admin)">&#9998;</button>' : ''}
@@ -132,11 +140,21 @@ const Perso = {
         await sb.from('personnalites_likes').delete()
           .eq('user_id', uid).eq('personnalite_id', id);
         this.likes.delete(id);
-        if (btn) btn.classList.remove('active');
+        this.likesCount[id] = Math.max(0, (this.likesCount[id] || 1) - 1);
+        if (btn) {
+          btn.classList.remove('active');
+          const c = btn.querySelector('.like-count');
+          if (c) c.textContent = this.likesCount[id];
+        }
       } else {
         await sb.from('personnalites_likes').insert({ user_id: uid, personnalite_id: id });
+        this.likesCount[id] = (this.likesCount[id] || 0) + 1;
         this.likes.add(id);
-        if (btn) btn.classList.add('active');
+        if (btn) {
+          btn.classList.add('active');
+          const c = btn.querySelector('.like-count');
+          if (c) c.textContent = this.likesCount[id];
+        }
       }
     } catch (err) { UI.toast('Erreur : ' + err.message); }
   },
@@ -183,8 +201,32 @@ const Perso = {
       ${p.bio ? '<div class="fiche-bio">' + this.esc(p.bio) + '</div>' : ''}
       ${videosHtml ? '<div class="fiche-videos">' + videosHtml + '</div>' : ''}
       ${liens ? '<div class="fiche-liens">' + liens + '</div>' : ''}
+      <div id="fiche-propositions"></div>
     `;
     UI.openModal('modal-fiche');
+    this.loadPropositions(id);
+  },
+
+  // Gouvernements publiés où la personnalité est proposée
+  async loadPropositions(id) {
+    const cont = document.getElementById('fiche-propositions');
+    if (!cont) return;
+    try {
+      const [postes, gouvs] = await Promise.all([
+        sb.from('postes_gouvernement').select('*').eq('personnalite_id', id),
+        sb.from('gouvernements').select('id, titre, is_published')
+      ]);
+      const items = (postes.data || []).map(po => {
+        const g = (gouvs.data || []).find(x => x.id === po.gouvernement_id && x.is_published);
+        if (!g) return null;
+        const role = po.nom_poste_personnalise || po.fonction_delegue || 'Membre';
+        return '<div class="fiche-proposition">' + this.esc(role) +
+          ' dans <span class="fp-gouv">' + this.esc(g.titre || 'Sans titre') + '</span></div>';
+      }).filter(Boolean);
+      if (items.length) {
+        cont.innerHTML = '<h4 class="fiche-sous-titre">Personnalité proposée au poste de</h4>' + items.join('');
+      }
+    } catch (err) { /* section facultative */ }
   },
 
   // ---------- Ajout simple (section 3) ----------

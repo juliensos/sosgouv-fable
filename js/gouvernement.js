@@ -94,6 +94,67 @@ const Gouv = {
     this.initComposer();
   },
 
+  // Reprendre un brouillon existant dans le composer
+  async loadDraft(id) {
+    UI.showSection(2);
+    try {
+      await this.loadReferentiels();
+      await this.loadPersosCache();
+      const [gRes, ssRes, fusRes, allSous] = await Promise.all([
+        sb.from('gouvernements')
+          .select('*, users!created_by(username), postes_gouvernement(*, personnalites!personnalite_id(id, nom, prenom, statut), secteurs!secteur_id(nom))')
+          .eq('id', id).single(),
+        sb.from('postes_sous_secteurs').select('*'),
+        sb.from('postes_secteurs_fusionnes').select('*'),
+        sb.from('sous_secteurs').select('*')
+      ]);
+      if (gRes.error) throw gRes.error;
+      const g = gRes.data;
+      if (!g) return UI.toast('Brouillon introuvable.');
+      const sousById = {};
+      (allSous.data || []).forEach(s => sousById[s.id] = s);
+      const postes = (g.postes_gouvernement || []).slice().sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+      this.composerState = {
+        editingId: g.id,
+        titre: g.titre || '',
+        description: g.description || '',
+        postes: postes.map((po, i) => {
+          const secteur = po.secteur_id ? this.secteurs.find(s => s.id === po.secteur_id) : null;
+          let intitule = po.nom_poste_personnalise || (secteur ? (secteur.intitule_poste_defaut || secteur.nom) : '');
+          let suffixe = '';
+          if (po.type === 'regalien' && secteur) {
+            const base = secteur.intitule_poste_defaut || secteur.nom;
+            if (intitule.startsWith(base)) {
+              suffixe = intitule.slice(base.length).trim();
+              intitule = base;
+            }
+          }
+          return {
+            uid: 'load-' + i,
+            type: po.type,
+            secteur,
+            intitule,
+            suffixe,
+            fonction: po.fonction_delegue || '',
+            personnalite: po.personnalites || null,
+            sousSecteurs: (ssRes.data || [])
+              .filter(r => r.poste_id === po.id)
+              .map(r => sousById[r.sous_secteur_id])
+              .filter(Boolean),
+            fusion: (fusRes.data || [])
+              .filter(r => r.poste_id === po.id)
+              .map(r => this.secteurs.find(s => s.id === r.secteur_id))
+              .filter(Boolean)
+          };
+        })
+      };
+      document.getElementById('gouvTitre').value = this.composerState.titre;
+      document.getElementById('gouvDescription').value = this.composerState.description;
+      this.renderComposer();
+      UI.toast('Brouillon « ' + (g.titre || 'Sans titre') + ' » chargé. Modifiez puis enregistrez ou publiez.');
+    } catch (err) { UI.toast('Erreur : ' + err.message); }
+  },
+
   renderComposer() {
     const cont = document.getElementById('composer-postes');
     if (!cont || !this.composerState) return;
@@ -116,7 +177,18 @@ const Gouv = {
             '<option value="" disabled' + (p.secteur ? '' : ' selected') + '>Secteur</option>' +
             this.nonRegaliens().map(s =>
               '<option value="' + s.id + '"' + (p.secteur && p.secteur.id === s.id ? ' selected' : '') + '>' + Perso.esc(s.nom) + '</option>'
-            ).join('') + '</select>'
+            ).join('') + '</select>' +
+            (p.secteur
+              ? (p.fusion || []).map((s, fi) =>
+                  '<span class="fusion-tag">+ ' + Perso.esc(s.nom) + ' <button class="btn-icone btn-fusion-del" data-fi="' + fi + '" title="Retirer">&times;</button></span>'
+                ).join('') +
+                '<select class="poste-fusion-select placeholder">' +
+                '<option value="" disabled selected>+ fusionner avec…</option>' +
+                this.nonRegaliens()
+                  .filter(s => s.id !== p.secteur.id && !(p.fusion || []).some(f => f.id === s.id))
+                  .map(s => '<option value="' + s.id + '">' + Perso.esc(s.nom) + '</option>').join('') +
+                '</select>'
+              : '')
           : '<span class="poste-secteur">' + (p.secteur ? Perso.esc(p.secteur.nom) : '') + '</span>'}
         ${p.type !== 'regalien' ? '<button class="btn-icone btn-remove-poste" title="Supprimer">&times;</button>' : ''}
       </div>
@@ -149,10 +221,27 @@ const Gouv = {
       const s = this.nonRegaliens().find(x => x.id === secteurSelect.value);
       if (!s) return;
       p.secteur = s;
+      p.fusion = [];
       p.intitule = s.intitule_poste_defaut || s.nom;
       p.sousSecteurs = (this.sousSecteursDefaut[s.id] || []).slice();
       this.renderComposer();
     });
+
+    const fusionSelect = bloc.querySelector('.poste-fusion-select');
+    if (fusionSelect) fusionSelect.addEventListener('change', () => {
+      const s = this.nonRegaliens().find(x => x.id === fusionSelect.value);
+      if (!s) return;
+      p.fusion = p.fusion || [];
+      p.fusion.push(s);
+      this.recomputeFusion(p);
+      this.renderComposer();
+    });
+    bloc.querySelectorAll('.btn-fusion-del').forEach(btn => btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      p.fusion.splice(Number(btn.dataset.fi), 1);
+      this.recomputeFusion(p);
+      this.renderComposer();
+    }));
 
     const suffixe = bloc.querySelector('.poste-suffixe');
     if (suffixe) suffixe.addEventListener('input', () => p.suffixe = suffixe.value);
@@ -219,7 +308,7 @@ const Gouv = {
     if (!cont) return;
     const render = () => {
       cont.innerHTML =
-        '<h4>Sous-secteurs — ' + Perso.esc(p.secteur ? p.secteur.nom : p.intitule) + '</h4>' +
+        '<h4>Sous-secteurs : ' + Perso.esc(p.secteur ? p.secteur.nom : p.intitule) + '</h4>' +
         (p.sousSecteurs.length
           ? p.sousSecteurs.map((s, i) =>
               '<div class="sous-item">' + Perso.esc(s.nom) +
@@ -246,6 +335,17 @@ const Gouv = {
   },
 
   // ---------- Ajout de blocs ----------
+  // Recalcule intitulé et sous-secteurs d'un ministère fusionné
+  recomputeFusion(p) {
+    if (!p.secteur) return;
+    const noms = [p.secteur.nom, ...(p.fusion || []).map(s => s.nom)];
+    p.intitule = (p.secteur.intitule_poste_defaut || p.secteur.nom) +
+      ((p.fusion || []).length ? ' + ' + (p.fusion || []).map(s => s.nom).join(' + ') : '');
+    const vus = new Set();
+    p.sousSecteurs = [p.secteur, ...(p.fusion || [])].flatMap(s => this.sousSecteursDefaut[s.id] || [])
+      .filter(s => { if (vus.has(s.id)) return false; vus.add(s.id); return true; });
+  },
+
   addMinistere() {
     if (!this.composerState) return;
     if (!this.nonRegaliens().length) return UI.toast('Aucun secteur non-régalien disponible.');
@@ -293,17 +393,32 @@ const Gouv = {
     }
 
     try {
-      // 1. Gouvernement
-      const { data: gouv, error: gErr } = await sb
-        .from('gouvernements')
-        .insert({
-          titre, description,
-          created_by: Auth.currentUser.id,
-          is_published: !!publish
-        })
-        .select()
-        .single();
-      if (gErr) throw gErr;
+      // 1. Gouvernement (création, ou mise à jour si on édite un brouillon)
+      let gouv;
+      if (this.composerState.editingId) {
+        const { data, error: uErr } = await sb
+          .from('gouvernements')
+          .update({ titre, description, is_published: !!publish })
+          .eq('id', this.composerState.editingId)
+          .select()
+          .single();
+        if (uErr) throw uErr;
+        gouv = data;
+        // On repart de zéro sur les postes du brouillon
+        await sb.from('postes_gouvernement').delete().eq('gouvernement_id', gouv.id);
+      } else {
+        const { data, error: gErr } = await sb
+          .from('gouvernements')
+          .insert({
+            titre, description,
+            created_by: Auth.currentUser.id,
+            is_published: !!publish
+          })
+          .select()
+          .single();
+        if (gErr) throw gErr;
+        gouv = data;
+      }
 
       // 2. Postes
       const postesRows = this.composerState.postes.map((p, i) => ({
@@ -325,9 +440,11 @@ const Gouv = {
 
       // 3. Sous-secteurs de chaque poste (création des nouveaux si besoin)
       const sousRows = [];
+      const fusionRows = [];
       for (let i = 0; i < (postes || []).length; i++) {
         const row = postes[i];
         const p = this.composerState.postes[i];
+        (p.fusion || []).forEach(s => fusionRows.push({ poste_id: row.id, secteur_id: s.id }));
         for (const s of (p.sousSecteurs || [])) {
           if (!s.id && s.nom) {
             const { data: created, error: cErr } = await sb
@@ -340,6 +457,10 @@ const Gouv = {
       if (sousRows.length) {
         const { error: sErr } = await sb.from('postes_sous_secteurs').insert(sousRows);
         if (sErr) throw sErr;
+      }
+      if (fusionRows.length) {
+        const { error: fErr } = await sb.from('postes_secteurs_fusionnes').insert(fusionRows);
+        if (fErr) throw fErr;
       }
 
       UI.toast(publish
@@ -374,6 +495,7 @@ const Gouv = {
       (statsRes.data || []).forEach(s => stats[s.id] = s);
       this.stats = stats;
       await this.loadUserVotes();
+      this.sortPublished();
       this.renderPublished();
     } catch (err) {
       cont.innerHTML = '<div class="error-msg">Erreur de chargement : ' + err.message + '</div>';
@@ -391,6 +513,25 @@ const Gouv = {
     ]);
     (v.data || []).forEach(r => this.votesUser[r.gouvernement_id] = r.note);
     (e.data || []).forEach(r => this.epingles.add(r.gouvernement_id));
+  },
+
+  tri: 'note',
+  sortPublished() {
+    const st = id => (this.stats && this.stats[id]) || {};
+    const epingleDabord = (a, b) => {
+      const ea = this.epingles.has(a.id) ? 1 : 0;
+      const eb = this.epingles.has(b.id) ? 1 : 0;
+      return eb - ea;
+    };
+    const cmp = {
+      note: (a, b) => (Number(st(b.id).note_moyenne) || 0) - (Number(st(a.id).note_moyenne) || 0),
+      votes: (a, b) => (st(b.id).nb_votes || 0) - (st(a.id).nb_votes || 0),
+      popularite: (a, b) =>
+        ((st(b.id).nb_votes || 0) + (st(b.id).nb_commentaires || 0)) -
+        ((st(a.id).nb_votes || 0) + (st(a.id).nb_commentaires || 0)),
+      date: (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)
+    }[this.tri] || (() => 0);
+    this.published.sort((a, b) => epingleDabord(a, b) || cmp(a, b));
   },
 
   renderPublished() {
@@ -420,7 +561,7 @@ const Gouv = {
       <div class="gouv-card" data-id="${g.id}">
         <div class="gouv-entete">
           <span class="gouv-titre">${Perso.esc(g.titre)}</span>
-          <span class="gouv-note">&#9733; ${st.note_moyenne ?? '—'} <span class="gouv-nbvotes">(${st.nb_votes || 0})</span></span>
+          <span class="gouv-note">&#9733; ${st.note_moyenne ?? '·'} <span class="gouv-nbvotes">(${st.nb_votes || 0})</span></span>
           ${pret ? '<span class="badge-pret">prêt à gouverner</span>' : ''}
         </div>
         <div class="gouv-auteur">par ${Perso.esc(g.users ? g.users.username : '?')}</div>
@@ -519,13 +660,25 @@ const Gouv = {
     const cont = document.getElementById('detail-contenu');
     if (!cont) return;
 
+    // Secteurs fusionnés éventuels
+    let fusionsParPoste = {};
+    try {
+      const { data: fus } = await sb.from('postes_secteurs_fusionnes').select('*');
+      (fus || []).forEach(r => {
+        const s = this.secteurs.find(x => x.id === r.secteur_id);
+        if (!s) return;
+        (fusionsParPoste[r.poste_id] = fusionsParPoste[r.poste_id] || []).push(s.nom);
+      });
+    } catch (err) { /* facultatif */ }
+
     const postes = (g.postes_gouvernement || []).slice().sort((a, b) => a.ordre - b.ordre);
     const bloc = (label, list) => list.length
       ? '<h4>' + label + '</h4>' + list.map(p => {
           const perso = p.personnalites;
+          const fusion = (fusionsParPoste[p.id] || []).map(n => ' + ' + Perso.esc(n)).join('');
           return '<div class="detail-poste"><span class="dp-intitule">' +
-            Perso.esc(p.nom_poste_personnalise || (p.secteurs ? p.secteurs.nom : '')) +
-            (p.fonction_delegue ? ' — ' + Perso.esc(p.fonction_delegue) : '') +
+            Perso.esc(p.nom_poste_personnalise || (p.secteurs ? p.secteurs.nom : '')) + fusion +
+            (p.fonction_delegue ? ', ' + Perso.esc(p.fonction_delegue) : '') +
             '</span><span class="dp-perso">' +
             (perso ? Perso.esc((perso.prenom || '') + ' ' + perso.nom) : '<em>non attribué</em>') +
             '</span></div>';
@@ -596,6 +749,12 @@ const Gouv = {
     if (btnDraft) btnDraft.addEventListener('click', (e) => { e.preventDefault(); this.save(false); });
     const btnPub = document.getElementById('btnPublier');
     if (btnPub) btnPub.addEventListener('click', (e) => { e.preventDefault(); this.save(true); });
+    const tri = document.getElementById('triGouv');
+    if (tri) tri.addEventListener('change', () => {
+      this.tri = tri.value;
+      this.sortPublished();
+      this.renderPublished();
+    });
   }
 };
 

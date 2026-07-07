@@ -241,7 +241,7 @@ const UI = {
       set('esp-epingles-perso', (epP.data || []).map(l => persoItem(l.personnalite_id)).filter(Boolean).join(''));
       set('esp-epingles-gouv', (epG.data || []).map(l => gouvItem(l.gouvernement_id)).filter(Boolean).join(''));
       set('esp-brouillons', mesBrouillons.map(g =>
-        '<div class="esp-brouillon">&#128221; ' + esc(g.titre || 'Sans titre') + '</div>'
+        '<a href="#" class="esp-item esp-brouillon" data-esp-brouillon="' + esc(g.id) + '">&#128221; ' + esc(g.titre || 'Sans titre') + '</a>'
       ).join(''));
       set('esp-votes', (votes.data || []).map(v => gouvItem(v.gouvernement_id, ' <span class="esp-note">' + '&#9733;'.repeat(v.note) + '</span>')).filter(Boolean).join(''));
       set('esp-commentaires', (comms.data || []).map(c => {
@@ -262,6 +262,11 @@ const UI = {
         this.closeModals();
         this.showSection(1);
         if (window.Gouv && Gouv.openDetail) Gouv.openDetail(a.dataset.espGouv);
+      }));
+      document.querySelectorAll('[data-esp-brouillon]').forEach(a => a.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.closeModals();
+        if (window.Gouv && Gouv.loadDraft) Gouv.loadDraft(a.dataset.espBrouillon);
       }));
     } catch (err) {
       set('esp-likes', '<div class="esp-vide">Erreur de chargement : ' + esc(err.message) + '</div>');
