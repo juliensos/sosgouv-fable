@@ -11,7 +11,7 @@
        correspond bien à la dernière version publiée. -->
   <link href="https://cdn.prod.website-files.com/68ecfda4d9b3270b98426ff5/css/sosgouv.webflow.shared.af7c0b75c.css" rel="stylesheet" type="text/css"/>
   <!-- CSS applicatif (composants dynamiques : cartes, modaux, badges, toasts) -->
-  <link href="css/sosgouv.css?v=5" rel="stylesheet" type="text/css"/>
+  <link href="css/sosgouv.css?v=6" rel="stylesheet" type="text/css"/>
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
@@ -112,6 +112,14 @@
       <!-- SECTION 1 : GOUVERNEMENTS PUBLIES -->
       <div id="section-1" class="section-page" style="display:none">
         <h2 class="titre-section">Gouvernements publiés</h2>
+        <div class="filtres-row">
+          <select id="triGouv" class="select-field-5 w-select">
+            <option value="note">Les mieux notés</option>
+            <option value="votes">Les plus notés</option>
+            <option value="popularite">Popularité</option>
+            <option value="date">Date d'ajout</option>
+          </select>
+        </div>
         <div id="liste-gouvernements"></div>
       </div>
 
@@ -269,10 +277,10 @@
 
   <!-- ==================== SCRIPTS ==================== -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=5"></script>
-  <script src="js/auth.js?v=5"></script>
-  <script src="js/ui.js?v=5"></script>
-  <script src="js/personnalites.js?v=5"></script>
-  <script src="js/gouvernement.js?v=5"></script>
+  <script src="config.js?v=6"></script>
+  <script src="js/auth.js?v=6"></script>
+  <script src="js/ui.js?v=6"></script>
+  <script src="js/personnalites.js?v=6"></script>
+  <script src="js/gouvernement.js?v=6"></script>
 </body>
 </html>
