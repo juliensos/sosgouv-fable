@@ -174,13 +174,25 @@ const UI = {
 
     // Ouverture données personnelles
     const openInfos = document.getElementById('openInfosPerso');
-    if (openInfos) openInfos.addEventListener('click', (e) => {
+    if (openInfos) openInfos.addEventListener('click', async (e) => {
       e.preventDefault();
       if (!Auth.isLoggedIn()) return this.openModal('modal-connect');
       document.getElementById('infoNom').value = Auth.currentUser.nom || '';
       document.getElementById('infoPrenom').value = Auth.currentUser.prenom || '';
       document.getElementById('infoEmail').value = Auth.currentUser.email || '';
       this.openModal('modal-infos');
+      // Valeurs fraîches depuis la base (la session locale peut être en retard)
+      try {
+        const { data } = await sb.from('users').select('nom, prenom, email')
+          .eq('id', Auth.currentUser.id).maybeSingle();
+        if (data) {
+          document.getElementById('infoNom').value = data.nom || '';
+          document.getElementById('infoPrenom').value = data.prenom || '';
+          document.getElementById('infoEmail').value = data.email || '';
+          Object.assign(Auth.currentUser, data);
+          Auth.saveSession(Auth.currentUser);
+        }
+      } catch (err) { /* on garde les valeurs de session */ }
       this.loadEspacePerso();
     });
 

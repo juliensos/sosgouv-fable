@@ -39,6 +39,27 @@ const Gouv = {
   regaliens() { return this.secteurs.filter(s => s.type === 'regalien'); },
   nonRegaliens() { return this.secteurs.filter(s => s.type === 'non_regalien'); },
 
+  // Cache des personnalités pour la recherche locale (insensible casse et accents)
+  persosCache: null,
+  norm(s) {
+    return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  },
+  async loadPersosCache() {
+    const { data, error } = await sb
+      .from('personnalites')
+      .select('id, nom, prenom, metiers')
+      .order('nom', { ascending: true });
+    if (error) throw error;
+    this.persosCache = data || [];
+  },
+  searchPersos(q) {
+    const nq = this.norm(q);
+    return (this.persosCache || []).filter(x =>
+      this.norm(x.nom).includes(nq) || this.norm(x.prenom).includes(nq) ||
+      this.norm((x.prenom || '') + ' ' + x.nom).includes(nq)
+    );
+  },
+
   // ================== COMPOSER (section 2) ==================
   async initComposer() {
     const cont = document.getElementById('composer-postes');
@@ -47,6 +68,7 @@ const Gouv = {
     cont.innerHTML = '<div class="loading">Chargement…</div>';
     try {
       await this.loadReferentiels();
+      await this.loadPersosCache();
     } catch (err) {
       cont.innerHTML = '<div class="error-msg">Erreur : ' + err.message + '</div>';
       return;
@@ -92,10 +114,14 @@ const Gouv = {
         <span class="poste-secteur">${p.secteur ? Perso.esc(p.secteur.nom) : ''}</span>
         ${p.type !== 'regalien' ? '<button class="btn-icone btn-remove-poste" title="Supprimer">&times;</button>' : ''}
       </div>
-      <input type="text" class="champ-texte poste-intitule" value="${Perso.esc(p.intitule)}" placeholder="Intitulé du poste">
+      ${p.type === 'regalien'
+        ? '<div class="poste-intitule-verrou"><span class="intitule-base">' + Perso.esc(p.intitule) + '</span>' +
+          '<input type="text" class="champ-texte poste-suffixe" value="' + Perso.esc(p.suffixe || '') + '" placeholder="Complément (ex : et de la Sécurité)"></div>'
+        : '<input type="text" class="champ-texte poste-intitule" value="' + Perso.esc(p.intitule) + '" placeholder="Intitulé du poste">'}
       ${p.type === 'delegue' ? '<input type="text" class="champ-texte poste-fonction" value="' + Perso.esc(p.fonction || '') + '" placeholder="Fonction (ex : chargé de la transition énergétique)">' : ''}
       <div class="poste-perso-row">
         <input type="text" class="champ-texte poste-perso-search" value="${perso}" placeholder="Rechercher une personnalité…" autocomplete="off">
+        <button class="btn-loupe" title="Parcourir toutes les personnalités">&#128269;</button>
         <div class="autocomplete-results" style="display:none"></div>
       </div>
       ${p.type !== 'delegue' ? '<div class="poste-sous-secteurs">' + (sous || '<em>Aucun sous-secteur</em>') + ' <button class="btn-mini btn-edit-sous">modifier</button></div>' : ''}
@@ -107,7 +133,10 @@ const Gouv = {
     if (!bloc) return;
 
     const intitule = bloc.querySelector('.poste-intitule');
-    intitule.addEventListener('input', () => p.intitule = intitule.value);
+    if (intitule) intitule.addEventListener('input', () => p.intitule = intitule.value);
+
+    const suffixe = bloc.querySelector('.poste-suffixe');
+    if (suffixe) suffixe.addEventListener('input', () => p.suffixe = suffixe.value);
 
     const fonction = bloc.querySelector('.poste-fonction');
     if (fonction) fonction.addEventListener('input', () => p.fonction = fonction.value);
@@ -124,40 +153,44 @@ const Gouv = {
       this.openSousSecteursModal(p);
     });
 
-    // Autocomplete personnalités
+    // Autocomplete personnalités (recherche locale, insensible casse et accents)
     const search = bloc.querySelector('.poste-perso-search');
     const results = bloc.querySelector('.autocomplete-results');
+    const showResults = (data) => {
+      if (!data || !data.length) { results.style.display = 'none'; return; }
+      results.innerHTML = data.map(x =>
+        '<div class="autocomplete-item" data-id="' + x.id + '">' +
+        Perso.esc((x.prenom || '') + ' ' + x.nom) +
+        ' <span class="ac-metier">' + Perso.esc((x.metiers || [])[0] || '') + '</span></div>'
+      ).join('');
+      results.style.display = 'block';
+      results.querySelectorAll('.autocomplete-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const found = data.find(d => d.id === item.dataset.id);
+          p.personnalite = found;
+          search.value = (found.prenom || '') + ' ' + found.nom;
+          results.style.display = 'none';
+        });
+      });
+    };
     let timer = null;
     search.addEventListener('input', () => {
       p.personnalite = null;
       clearTimeout(timer);
       const q = search.value.trim();
       if (q.length < 2) { results.style.display = 'none'; return; }
-      timer = setTimeout(async () => {
-        try {
-          const { data, error } = await sb
-            .from('personnalites')
-            .select('id, nom, prenom, metiers')
-            .or('nom.ilike.%' + q + '%,prenom.ilike.%' + q + '%')
-            .limit(8);
-          if (error) throw error;
-          if (!data || !data.length) { results.style.display = 'none'; return; }
-          results.innerHTML = data.map(x =>
-            '<div class="autocomplete-item" data-id="' + x.id + '">' +
-            Perso.esc((x.prenom || '') + ' ' + x.nom) +
-            ' <span class="ac-metier">' + Perso.esc((x.metiers || [])[0] || '') + '</span></div>'
-          ).join('');
-          results.style.display = 'block';
-          results.querySelectorAll('.autocomplete-item').forEach(item => {
-            item.addEventListener('click', () => {
-              const found = data.find(d => d.id === item.dataset.id);
-              p.personnalite = found;
-              search.value = (found.prenom || '') + ' ' + found.nom;
-              results.style.display = 'none';
-            });
-          });
-        } catch (err) { results.style.display = 'none'; }
-      }, 250);
+      timer = setTimeout(() => showResults(this.searchPersos(q).slice(0, 8)), 150);
+    });
+
+    // Loupe : parcourir toutes les personnalités
+    const loupe = bloc.querySelector('.btn-loupe');
+    if (loupe) loupe.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (results.style.display === 'block') { results.style.display = 'none'; return; }
+      showResults((this.persosCache || []).slice());
+    });
+    document.addEventListener('click', (e) => {
+      if (!bloc.contains(e.target)) results.style.display = 'none';
     });
   },
 
@@ -233,6 +266,15 @@ const Gouv = {
     const description = document.getElementById('gouvDescription').value.trim();
     if (!titre) return UI.toast('Donnez un nom à votre gouvernement.');
 
+    if (publish) {
+      const manquants = this.composerState.postes
+        .filter(p => p.type === 'regalien' && !p.personnalite)
+        .map(p => p.secteur ? p.secteur.nom : p.intitule);
+      if (manquants.length) {
+        return UI.toast('Pour publier, nommez une personnalité à chaque poste régalien. Manquant : ' + manquants.join(', ') + '.');
+      }
+    }
+
     try {
       // 1. Gouvernement
       const { data: gouv, error: gErr } = await sb
@@ -252,7 +294,9 @@ const Gouv = {
         type: p.type,
         personnalite_id: p.personnalite ? p.personnalite.id : null,
         secteur_id: p.secteur ? p.secteur.id : null,
-        nom_poste_personnalise: p.intitule || null,
+        nom_poste_personnalise: (p.type === 'regalien'
+          ? (p.intitule + (p.suffixe && p.suffixe.trim() ? ' ' + p.suffixe.trim() : ''))
+          : p.intitule) || null,
         fonction_delegue: p.type === 'delegue' ? (p.fonction || null) : null,
         ordre: i
       }));
@@ -262,14 +306,20 @@ const Gouv = {
         .select();
       if (pErr) throw pErr;
 
-      // 3. Sous-secteurs de chaque poste (seulement ceux existants en base)
+      // 3. Sous-secteurs de chaque poste (création des nouveaux si besoin)
       const sousRows = [];
-      (postes || []).forEach((row, i) => {
+      for (let i = 0; i < (postes || []).length; i++) {
+        const row = postes[i];
         const p = this.composerState.postes[i];
-        (p.sousSecteurs || []).forEach(s => {
+        for (const s of (p.sousSecteurs || [])) {
+          if (!s.id && s.nom) {
+            const { data: created, error: cErr } = await sb
+              .from('sous_secteurs').insert({ nom: s.nom }).select().single();
+            if (!cErr && created) s.id = created.id;
+          }
           if (s.id) sousRows.push({ poste_id: row.id, sous_secteur_id: s.id });
-        });
-      });
+        }
+      }
       if (sousRows.length) {
         const { error: sErr } = await sb.from('postes_sous_secteurs').insert(sousRows);
         if (sErr) throw sErr;
