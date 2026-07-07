@@ -46,11 +46,11 @@ function makeMockSupabase() {
   function resolveJoins(table, row, joins) {
     const out = { ...row };
     for (const j of joins) {
-      if (j === 'users(username)' && table === 'gouvernements') {
+      if ((j === 'users(username)' || j === 'users!created_by(username)') && table === 'gouvernements') {
         const u = db.users.find(u => u.id === row.created_by);
         out.users = u ? { username: u.username } : null;
       }
-      if (j === 'users(username)' && table === 'commentaires') {
+      if ((j === 'users(username)' || j === 'users!user_id(username)') && table === 'commentaires') {
         const u = db.users.find(u => u.id === row.user_id);
         out.users = u ? { username: u.username } : null;
       }
@@ -374,6 +374,44 @@ async function main() {
   await Perso.adminSave();
   await wait(20);
   test('Édition admin : statut mis à jour', mock._db.personnalites.find(p => p.id === persoId).statut === 2);
+
+  console.log('\n=== 6b. DOCUMENTS EN LIGNE (ADMIN) ===');
+  Perso.openAdminEdit(persoId);
+  document.getElementById('admLienType').value = 'video';
+  document.getElementById('admLienTitre').value = 'Interview';
+  document.getElementById('admLienUrl').value = 'https://www.youtube.com/watch?v=abc123def45';
+  Perso.admAddLien();
+  test('Lien vidéo ajouté à la liste de travail', Perso._admLiens.length === 1 && Perso._admLiens[0].type === 'video');
+  document.getElementById('admLienType').value = 'lien';
+  document.getElementById('admLienTitre').value = 'Article';
+  document.getElementById('admLienUrl').value = 'lemonde.fr/article';
+  Perso.admAddLien();
+  test('URL sans https complétée automatiquement', Perso._admLiens[1].url === 'https://lemonde.fr/article');
+  await Perso.adminSave();
+  await wait(20);
+  const savedLiens = mock._db.personnalites.find(p => p.id === persoId).liens;
+  test('Liens enregistrés en base', Array.isArray(savedLiens) && savedLiens.length === 2);
+  test('Conversion YouTube en URL embed', Perso.videoEmbedUrl('https://www.youtube.com/watch?v=abc123def45') === 'https://www.youtube.com/embed/abc123def45');
+  test('Conversion Vimeo en URL embed', Perso.videoEmbedUrl('https://vimeo.com/12345') === 'https://player.vimeo.com/video/12345');
+  await Perso.loadList();
+  await wait(20);
+  Perso.openFiche(persoId);
+  const ficheHtml = document.getElementById('fiche-contenu').innerHTML;
+  test('Vidéo intégrée en iframe sur la fiche', ficheHtml.includes('youtube.com/embed/abc123def45'));
+  test('Lien internet affiché sur la fiche', ficheHtml.includes('lemonde.fr/article'));
+  Perso.openAdminEdit(persoId);
+  document.querySelector('.adm-lien-del').click();
+  test('Suppression d\'un document de la liste', Perso._admLiens.length === 1);
+
+  console.log('\n=== 6c. ESPACE PERSONNEL ===');
+  await Perso.toggleLike(persoId);
+  await wait(20);
+  await UI.loadEspacePerso();
+  await wait(20);
+  test('Espace perso : personnalité likée listée', document.getElementById('esp-likes').innerHTML.includes(mock._db.personnalites[0].nom));
+  test('Espace perso : vote listé avec étoiles', document.getElementById('esp-votes').innerHTML.includes('&#9733;') || document.getElementById('esp-votes').innerHTML.includes('★'));
+  test('Espace perso : commentaire listé', document.getElementById('esp-commentaires').innerHTML.length > 30);
+  test('Espace perso : gouvernement épinglable listé ou vide sans erreur', !document.getElementById('esp-epingles-gouv').innerHTML.includes('Erreur'));
 
   console.log('\n=== 7. SECURITE (echappement HTML) ===');
   mock._db.personnalites.push({ id: 'xss-1', nom: '<script>alert(1)</script>', prenom: '', metiers: [], statut: 0 });
