@@ -1,0 +1,184 @@
+/* ============================================================
+   SOSGOUV - CSS applicatif
+   Complète le CSS Webflow (chargé depuis le CDN) pour les
+   composants générés dynamiquement : cartes, modaux, badges,
+   autocomplete, toasts, footer admin jaune.
+   ============================================================ */
+
+body { font-family: 'Lato', sans-serif; }
+
+/* ---------- Sections & navigation ---------- */
+.section-page { padding: 20px 0; }
+.titre-section { font-weight: 900; margin-bottom: 16px; }
+.nav-sections { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+.nav-link { text-decoration: none; color: inherit; font-size: 14px; padding: 4px 0; border-bottom: 2px solid transparent; }
+.nav-link.active { border-bottom-color: currentColor; font-weight: 700; }
+.texte-apropos { max-width: 640px; line-height: 1.6; }
+.apropos-actions { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+.connected-as { opacity: .7; font-size: 12px; }
+
+/* ---------- Formulaires ---------- */
+.champ-texte { display: block; width: 100%; max-width: 420px; margin-bottom: 10px; padding: 8px 12px; border: 1px solid #d9d9d9; font-family: inherit; }
+.textarea-vision { min-height: 80px; }
+.form-add-perso { max-width: 420px; }
+.filtres-row { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.select-field-5 { padding: 6px 10px; border: 1px solid #d9d9d9; font-family: inherit; }
+.btn-secondaire { opacity: .75; }
+.composer-add-row, .composer-save-row { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+
+/* ---------- Listes personnalités ---------- */
+.groupe-lettre { font-weight: 900; font-size: 18px; margin: 18px 0 6px; border-bottom: 1px solid #e5e5e5; }
+.perso-card { display: flex; justify-content: space-between; align-items: center; padding: 8px 4px; border-bottom: 1px solid #f0f0f0; gap: 12px; }
+.perso-infos { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.perso-nom { font-weight: 700; text-transform: uppercase; }
+.perso-metier { opacity: .6; font-size: 13px; }
+.perso-actions { display: flex; gap: 6px; }
+
+/* ---------- Badges statut (0-3) ---------- */
+.badge-statut { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #eee; }
+.statut-neant { background: #ececec; color: #666; }
+.statut-jamais { background: #fde2e2; color: #a12727; }
+.statut-cond { background: #fff3cd; color: #8a6d00; }
+.statut-ok { background: #d9f2df; color: #1f7a35; }
+.badge-pret { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #d9f2df; color: #1f7a35; font-weight: 700; }
+
+/* ---------- Boutons icônes ---------- */
+.btn-icone { background: none; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; padding: 3px 7px; font-size: 14px; line-height: 1; }
+.btn-icone.active { background: #222; color: #fff; border-color: #222; }
+.btn-mini { background: none; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; padding: 2px 8px; font-size: 12px; }
+
+/* ---------- Cartes gouvernements ---------- */
+.gouv-card { border: 1px solid #e5e5e5; border-radius: 6px; padding: 14px 16px; margin-bottom: 14px; }
+.gouv-entete { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.gouv-titre { font-weight: 900; font-size: 17px; }
+.gouv-note { font-size: 14px; }
+.gouv-nbvotes { opacity: .5; font-size: 12px; }
+.gouv-auteur { font-size: 12px; opacity: .6; margin: 2px 0 8px; }
+.gouv-membres { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
+.gouv-membre { display: flex; gap: 10px; font-size: 13px; }
+.gm-nom { font-weight: 700; min-width: 180px; }
+.gm-secteur { opacity: .6; }
+.gouv-actions { display: flex; align-items: center; gap: 10px; }
+.gouv-vote .etoile { cursor: pointer; color: #ccc; font-size: 18px; }
+.gouv-vote .etoile.active { color: #f2b01e; }
+.gouv-nbcomm { font-size: 12px; opacity: .5; margin-top: 6px; }
+
+/* ---------- Composer : blocs de postes ---------- */
+.poste-bloc { border: 1px solid #e5e5e5; border-radius: 6px; padding: 12px 14px; margin-bottom: 12px; }
+.poste-regalien { border-left: 4px solid #222; }
+.poste-non_regalien { border-left: 4px solid #888; }
+.poste-delegue { border-left: 4px solid #f2b01e; }
+.poste-entete { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.poste-type { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: .5; }
+.poste-secteur { font-weight: 700; }
+.btn-remove-poste { margin-left: auto; }
+.poste-perso-row { position: relative; max-width: 420px; }
+.poste-sous-secteurs { font-size: 12px; opacity: .8; margin-top: 4px; }
+
+/* ---------- Autocomplete ---------- */
+.autocomplete-results { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #ddd; z-index: 50; max-height: 220px; overflow-y: auto; }
+.autocomplete-item { padding: 6px 10px; cursor: pointer; font-size: 14px; }
+.autocomplete-item:hover { background: #f5f5f5; }
+.ac-metier { opacity: .5; font-size: 12px; }
+
+/* ---------- Modaux ---------- */
+._3-fond-modal { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; }
+.modal-sosgouv { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; z-index: 110; padding: 24px 28px; border-radius: 8px; max-width: 520px; width: calc(100% - 40px); max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,.2); }
+.modal-large { max-width: 720px; }
+.modal-close { position: absolute; top: 8px; right: 12px; background: none; border: none; font-size: 22px; cursor: pointer; }
+.cont-flex { display: flex; gap: 24px; flex-wrap: wrap; }
+.cont-flex .bloc { flex: 1; min-width: 200px; }
+
+/* ---------- Détail gouvernement ---------- */
+.detail-poste { display: flex; gap: 12px; padding: 4px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
+.dp-intitule { min-width: 240px; font-weight: 700; }
+.detail-desc { opacity: .8; }
+.comm-item { padding: 6px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
+.comm-auteur { font-weight: 700; margin-right: 6px; }
+.comm-add-row, .sous-add-row { display: flex; gap: 8px; margin-top: 10px; align-items: flex-start; }
+.sous-item { padding: 4px 0; font-size: 14px; }
+
+/* ---------- Footer admin (jaune) ---------- */
+.admin-footer { display: flex; gap: 24px; align-items: center; background: #f2b01e; padding: 8px 16px; border-radius: 4px; }
+.admin-footer a { color: #222; font-size: 13px; margin-right: 12px; }
+.test-version { font-size: 12px; font-weight: 700; }
+
+/* ---------- Toast & états ---------- */
+#sosgouv-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #222; color: #fff; padding: 10px 20px; border-radius: 6px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 200; max-width: 90vw; }
+#sosgouv-toast.visible { opacity: 1; }
+.loading, .empty-msg { opacity: .5; padding: 12px 0; }
+.error-msg { color: #a12727; padding: 12px 0; }
+
+/* ===== Dropdown compte : fonctionnement sans webflow.js ===== */
+.dropdown-list-menu.w-dropdown-list { display: none; position: absolute; right: 0; top: 100%; background: #fff; min-width: 220px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); z-index: 1000; }
+.dropdown-list-menu.w-dropdown-list.w--open { display: block; }
+.dropdown-menu.w-dropdown { position: relative; }
+.dropdown-toogle.w-dropdown-toggle { cursor: pointer; }
+
+/* ===== Espace personnel : mon activité ===== */
+#espace-perso { margin-top: 24px; border-top: 1px solid #e5e5e5; padding-top: 16px; }
+#espace-perso h4 { margin: 0 0 12px; }
+.esp-bloc { margin-bottom: 14px; }
+.esp-bloc h5 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
+.esp-liste { display: flex; flex-direction: column; gap: 4px; }
+.esp-item { color: #1a1a1a; text-decoration: underline; font-size: 14px; }
+.esp-item:hover { color: #f2b01e; }
+.esp-note { color: #f2b01e; text-decoration: none; }
+.esp-comm { font-size: 14px; background: #f7f7f7; padding: 6px 10px; border-radius: 4px; }
+.esp-comm-cible { color: #888; font-style: italic; }
+.esp-vide { color: #999; font-size: 13px; font-style: italic; }
+
+/* ===== Editeur admin : documents en ligne ===== */
+.adm-liens-bloc { margin: 16px 0; border-top: 1px solid #e5e5e5; padding-top: 12px; }
+.adm-liens-bloc h5 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
+.adm-lien-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 14px; }
+.adm-lien-titre { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm-lien-del { color: #c0392b; font-size: 18px; }
+.adm-lien-vide { color: #999; font-size: 13px; font-style: italic; }
+.btn-secondaire { background: #666 !important; }
+
+/* ===== Fiche : vidéos et liens ===== */
+.fiche-videos { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+.fiche-video iframe { width: 100%; aspect-ratio: 16 / 9; border-radius: 6px; }
+.fiche-video-titre { font-size: 13px; color: #666; margin-top: 4px; }
+.fiche-liens { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.fiche-lien { color: #1a1a1a; font-size: 14px; }
+.fiche-lien:hover { color: #f2b01e; }
+
+/* ===== Composer : intitulé régalien verrouillé + loupe ===== */
+.poste-intitule-verrou { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.intitule-base { font-weight: 700; white-space: nowrap; }
+.poste-suffixe { flex: 1; min-width: 160px; }
+.poste-perso-row { position: relative; display: flex; align-items: center; gap: 6px; }
+.poste-perso-search { flex: 1; }
+.btn-loupe { background: none; border: 1px solid #ccc; border-radius: 4px; padding: 6px 10px; cursor: pointer; font-size: 15px; line-height: 1; }
+.btn-loupe:hover { border-color: #f2b01e; }
+.autocomplete-results { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #ddd; border-radius: 4px; max-height: 260px; overflow-y: auto; z-index: 900; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+
+/* ===== Sélecteur de secteur (ministères ajoutés) ===== */
+.poste-secteur-select { padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; background: #fff; color: #1a1a1a; }
+.poste-secteur-select.placeholder { color: #999; }
+.poste-secteur-select option { color: #1a1a1a; }
+
+/* ===== Poubelles ===== */
+.btn-del-perso, .btn-gouv-del { color: #c0392b; }
+.btn-del-perso:hover, .btn-gouv-del:hover { color: #e74c3c; }
+
+/* ===== Brouillons dans l'espace perso ===== */
+.esp-brouillon { font-size: 14px; color: #444; }
+
+/* ===== Compteur de likes ===== */
+.like-count { font-size: 12px; margin-left: 3px; vertical-align: 1px; }
+
+/* ===== Fiche : propositions ===== */
+.fiche-sous-titre { margin: 16px 0 6px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; }
+.fiche-proposition { font-size: 14px; padding: 3px 0; }
+.fp-gouv { font-weight: 700; }
+
+/* ===== Fusion de ministères ===== */
+.fusion-tag { display: inline-flex; align-items: center; gap: 4px; background: #f2f2f2; border-radius: 4px; padding: 2px 8px; font-size: 13px; margin-left: 6px; }
+.btn-fusion-del { color: #c0392b; font-size: 15px; }
+.poste-fusion-select { margin-left: 6px; padding: 4px 8px; border: 1px dashed #bbb; border-radius: 4px; font-size: 13px; color: #999; background: #fff; }
+
+/* ---- Lien de bascule entre versions ---- */
+.version-switch { display: block; text-align: center; font-size: 10px; color: #aca69a; text-decoration: underline; padding: 6px 0; }

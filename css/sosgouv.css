@@ -194,3 +194,6 @@ textarea.champ-texte { min-height: 80px; }
 .sous-lien { color: var(--sos-grey-1, #aca69a); font-size: 12px; }
 .btn-remove-poste { font-size: 16px; margin-left: auto; }
 .mini-boutons.active .ico { color: var(--red, #b81515); }
+
+/* ---- Lien de bascule entre versions ---- */
+.version-switch { display: block; text-align: center; font-size: 10px; color: #aca69a; text-decoration: underline; padding: 6px 0; }
