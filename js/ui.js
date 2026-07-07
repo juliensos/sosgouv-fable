@@ -1,0 +1,166 @@
+// ============================================================
+// SOSGOUV - ui.js
+// Navigation par sections (simulation de pages), gestion des
+// modaux, menu selon connexion, footer admin jaune.
+// Sections : 0 A propos | 1 Gouvernements publiés |
+//            2 Composer | 3 Ajouter personnalité | 4 Liste
+// ============================================================
+const UI = {
+  currentSection: 0,
+
+  // ---------- Navigation par sections ----------
+  showSection(n) {
+    document.querySelectorAll('.section-page').forEach(s => s.style.display = 'none');
+    const target = document.getElementById('section-' + n);
+    if (target) target.style.display = 'block';
+    this.currentSection = n;
+
+    document.querySelectorAll('[data-section]').forEach(link => {
+      link.classList.toggle('active', Number(link.dataset.section) === n);
+    });
+
+    // Chargements associés
+    if (n === 1 && window.Gouv) Gouv.loadPublished();
+    if (n === 2 && window.Gouv) Gouv.initComposer();
+    if (n === 4 && window.Perso) Perso.loadList();
+  },
+
+  // ---------- Modaux ----------
+  openModal(id) {
+    const fond = document.querySelector('._3-fond-modal');
+    const modal = document.getElementById(id);
+    if (fond) fond.style.display = 'block';
+    if (modal) modal.style.display = 'block';
+  },
+
+  closeModals() {
+    const fond = document.querySelector('._3-fond-modal');
+    if (fond) fond.style.display = 'none';
+    document.querySelectorAll('.modal-sosgouv').forEach(m => m.style.display = 'none');
+  },
+
+  // ---------- Menu selon connexion ----------
+  updateMenu() {
+    const notConnected = document.getElementById('menuNotConnected');
+    const connected = document.getElementById('menuConnected');
+    const userLabel = document.getElementById('connectedUsername');
+    const logged = Auth.isLoggedIn();
+
+    if (notConnected) notConnected.style.display = logged ? 'none' : 'block';
+    if (connected) connected.style.display = logged ? 'block' : 'none';
+    if (userLabel) userLabel.textContent = logged ? Auth.currentUser.username : '';
+
+    // Footer admin (jaune) visible uniquement pour les admins
+    const adminFooter = document.getElementById('adminFooter');
+    if (adminFooter) adminFooter.style.display = Auth.isAdmin() ? 'flex' : 'none';
+  },
+
+  // ---------- Messages ----------
+  toast(msg) {
+    let t = document.getElementById('sosgouv-toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'sosgouv-toast';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.add('visible');
+    setTimeout(() => t.classList.remove('visible'), 3000);
+  },
+
+  // ---------- Initialisation ----------
+  init() {
+    // Liens de navigation
+    document.querySelectorAll('[data-section]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.showSection(Number(link.dataset.section));
+      });
+    });
+
+    // Fermeture des modaux (fond + croix)
+    const fond = document.querySelector('._3-fond-modal');
+    if (fond) fond.addEventListener('click', () => this.closeModals());
+    document.querySelectorAll('[data-close-modal]').forEach(btn => {
+      btn.addEventListener('click', (e) => { e.preventDefault(); this.closeModals(); });
+    });
+
+    // Connexion
+    const loginBtn = document.getElementById('btnLogin');
+    if (loginBtn) loginBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      try {
+        await Auth.login(
+          document.getElementById('loginUsername').value,
+          document.getElementById('loginPassword').value
+        );
+        this.closeModals();
+        this.updateMenu();
+        this.toast('Connexion réussie, bienvenue ' + Auth.currentUser.username + ' !');
+      } catch (err) { this.toast('Erreur : ' + err.message); }
+    });
+
+    // Création de compte
+    const signupBtn = document.getElementById('btnSignup');
+    if (signupBtn) signupBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      try {
+        await Auth.signup(
+          document.getElementById('signupUsername').value,
+          document.getElementById('signupPassword').value
+        );
+        this.closeModals();
+        this.updateMenu();
+        this.toast('Compte créé, bienvenue ' + Auth.currentUser.username + ' !');
+      } catch (err) { this.toast('Erreur : ' + err.message); }
+    });
+
+    // Déconnexion
+    const logoutBtn = document.getElementById('btnLogout');
+    if (logoutBtn) logoutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      Auth.logout();
+      this.updateMenu();
+      this.showSection(0);
+      this.toast('Déconnexion réussie.');
+    });
+
+    // Ouverture du modal de connexion
+    document.querySelectorAll('[data-open-connect]').forEach(btn => {
+      btn.addEventListener('click', (e) => { e.preventDefault(); this.openModal('modal-connect'); });
+    });
+
+    // Données personnelles
+    const saveInfoBtn = document.getElementById('btnSaveInfos');
+    if (saveInfoBtn) saveInfoBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (!Auth.isLoggedIn()) return this.toast('Vous devez être connecté.');
+      try {
+        await Auth.updateProfile({
+          nom: document.getElementById('infoNom').value || '',
+          prenom: document.getElementById('infoPrenom').value || '',
+          email: document.getElementById('infoEmail').value || ''
+        });
+        this.toast('Informations enregistrées.');
+        this.closeModals();
+      } catch (err) { this.toast('Erreur : ' + err.message); }
+    });
+
+    // Ouverture données personnelles
+    const openInfos = document.getElementById('openInfosPerso');
+    if (openInfos) openInfos.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!Auth.isLoggedIn()) return this.openModal('modal-connect');
+      document.getElementById('infoNom').value = Auth.currentUser.nom || '';
+      document.getElementById('infoPrenom').value = Auth.currentUser.prenom || '';
+      document.getElementById('infoEmail').value = Auth.currentUser.email || '';
+      this.openModal('modal-infos');
+    });
+
+    this.updateMenu();
+    this.showSection(0);
+  }
+};
+
+window.UI = UI;
+document.addEventListener('DOMContentLoaded', () => UI.init());
