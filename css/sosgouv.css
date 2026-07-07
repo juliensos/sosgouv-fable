@@ -108,3 +108,9 @@ body { font-family: 'Lato', sans-serif; }
 #sosgouv-toast.visible { opacity: 1; }
 .loading, .empty-msg { opacity: .5; padding: 12px 0; }
 .error-msg { color: #a12727; padding: 12px 0; }
+
+/* ===== Dropdown compte : fonctionnement sans webflow.js ===== */
+.dropdown-list-menu.w-dropdown-list { display: none; position: absolute; right: 0; top: 100%; background: #fff; min-width: 220px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); z-index: 1000; }
+.dropdown-list-menu.w-dropdown-list.w--open { display: block; }
+.dropdown-menu.w-dropdown { position: relative; }
+.dropdown-toogle.w-dropdown-toggle { cursor: pointer; }
