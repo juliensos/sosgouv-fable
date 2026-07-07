@@ -144,3 +144,13 @@ body { font-family: 'Lato', sans-serif; }
 .fiche-liens { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
 .fiche-lien { color: #1a1a1a; font-size: 14px; }
 .fiche-lien:hover { color: #f2b01e; }
+
+/* ===== Composer : intitulé régalien verrouillé + loupe ===== */
+.poste-intitule-verrou { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.intitule-base { font-weight: 700; white-space: nowrap; }
+.poste-suffixe { flex: 1; min-width: 160px; }
+.poste-perso-row { position: relative; display: flex; align-items: center; gap: 6px; }
+.poste-perso-search { flex: 1; }
+.btn-loupe { background: none; border: 1px solid #ccc; border-radius: 4px; padding: 6px 10px; cursor: pointer; font-size: 15px; line-height: 1; }
+.btn-loupe:hover { border-color: #f2b01e; }
+.autocomplete-results { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #ddd; border-radius: 4px; max-height: 260px; overflow-y: auto; z-index: 900; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
