@@ -11,7 +11,7 @@
        correspond bien à la dernière version publiée. -->
   <link href="https://cdn.prod.website-files.com/68ecfda4d9b3270b98426ff5/css/sosgouv.webflow.shared.5310d7a46.css" rel="stylesheet" type="text/css"/>
   <!-- CSS applicatif (composants dynamiques : cartes, modaux, badges, toasts) -->
-  <link href="css/sosgouv.css?v=7" rel="stylesheet" type="text/css"/>
+  <link href="css/sosgouv.css?v=8" rel="stylesheet" type="text/css"/>
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com" rel="preconnect"/>
@@ -132,12 +132,12 @@
         <textarea id="gouvDescription" class="champ-texte w-input textarea-vision" placeholder="Vision de l'auteur (optionnel)"></textarea>
         <div id="composer-postes"></div>
         <div class="composer-add-row">
-          <button id="btnAddMinistere" class="submit-button-3 w-button">+ Ajouter un ministère</button>
-          <button id="btnAddDelegue" class="submit-button-3 w-button">+ Ajouter un délégué ministériel</button>
+          <button id="btnAddMinistere" class="_w-link-bloc-button add-ministere">+ ajouter un ministère</button>
+          <button id="btnAddDelegue" class="_w-link-bloc-button add-ministere">+ ajouter un délégué</button>
         </div>
         <div class="composer-save-row">
-          <button id="btnBrouillon" class="submit-button-3 w-button btn-secondaire">Enregistrer en brouillon</button>
-          <button id="btnPublier" class="submit-button-3 w-button">Publier</button>
+          <button id="btnBrouillon" class="_w-link-bloc-button bbrouillon">brouillon</button>
+          <button id="btnPublier" class="_w-link-bloc-button publier">publier</button>
         </div>
       </div>
 
@@ -190,7 +190,7 @@
   <div class="_3-fond-modal" style="display:none"></div>
 
   <!-- Connexion / création de compte -->
-  <div id="modal-connect" class="modal-sosgouv" style="display:none">
+  <div id="modal-connect" class="modal-sosgouv m-bloc-base small-500" style="display:none">
     <button class="modal-close" data-close-modal>&times;</button>
     <div class="cont-flex">
       <div class="bloc">
@@ -209,7 +209,7 @@
   </div>
 
   <!-- Données personnelles -->
-  <div id="modal-infos" class="modal-sosgouv" style="display:none">
+  <div id="modal-infos" class="modal-sosgouv m-bloc-base small-500" style="display:none">
     <button class="modal-close" data-close-modal>&times;</button>
     <h4>Mes données personnelles</h4>
     <input type="text" id="infoNom" class="champ-texte w-input" placeholder="Nom"/>
@@ -228,13 +228,13 @@
   </div>
 
   <!-- Fiche personnalité -->
-  <div id="modal-fiche" class="modal-sosgouv" style="display:none">
+  <div id="modal-fiche" class="modal-sosgouv m-bloc-base small-500" style="display:none">
     <button class="modal-close" data-close-modal>&times;</button>
     <div id="fiche-contenu"></div>
   </div>
 
   <!-- Edition admin personnalité -->
-  <div id="modal-admin-perso" class="modal-sosgouv" style="display:none">
+  <div id="modal-admin-perso" class="modal-sosgouv m-bloc-base small-500" style="display:none">
     <button class="modal-close" data-close-modal>&times;</button>
     <h4>Édition (admin)</h4>
     <input type="text" id="admNom" class="champ-texte w-input" placeholder="Nom"/>
@@ -265,24 +265,24 @@
   </div>
 
   <!-- Sous-secteurs d'un poste -->
-  <div id="modal-sous-secteurs" class="modal-sosgouv" style="display:none">
+  <div id="modal-sous-secteurs" class="modal-sosgouv m-bloc-base small-500" style="display:none">
     <button class="modal-close" data-close-modal>&times;</button>
     <div id="sous-secteurs-contenu"></div>
     <button id="btnCloseSous" class="submit-button-3 w-button">Valider</button>
   </div>
 
   <!-- Détail d'un gouvernement -->
-  <div id="modal-detail" class="modal-sosgouv modal-large" style="display:none">
+  <div id="modal-detail" class="modal-sosgouv modal-large m-bloc-base" style="display:none">
     <button class="modal-close" data-close-modal>&times;</button>
     <div id="detail-contenu"></div>
   </div>
 
   <!-- ==================== SCRIPTS ==================== -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=7"></script>
-  <script src="js/auth.js?v=7"></script>
-  <script src="js/ui.js?v=7"></script>
-  <script src="js/personnalites.js?v=7"></script>
-  <script src="js/gouvernement.js?v=7"></script>
+  <script src="config.js?v=8"></script>
+  <script src="js/auth.js?v=8"></script>
+  <script src="js/ui.js?v=8"></script>
+  <script src="js/personnalites.js?v=8"></script>
+  <script src="js/gouvernement.js?v=8"></script>
 </body>
 </html>
