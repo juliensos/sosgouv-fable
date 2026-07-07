@@ -169,9 +169,9 @@ const Gouv = {
     const sous = (p.sousSecteurs || []).map(s => Perso.esc(s.nom)).join(' · ');
     const typeLabel = { regalien: 'Régalien', non_regalien: 'Ministère', delegue: 'Délégué ministériel' }[p.type];
     return `
-    <div class="poste-bloc poste-${p.type}" id="poste-${p.uid}">
-      <div class="poste-entete">
-        <span class="poste-type">${typeLabel}</span>
+    <div class="poste-bloc poste-${p.type} _w-bloc-poste" id="poste-${p.uid}">
+      <div class="poste-entete bloc-poste-ligne1">
+        <span class="poste-type _w-courant _w-grey">${typeLabel}</span>
         ${p.type === 'non_regalien'
           ? '<select class="poste-secteur-select' + (p.secteur ? '' : ' placeholder') + '">' +
             '<option value="" disabled' + (p.secteur ? '' : ' selected') + '>Secteur</option>' +
@@ -189,23 +189,23 @@ const Gouv = {
                   .map(s => '<option value="' + s.id + '">' + Perso.esc(s.nom) + '</option>').join('') +
                 '</select>'
               : '')
-          : '<span class="poste-secteur">' + (p.secteur ? Perso.esc(p.secteur.nom) : '') + '</span>'}
+          : '<span class="poste-secteur secteur">' + (p.secteur ? Perso.esc(p.secteur.nom) : '') + '</span>'}
         ${p.type !== 'regalien' ? '<button class="btn-icone btn-remove-poste" title="Supprimer">&times;</button>' : ''}
       </div>
       ${p.type === 'regalien'
-        ? '<div class="poste-intitule-verrou"><span class="intitule-base">' + Perso.esc(p.intitule) + '</span>' +
+        ? '<div class="poste-intitule-verrou"><span class="intitule-base ministre">' + Perso.esc(p.intitule) + '</span>' +
           (p.secteur && p.secteur.nom === 'Matignon'
             ? ''
             : '<input type="text" class="champ-texte poste-suffixe" value="' + Perso.esc(p.suffixe || '') + '" placeholder="Compléter">') +
           '</div>'
-        : '<input type="text" class="champ-texte poste-intitule" value="' + Perso.esc(p.intitule) + '" placeholder="Intitulé du poste">'}
+        : '<input type="text" class="champ-texte poste-intitule intitule" value="' + Perso.esc(p.intitule) + '" placeholder="Intitulé du poste">'}
       ${p.type === 'delegue' ? '<input type="text" class="champ-texte poste-fonction" value="' + Perso.esc(p.fonction || '') + '" placeholder="Fonction (ex : chargé de la transition énergétique)">' : ''}
-      <div class="poste-perso-row">
+      <div class="poste-perso-row loupe-name">
         <input type="text" class="champ-texte poste-perso-search" value="${perso}" placeholder="Rechercher une personnalité…" autocomplete="off">
         <button class="btn-loupe" title="Parcourir toutes les personnalités">&#128269;</button>
         <div class="autocomplete-results" style="display:none"></div>
       </div>
-      ${p.type !== 'delegue' ? '<div class="poste-sous-secteurs">' + (sous || '<em>Aucun sous-secteur</em>') + ' <button class="btn-mini btn-edit-sous">modifier</button></div>' : ''}
+      ${p.type !== 'delegue' ? '<div class="poste-sous-secteurs secteur-sous-secteurs"><span class="sous-lien">' + (sous || '<em>Aucun sous-secteur</em>') + '</span> <button class="mini-boutons white btn-edit-sous">modifier</button></div>' : ''}
     </div>`;
   },
 
@@ -557,27 +557,39 @@ const Gouv = {
           '</span><span class="gm-secteur">' + Perso.esc(role) + '</span></div>';
       }).join('');
       const pinned = this.epingles.has(g.id);
+      const note = st.note_moyenne != null ? String(st.note_moyenne).replace('.', ',') : null;
       return `
-      <div class="gouv-card" data-id="${g.id}">
-        <div class="gouv-entete">
-          <span class="gouv-titre">${Perso.esc(g.titre)}</span>
-          <span class="gouv-note">&#9733; ${st.note_moyenne ?? '·'} <span class="gouv-nbvotes">(${st.nb_votes || 0})</span></span>
-          ${pret ? '<span class="badge-pret">prêt à gouverner</span>' : ''}
-        </div>
-        <div class="gouv-auteur">par ${Perso.esc(g.users ? g.users.username : '?')}</div>
-        <div class="gouv-membres">${membres}</div>
-        <div class="gouv-actions">
-          <div class="gouv-vote" data-id="${g.id}">
-            ${[1,2,3,4,5].map(n =>
-              '<span class="etoile ' + ((this.votesUser[g.id] || 0) >= n ? 'active' : '') + '" data-note="' + n + '">&#9733;</span>'
-            ).join('')}
+      <div class="gouv-card _w-gov-bloc" data-id="${g.id}">
+        <div class="infos">
+          <div class="bloc-en-tete-gov">
+            <h3 class="heading-3-gov gouv-titre">${Perso.esc(g.titre)}</h3>
+            <div class="propos-par">
+              <span class="_w-courant _w-grey">proposé par</span>
+              <span class="_w-courant _w-bold gouv-auteur">${Perso.esc(g.users ? g.users.username : '?')}</span>
+            </div>
           </div>
-          <button class="btn-icone btn-gouv-pin ${pinned ? 'active' : ''}" title="Épingler">&#128204;</button>
-          <button class="btn-icone btn-gouv-share" title="Partager">&#128279;</button>
-          <button class="btn-mini btn-gouv-detail">Détail</button>
-          ${Auth.isAdmin() ? '<button class="btn-icone btn-gouv-del" title="Supprimer (admin)">&#128465;</button>' : ''}
+          ${g.description ? '<p class="paragraph-2 gouv-desc">' + Perso.esc(g.description) + '</p>' : ''}
+          <div class="membres gouv-membres">${membres}</div>
         </div>
-        <div class="gouv-nbcomm">${st.nb_commentaires || 0} commentaire(s)</div>
+        <div class="_w-block-gov-infos">
+          ${pret ? '<span class="badge-pret">prêt à gouverner</span>' : ''}
+          <div class="notation">
+            <div class="vote gouv-vote" data-id="${g.id}">
+              ${[1,2,3,4,5].map(n =>
+                '<span class="etoile ' + ((this.votesUser[g.id] || 0) >= n ? 'pleine active' : '') + '" data-note="' + n + '">&#9733;</span>'
+              ).join('')}
+            </div>
+            ${note != null ? '<span class="note-moy">' + note + '</span>' : ''}
+            <span class="_w-courant _w-grey gouv-nbvotes">(${st.nb_votes || 0})</span>
+          </div>
+          <span class="_w-courant _w-grey gouv-nbcomm">${st.nb_commentaires || 0} commentaire(s)</span>
+          <div class="gouv-actions">
+            <button class="mini-boutons white btn-gouv-pin ${pinned ? 'active' : ''}" title="Épingler"><span class="ico">&#128204;</span>&nbsp;épingler</button>
+            <button class="mini-boutons white btn-gouv-share" title="Partager"><span class="ico">&#128279;</span></button>
+            <button class="mini-boutons btn-gouv-detail detail">détails</button>
+            ${Auth.isAdmin() ? '<button class="mini-boutons white btn-gouv-del" title="Supprimer (admin)"><span class="ico">&#128465;</span></button>' : ''}
+          </div>
+        </div>
       </div>`;
     }).join('');
     this.bindPublished(cont);

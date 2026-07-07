@@ -98,19 +98,24 @@ const Perso = {
     const pinned = this.epingles.has(p.id);
     const metiers = (p.metiers || []).join(', ');
     return `
-    <div class="perso-card" data-id="${p.id}">
-      <div class="perso-infos">
-        <span class="perso-nom">${this.esc(p.nom)}</span>
-        <span class="perso-prenom">${this.esc(p.prenom || '')}</span>
-        <span class="perso-metier">${this.esc(metiers)}</span>
+    <div class="perso-card perso-bloc" data-id="${p.id}">
+      <div class="perso-infos infos">
+        <div class="name-line">
+          <div class="nom-secteur">
+            <span class="perso-nom heading-7">${this.esc(p.nom)}</span>
+            <span class="perso-prenom heading-9">${this.esc(p.prenom || '')}</span>
+            <span class="_w-courant _w-grey">&bull;</span>
+            <span class="perso-metier metier">${this.esc(metiers)}</span>
+          </div>
+        </div>
         <span class="badge-statut ${this.STATUT_CLASSES[p.statut] || ''}">${this.STATUTS[p.statut] || ''}</span>
       </div>
-      <div class="perso-actions">
-        <button class="btn-icone btn-like ${liked ? 'active' : ''}" title="Like">&#9829;<span class="like-count">${this.likesCount[p.id] || 0}</span></button>
-        <button class="btn-icone btn-pin ${pinned ? 'active' : ''}" title="Épingler">&#128204;</button>
-        <button class="btn-icone btn-fiche" title="Voir la fiche">&#128196;</button>
-        ${Auth.isAdmin() ? '<button class="btn-icone btn-edit" title="Modifier (admin)">&#9998;</button>' : ''}
-        ${(Auth.isAdmin() || (Auth.isLoggedIn() && p.ajoute_par === Auth.currentUser.id)) ? '<button class="btn-icone btn-del-perso" title="Supprimer">&#128465;</button>' : ''}
+      <div class="perso-actions send-et-pin-perso">
+        <button class="mini-boutons btn-like ${liked ? 'active' : ''}" title="Like"><span class="ico">&#9829;</span><span class="like-count">${this.likesCount[p.id] || 0}</span></button>
+        <button class="mini-boutons white btn-pin ${pinned ? 'active' : ''}" title="Épingler"><span class="ico">&#128204;</span>&nbsp;épingler</button>
+        <button class="mini-boutons white btn-fiche" title="Voir la fiche">fiche</button>
+        ${Auth.isAdmin() ? '<button class="mini-boutons white btn-edit" title="Modifier (admin)"><span class="ico">&#9998;</span></button>' : ''}
+        ${(Auth.isAdmin() || (Auth.isLoggedIn() && p.ajoute_par === Auth.currentUser.id)) ? '<button class="mini-boutons white btn-del-perso" title="Supprimer"><span class="ico">&#128465;</span></button>' : ''}
       </div>
     </div>`;
   },
@@ -194,12 +199,22 @@ const Perso = {
       '<a class="fiche-lien" href="' + this.esc(l.url || l) + '" target="_blank" rel="noopener">&#128279; ' + this.esc(l.titre || l.url || l) + '</a>'
     ).join('');
     cont.innerHTML = `
-      <h3>${this.esc(p.prenom || '')} ${this.esc(p.nom)}</h3>
-      <div class="badge-statut ${this.STATUT_CLASSES[p.statut] || ''}">${this.STATUTS[p.statut] || ''}</div>
-      <p class="fiche-metiers">${this.esc((p.metiers || []).join(', '))}</p>
-      ${p.short_bio ? '<p class="fiche-shortbio">' + this.esc(p.short_bio) + '</p>' : ''}
-      ${p.bio ? '<div class="fiche-bio">' + this.esc(p.bio) + '</div>' : ''}
-      ${videosHtml ? '<div class="fiche-videos">' + videosHtml + '</div>' : ''}
+      <div class="descript-photo-bio">
+        ${p.photo_url
+          ? '<img class="image-perso" src="' + this.esc(p.photo_url) + '" alt="" width="100" height="100"/>'
+          : '<div class="image-perso-placeholder"></div>'}
+        <div class="block-infos-fiche">
+          <div class="name-line">
+            <span class="heading-7">${this.esc(p.nom)}</span>
+            <span class="heading-9">${this.esc(p.prenom || '')}</span>
+          </div>
+          <span class="metier">${this.esc((p.metiers || []).join(', '))}</span>
+          <span class="badge-statut ${this.STATUT_CLASSES[p.statut] || ''}">${this.STATUTS[p.statut] || ''}</span>
+        </div>
+      </div>
+      ${p.short_bio ? '<h4>Biographie</h4><p class="paragraph-2 fiche-shortbio">' + this.esc(p.short_bio) + '</p>' : ''}
+      ${p.bio ? '<div class="paragraph-2 fiche-bio">' + this.esc(p.bio) + '</div>' : ''}
+      ${videosHtml ? '<h4>Médias</h4><div class="grid-video fiche-videos">' + videosHtml + '</div>' : ''}
       ${liens ? '<div class="fiche-liens">' + liens + '</div>' : ''}
       <div id="fiche-propositions"></div>
     `;
