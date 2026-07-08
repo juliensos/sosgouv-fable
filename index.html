@@ -1,13 +1,12 @@
 <!DOCTYPE html>
-<html data-wf-domain="sosgouv.webflow.io" data-wf-page="68ecfda5d9b3270b98427085" data-wf-site="68ecfda4d9b3270b98426ff5" lang="fr">
+<html lang="fr">
 <head>
   <meta charset="utf-8"/>
   <title>SOSGOUV, Imaginez votre gouvernement</title>
   <meta content="width=device-width, initial-scale=1" name="viewport"/>
-  <link href="https://cdn.prod.website-files.com/68ecfda4d9b3270b98426ff5/css/sosgouv.webflow.shared.5310d7a46.css" rel="stylesheet" type="text/css"/>
-  <link href="css/sosgouv.css?v=11" rel="stylesheet" type="text/css"/>
-  <link href="https://fonts.googleapis.com" rel="preconnect"/>
-  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin="anonymous"/>
+  <!-- webflow-css-sync: la ligne suivante est mise à jour automatiquement -->
+  <link href="https://cdn.prod.website-files.com/68ecfda4d9b3270b98426ff5/css/sosgouv.webflow.shared.d092d7c07.css" rel="stylesheet" type="text/css"/>
+  <link href="css/sosgouv.css?v12" rel="stylesheet" type="text/css"/>
   <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js" type="text/javascript"></script>
   <script type="text/javascript">
     if (window.WebFont) WebFont.load({ google: { families: ["Lato:400,700,900"] } });
@@ -20,39 +19,34 @@
 <div class="grid-layout">
 <div class="_3-cont-head">
             <div id="w-node-aa9e0547-6ba9-5bad-a502-15b722d0c07d-98427085" class="bloclogo">
-                <a data-w-id="36ede9ba-fdf2-e3a6-749e-26f4a5712771" href="#" class="w-inline-block">
+                <a href="#" class="w-inline-block">
                     <div class="logofont">SOSGOUV</div>
                 </a>
+                <div class="text-block-74">Imaginez votre gouvernement idéal </div>
             </div>
             <div id="w-node-c81e0f28-5e42-2d75-638a-3843b4fc30ea-98427085" class="_3-menu-2x-boutons">
-                <a data-w-id="c81e0f28-5e42-2d75-638a-3843b4fc30eb" href="#" class="_3-menou-bouton-compte user w-inline-block" id="btnCompte">
+                <a href="#" class="_3-menou-bouton-compte user w-inline-block" id="btnCompte">
                     <div class="fontello-picot-compte"></div>
                     <div class="si-connect">
                         <div class="connected-username">username</div>
                     </div>
                 </a>
-                <a data-w-id="268e8b95-4ff6-f11e-b7be-0b50c8ae2d30" href="#" class="link-menu-general w-inline-block" id="btnMenuGeneral">
-                    <div class="_3-menou-bouton-compte">
-                        <div class="fontello-picot-compte"></div>
-                    </div>
-                </a>
-                <div data-w-id="478dde0c-21d7-b1e0-ecca-9c82e317662c" style="display:none" class="_3-menu-mon-compte" id="menuCompte" style="display:none">
+                <div style="display:none" class="_3-menu-mon-compte" id="menuCompte" style="display:none">
                     <a href="#" class="menu-link" id="openConnect">me connecter</a>
                     <a href="#" class="menu-link" id="openInfosPerso">info. personelles</a>
                     <a href="#" class="menu-link" id="openActivite">mon activité</a>
-                    <a href="#" class="menu-link menu-link-off">messagerie</a>
-<a href="#" class="menu-link" id="btnLogoutMenu" style="display:none">me déconnecter</a>
+                    <a href="#" class="menu-link menu-link-off">messagerie</a><a href="#" class="menu-link" id="btnLogoutMenu" style="display:none">me déconnecter</a>
                 </div>
-                <div data-w-id="64672d2e-7442-9208-52d2-1e190cb13a73" style="display:none" class="_3-menu-general" id="menuGeneral" style="display:none">
-                    <a data-w-id="64672d2e-7442-9208-52d2-1e190cb13a74" href="#" class="menu-link">FAQ</a>
+                <div style="display:none" class="_3-menu-general" id="menuGeneral" style="display:none">
+                    <a href="#" class="menu-link">FAQ</a>
                     <a href="#" class="menu-link">contact</a>
                 </div>
             </div>
         </div>
 <div class="_3-cont-body">
-<div data-w-id="a2e60ac1-65b7-fe6c-816e-297bb806da26" style="display:none" class="pm-parent connect" id="modal-connect">
+<div style="display:none" class="pm-parent connect" id="modal-connect">
                     <div class="cont-flex-50-50">
-                        <a data-w-id="28008cbe-7ad8-a818-5dfc-654cacba93f4" href="#" class="_3-close-bouton invert w-inline-block">
+                        <a href="#" data-close-modal class="_3-close-bouton invert w-inline-block">
                             <div class="croix"></div>
                         </a>
                         <div class="_3-small-modal-stroke">
@@ -103,7 +97,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div data-w-id="28008cbe-7ad8-a818-5dfc-654cacba93f7" class="_3-fond-modal"></div>
+                        <div class="_3-fond-modal"></div>
                     </div>
                 </div>
 <div class="bm-parent" id="modal-infos" style="display:none">
@@ -134,9 +128,7 @@
 <div class="bm-parent" id="modal-detail" style="display:none">
   <div class="cont-flex-50-50">
     <a href="#" class="_3-close-bouton invert w-inline-block" data-close-modal><div class="croix">&times;</div></a>
-    <div class="_3-big-modal-stroke">
-      <div class="_4-content-gm" id="detail-contenu"></div>
-    </div>
+    <div class="_3-big-modal-stroke"><div class="_4-content-gm" id="detail-contenu"></div></div>
   </div>
 </div>
 <div class="bm-parent" id="modal-fiche" style="display:none">
@@ -188,17 +180,17 @@
   </div>
 </div>
 <div class="_3-cont-page-menu"><div class="_3-menu-wrap"><div class="_3-menu">
-                    <a data-w-id="25cab02f-af32-8a74-54c8-57aeb41a9c5f" href="#" data-section="1" class="_2-menu-bouton w-inline-block">
-                        <h1>gouvernements publiés</h1>
+                    <a href="#" data-section="1" class="_2-menu-bouton w-inline-block">
+                        <h1 class="heading-32">gouvernements publiés</h1>
                     </a>
-                    <a data-w-id="08facb67-cf85-5b41-76f3-6e759d191557" href="#" data-section="2" class="_2-menu-bouton w-inline-block">
-                        <h1>composer un gouvernement</h1>
+                    <a href="#" data-section="2" class="_2-menu-bouton w-inline-block">
+                        <h1 class="heading-33">composer un gouvernement</h1>
                     </a>
-                    <a data-w-id="00af5ef5-d7cd-e1cf-6721-cae94375086b" href="#" data-section="3" class="_2-menu-bouton w-inline-block">
-                        <h1>ajouter une personnalité</h1>
+                    <a href="#" data-section="3" class="_2-menu-bouton w-inline-block">
+                        <h1 class="heading-34">ajouter une personnalité</h1>
                     </a>
-                    <a data-w-id="5524d704-f9fb-a64d-b2f1-84add1a2864e" href="#" data-section="4" class="_2-menu-bouton w-inline-block">
-                        <h1>liste des personnalités</h1>
+                    <a href="#" data-section="4" class="_2-menu-bouton w-inline-block">
+                        <h1 class="heading-35">liste des personnalités</h1>
                     </a>
                 </div></div>
 <div class="_3-0_sous-menu-content-0" id="section-0">
@@ -211,14 +203,14 @@
                         </p>
                         <div class="filet"></div>
                         <p class="paragraph-6">
-                            utilisez cette base de données 
+                            Utilisez cette base de données 
                             <br/>
                             pour composer votre gouvernement.
                             <br/>
                         </p>
                         <div class="filet"></div>
                         <p class="paragraph-6">
-                            publiez votre gouvernements 
+                            Publiez votre gouvernements 
                             <br/>
                             pour le présentez aux autres utilisateurs.
                             <br/>
@@ -261,21 +253,8 @@
                         </div>
                     </div>
                     <div class="_3-gov-content" id="liste-gouvernements"></div>
-                    <div class="_3-gov-content">
+                    <div class="_3-gov-content x">
                         
-                        <a data-w-id="72287cd0-a7ac-8e1f-c92e-2f2a8705ee93" href="#" class="_3-detail-link w-inline-block">
-                            <h6>
-                                <strong class="heading-bold-text">détails</strong>
-                            </h6>
-                        </a>
-                    </div>
-                    <div class="_3-gov-content">
-                        
-                        <a data-w-id="e031b387-67ea-d629-6de5-d1203e03a958" href="#" class="_3-detail-link w-inline-block">
-                            <h6>
-                                <strong class="heading-bold-text">détails</strong>
-                            </h6>
-                        </a>
                     </div>
                 </div>
 <div class="_3-2_sous-menu-content-2" id="section-2" style="display:none">
@@ -314,7 +293,7 @@
                                     </div>
                                     <div class="pubis-utons">
                                         <div class="flex---gap-10">
-                                            <a data-w-id="e4dc8c14-6403-205c-27f1-3ed54d54765a" href="#" id="btnAddPerso" class="_w-link-bloc-button publier w-inline-block">
+                                            <a href="#" id="btnAddPerso" class="_w-link-bloc-button publier w-inline-block">
                                                 <div class="_2-picto-fontello-bouton"></div>
                                                 <h6>
                                                     <strong class="heading-bold-text">ajouter à la base</strong>
@@ -373,12 +352,11 @@
 </div>
 </div>
 <div class="_3-fond-modal" id="fondModal" style="display:none"></div>
-<div class="toast" id="toast" style="display:none"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v=11"></script>
-<script src="js/auth.js?v=11"></script>
-<script src="js/ui.js?v=11"></script>
-<script src="js/personnalites.js?v=11"></script>
-<script src="js/gouvernement.js?v=11"></script>
+<script src="config.js?v12"></script>
+<script src="js/auth.js?v12"></script>
+<script src="js/ui.js?v12"></script>
+<script src="js/personnalites.js?v12"></script>
+<script src="js/gouvernement.js?v12"></script>
 </body>
 </html>
