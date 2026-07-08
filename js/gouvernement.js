@@ -572,46 +572,54 @@ const Gouv = {
       }).join('');
       const pinned = this.epingles.has(g.id);
       const note = st.note_moyenne != null ? String(st.note_moyenne).replace('.', ',') : null;
-      const membresHtml = postes.map((p, i) => {
+      const regs = postes.filter(p => p.type === 'regalien');
+      const autres = postes.filter(p => p.type !== 'regalien');
+      const ligne = p => {
         const perso = p.personnalites;
         const role = p.secteurs ? p.secteurs.nom
           : (p.type === 'delegue' ? (p.fonction_delegue || 'délégué') : (p.nom_poste_personnalise || ''));
         return '<div class="fonction-perso gouv-membre">' +
-          '<div class="secteurs gm-secteur">' + Perso.esc(role) + '</div>' +
           '<a href="#" class="w-inline-block"><div class="_3-name-gov-pub gm-nom">' +
           (perso ? Perso.esc((perso.prenom || '') + ' ' + perso.nom) : '<em>non attribué</em>') +
-          '</div></a></div>' +
-          (i < postes.length - 1 ? '<div class="bullet">&bull;</div>' : '');
-      }).join('');
+          '</div></a> <div class="secteurs gm-secteur">' + Perso.esc(role) + '</div></div>';
+      };
+      const maNote = this.votesUser[g.id] || 0;
       return `
       <div class="gouv-card gov-compact-bloc" data-id="${g.id}">
         <div class="gov-title">
-          <div class="filet">
-            <div class="div-block-326">
-              <a href="#" class="w-inline-block btn-gouv-detail">
-                <h1 class="heading-4-nom-prenom gouv-titre">${Perso.esc(g.titre)}</h1>
-              </a>
-              ${pret ? '<div class="badge-pret">prêt à gouverner</div>' : ''}
+          <div class="filet govlinedetails">
+            <h1 class="heading-4-nom-prenom d gouv-titre">${Perso.esc(g.titre)}</h1>
+            ${pret ? '<div class="badge-pret">prêt à gouverner</div>' : ''}
+            <div class="bouton-gov-detail">
+              <a href="#" class="_2-mini-bouton w-inline-block btn-gouv-detail"><h6 class="heading-dyn"><strong class="heading-bold-text">détails</strong></h6></a>
+              <a href="#" class="_2-mini-bouton w-inline-block btn-gouv-share" title="Faire suivre"><div class="_2-picto-fontello-bouton ico">&#9993;</div></a>
+              <a href="#" class="_2-mini-bouton w-inline-block btn-gouv-pin ${pinned ? 'active' : ''}" title="Épingler"><div class="_2-picto-fontello-bouton ico">&#128204;</div></a>
+              ${Auth.isAdmin() ? '<a href="#" class="_2-mini-bouton w-inline-block btn-gouv-del" title="Supprimer (admin)"><div class="_2-picto-fontello-bouton ico">&#128465;</div></a>' : ''}
+            </div>
+            <div class="radio-button-form">
+              <div class="div-block-323 gouv-vote" data-id="${g.id}">
+                ${[1,2,3,4,5].map(n =>
+                  '<span class="radio-button-3 w-radio-input etoile ' + (maNote >= n ? 'pleine active w--redirected-checked' : '') + '" data-note="' + n + '" title="' + n + '/5"></span>'
+                ).join('')}
+              </div>
+              <div class="_w-courant mini-jaune">Votre note <span class="gouv-nbvotes">(${st.nb_votes || 0})</span></div>
+            </div>
+            <div class="_3-star-bloc">
+              ${note != null
+                ? '<div class="_w-courant _w-bold _w-pink note note-moy">' + note + '</div>' +
+                  '<div class="star w-embed"><div class="star"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="100%" height="auto"><polygon points="150 41.3 190.19 0 204.35 55.86 259.81 40.19 244.14 95.65 300 109.81 258.7 150 300 190.19 244.14 204.35 259.81 259.81 204.35 244.14 190.19 300 150 258.7 109.81 300 95.65 244.14 40.19 259.81 55.86 204.35 0 190.19 41.3 150 0 109.81 55.86 95.65 40.19 40.19 95.65 55.86 109.81 0 150 41.3" fill="currentColor"/></svg></div></div>'
+                : ''}
             </div>
           </div>
-          <div class="_3-star-bloc">
-            ${note != null ? '<div class="_w-courant _w-bold _w-pink note note-moy">' + note + '</div>' : ''}
-            <div class="star ico">&#9733;</div>
-            <span class="_w-courant _w-grey gouv-nbvotes">(${st.nb_votes || 0})</span>
-          </div>
         </div>
-        <div class="div-block-277 gouv-membres">${membresHtml}</div>
-        <div class="filet"></div>
+        <div class="cr-e-par">
+          <div class="_w-courant _w-mini-grey">gouvernement créé par</div>
+          <a href="#" class="_w-courant _w-bold cap gouv-auteur">${Perso.esc(g.users ? g.users.username : '?')}</a>
+          <div class="_w-courant _w-mini-grey">&bull; ${st.nb_commentaires || 0} commentaire(s)</div>
+        </div>
+        <div class="gouv-membres membres-regaliens">${regs.map(ligne).join('')}</div>
+        ${autres.length ? '<div class="filet pointille"></div><div class="gouv-membres membres-autres">' + autres.map(ligne).join('') + '</div>' : ''}
         ${g.description ? '<p class="gouv-desc">' + Perso.esc(g.description) + '</p>' : ''}
-        <div class="gov-card-boutons">
-          <span class="_w-courant _w-grey">proposé par <strong class="gouv-auteur">${Perso.esc(g.users ? g.users.username : '?')}</strong> &bull; ${st.nb_commentaires || 0} commentaire(s)</span>
-          <div class="flex---gap-10">
-            <a href="#" class="_2-mini-bouton mini w-inline-block btn-gouv-pin ${pinned ? 'active' : ''}" title="Épingler"><div class="_2-picto-fontello-bouton ico">&#128204;</div><h6 class="heading-dyn mini">épingler</h6></a>
-            <a href="#" class="_2-mini-bouton mini w-inline-block btn-gouv-share" title="Partager"><div class="_2-picto-fontello-bouton ico">&#128279;</div></a>
-            <a href="#" class="_2-mini-bouton w-inline-block btn-gouv-detail detail"><h6 class="heading-dyn mini">détails</h6></a>
-            ${Auth.isAdmin() ? '<a href="#" class="_2-mini-bouton mini w-inline-block btn-gouv-del" title="Supprimer (admin)"><div class="_2-picto-fontello-bouton ico">&#128465;</div></a>' : ''}
-          </div>
-        </div>
       </div>`;
     }).join('');
     this.bindPublished(cont);
