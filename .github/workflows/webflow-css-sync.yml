@@ -1,0 +1,43 @@
+name: Sync CSS Webflow
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # tous les jours à 3h du matin UTC
+  workflow_dispatch: {}     # bouton "Run workflow" pour lancer à la main
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le repo
+        uses: actions/checkout@v4
+
+      - name: Lire l'URL CSS actuelle de la maquette Webflow
+        id: webflow
+        run: |
+          URL=$(curl -sL https://sosgouv.webflow.io \
+            | grep -o 'https://cdn\.prod\.website-files\.com/[^"]*\.css' \
+            | head -1)
+          echo "css_url=$URL" >> "$GITHUB_OUTPUT"
+          echo "URL trouvée : $URL"
+
+      - name: Mettre à jour index.html si besoin
+        run: |
+          URL="${{ steps.webflow.outputs.css_url }}"
+          if [ -z "$URL" ]; then
+            echo "Aucune URL trouvée, abandon sans erreur."
+            exit 0
+          fi
+          sed -i -E "s|https://cdn\.prod\.website-files\.com/[^\"]*\.css|$URL|" index.html
+          if git diff --quiet index.html; then
+            echo "CSS déjà à jour, rien à faire."
+          else
+            git config user.name "webflow-css-sync"
+            git config user.email "actions@github.com"
+            git add index.html
+            git commit -m "MAJ automatique du CSS Webflow ($(basename $URL))"
+            git push
+          fi
