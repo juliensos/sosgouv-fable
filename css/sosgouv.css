@@ -183,3 +183,41 @@
   background: var(--sos-white, #fff);
 }
 ._3-gov-content { display: flex; flex-direction: column; }
+
+/* ---- Correctifs v15 ---- */
+/* Pas de contour sur le grand conteneur de la page gouvernements */
+#section-1, #section-1 ._3-gov-content { border: none !important; }
+
+/* Note globale : centrage forcé dans l'étoile */
+._3-star-bloc { position: relative !important; width: 56px !important; height: 56px !important; flex: none; display: block !important; }
+._3-star-bloc .note, ._3-star-bloc ._w-courant._w-bold._w-pink.note {
+  position: absolute !important;
+  inset: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--sos-white, #fff) !important;
+  font-weight: 900;
+  font-size: 13px;
+  z-index: 2;
+}
+._3-star-bloc .star.w-embed { position: absolute !important; inset: 0 !important; margin: 0 !important; color: var(--sos-yellow, #ffbb47); }
+
+/* Bouton détails : libellé visible dans son cadre */
+.btn-gouv-detail { border: 2px solid var(--black-100, #000); border-radius: 6px; padding: 3px 10px; }
+.btn-gouv-detail h6, .btn-gouv-detail .heading-dyn { display: block !important; margin: 0; font-size: 11px; font-weight: 900; text-transform: uppercase; }
+
+/* Pictos SVG (corbeille, crayon) alignés sur les pictos fontello */
+.picto-svg { display: flex; align-items: center; justify-content: center; }
+.picto-svg svg { display: block; }
+
+/* Modal détail : mise en page maquette */
+.detail-titre { color: var(--sos-yellow, #ffbb47); text-transform: uppercase; font-size: 18px; font-weight: 900; margin: 0 0 4px; }
+.detail-vote { display: flex; gap: 4px; margin-bottom: 8px; }
+.detail-etoile { width: auto; height: auto; border: none !important; border-radius: 0; background: none !important; font-size: 22px; line-height: 1; color: var(--light-grey, #e7e7e7); font-family: Arial, sans-serif; padding: 0; }
+.detail-etoile.pleine, .detail-etoile:hover { color: var(--sos-yellow, #ffbb47) !important; background: none !important; }
+.detail-desc { margin: 6px 0 10px; }
+#detail-contenu h4 { margin: 14px 0 4px; }
+.btn-envoyer-comm { flex: none; }
