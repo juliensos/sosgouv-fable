@@ -17,7 +17,9 @@ window.ICO = {
   save: '\ue81b',      // enregistrer
   send: '\ue800',      // envoyer
   addMin: '\ue823',    // ajouter ministère
-  addDel: '\ue839'     // ajouter délégué
+  addDel: '\ue839',    // ajouter délégué
+  trash: '<svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M5.5 1h5l.5 1H14v1.5H2V2h3zM3 4.5h10L12.2 15H3.8zm3 2v6h1.2v-6zm2.8 0v6H10v-6z"/></svg>',
+  edit: '<svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M11.3 1.3l3.4 3.4L5.4 14H2v-3.4zM12.4 0l-1.7 1.7 3.6 3.6L16 3.6z"/></svg>'
 };
 
 // ============================================================
@@ -155,6 +157,12 @@ const UI = {
         }));
       }
     }
+
+    // Logo : retour à l'état initial de la page
+    document.querySelectorAll('.bloclogo a').forEach(a => a.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.location.href = window.location.pathname;
+    }));
 
     // Liens de navigation
     document.querySelectorAll('[data-section]').forEach(link => {

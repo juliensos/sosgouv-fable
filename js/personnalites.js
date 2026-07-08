@@ -120,8 +120,8 @@ const Perso = {
           <div class="_2-picto-fontello-bouton">${ICO.pin}</div>
           <h6 class="heading-dyn mini">épingler</h6>
         </a>
-        ${Auth.isAdmin() ? '<a href="#" class="_2-mini-bouton mini w-inline-block btn-edit" title="Modifier (admin)"><div class="_2-picto-fontello-bouton ico">&#9998;</div></a>' : ''}
-        ${(Auth.isAdmin() || (Auth.isLoggedIn() && p.ajoute_par === Auth.currentUser.id)) ? '<a href="#" class="_2-mini-bouton mini w-inline-block btn-del-perso" title="Supprimer"><div class="_2-picto-fontello-bouton ico">&#128465;</div></a>' : ''}
+        ${Auth.isAdmin() ? '<a href="#" class="_2-mini-bouton mini w-inline-block btn-edit" title="Modifier (admin)"><div class="_2-picto-fontello-bouton picto-svg">${ICO.edit}</div></a>' : ''}
+        ${(Auth.isAdmin() || (Auth.isLoggedIn() && p.ajoute_par === Auth.currentUser.id)) ? '<a href="#" class="_2-mini-bouton mini w-inline-block btn-del-perso" title="Supprimer"><div class="_2-picto-fontello-bouton picto-svg">${ICO.trash}</div></a>' : ''}
       </div>
       ${p.short_bio ? '<p class="short-bio">' + this.esc(p.short_bio) + '</p>' : ''}
     </div>`;

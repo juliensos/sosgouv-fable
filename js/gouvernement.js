@@ -605,7 +605,7 @@ const Gouv = {
               <a href="#" class="_2-mini-bouton w-inline-block btn-gouv-detail"><h6 class="heading-dyn"><strong class="heading-bold-text">détails</strong></h6></a>
               <a href="#" class="_2-mini-bouton w-inline-block btn-gouv-share" title="Faire suivre"><div class="_2-picto-fontello-bouton">${ICO.share}</div></a>
               <a href="#" class="_2-mini-bouton w-inline-block btn-gouv-pin ${pinned ? 'active' : ''}" title="Épingler"><div class="_2-picto-fontello-bouton">${ICO.pin}</div></a>
-              ${Auth.isAdmin() ? '<a href="#" class="_2-mini-bouton w-inline-block btn-gouv-del" title="Supprimer (admin)"><div class="_2-picto-fontello-bouton ico">&#128465;</div></a>' : ''}
+              ${Auth.isAdmin() ? '<a href="#" class="_2-mini-bouton w-inline-block btn-gouv-del" title="Supprimer (admin)"><div class="_2-picto-fontello-bouton picto-svg">${ICO.trash}</div></a>' : ''}
             </div>
             <div class="radio-button-form">
               <div class="div-block-323 gouv-vote" data-id="${g.id}">
@@ -746,19 +746,19 @@ const Gouv = {
       : '';
 
     cont.innerHTML =
-      '<div class="gov-title"><h1 class="heading-4-nom-prenom">' + Perso.esc(g.titre) + '</h1>' +
-      '<div class="_3-star-bloc"><div class="vote gouv-vote">' +
+      '<h1 class="detail-titre">' + Perso.esc(g.titre) + '</h1>' +
+      '<div class="vote gouv-vote detail-vote">' +
       [1,2,3,4,5].map(n =>
-        '<span class="etoile ' + ((this.votesUser[g.id] || 0) >= n ? 'pleine active' : '') + '" data-note="' + n + '">&#9733;</span>'
-      ).join('') + '</div></div></div>' +
-      '<div class="cr-e-par _w-courant _w-grey">créé par <strong>' + Perso.esc(g.users ? g.users.username : '?') + '</strong></div>' +
+        '<span class="etoile detail-etoile ' + ((this.votesUser[g.id] || 0) >= n ? 'pleine active' : '') + '" data-note="' + n + '" title="' + n + '/5">&#9733;</span>'
+      ).join('') + '</div>' +
+      '<div class="cr-e-par"><span class="_w-courant _w-mini-grey">créé par</span> <span class="_w-courant _w-bold cap">' + Perso.esc(g.users ? g.users.username : '?') + '</span></div>' +
       (g.description ? '<p class="detail-desc">' + Perso.esc(g.description) + '</p>' : '') +
       bloc('Ministres régaliens', postes.filter(p => p.type === 'regalien')) +
       bloc('Ministres', postes.filter(p => p.type === 'non_regalien')) +
       bloc('Délégués ministériels', postes.filter(p => p.type === 'delegue')) +
       '<h4>Commentaires</h4><div id="detail-commentaires"><div class="loading">Chargement…</div></div>' +
       '<div class="comm-add-row"><input type="text" id="newComment" class="mon-input5 w-input champ-texte" placeholder="Votre commentaire…">' +
-      '<a href="#" class="_2-mini-bouton w-inline-block" id="btnAddComment"><h6 class="heading-dyn mini">envoyer</h6></a></div>';
+      '<a href="#" class="_2-mini-bouton w-inline-block btn-envoyer-comm" id="btnAddComment"><div class="_2-picto-fontello-bouton">' + ICO.send + '</div></a></div>';
 
     UI.openModal('modal-detail');
     this.loadComments(id);
