@@ -145,3 +145,25 @@
 /* ---- Footer ---- */
 .version-switch { display: block; text-align: center; font-size: 10px; color: var(--sos-grey-1, #aca69a); text-decoration: underline; padding: 6px 0; }
 .admine-part { background: var(--sos-yellow, #ffbb47); }
+
+/* ---- Carte gouvernement, maquette de juillet ---- */
+.govlinedetails { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.bouton-gov-detail { display: flex; gap: 6px; margin-left: auto; }
+.radio-button-form { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.div-block-323.gouv-vote { display: flex; gap: 4px; }
+.radio-button-3.etoile {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 1.5px solid var(--black-100, #000);
+  background: var(--sos-white, #fff);
+  display: inline-block; cursor: pointer; padding: 0; font-size: 0;
+}
+.radio-button-3.etoile.pleine, .radio-button-3.etoile:hover { background: var(--sos-yellow, #ffbb47); }
+.mini-jaune { color: var(--sos-yellow, #ffbb47); font-size: 10px; }
+._3-star-bloc { position: relative; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; flex: none; }
+._3-star-bloc .star { position: absolute; inset: 0; color: var(--sos-yellow, #ffbb47); }
+._3-star-bloc .note { position: relative; z-index: 2; color: var(--sos-white, #fff); font-weight: 900; }
+.cr-e-par { display: flex; gap: 5px; align-items: center; margin: 4px 0 8px; }
+.gouv-membres .gouv-membre { display: flex; gap: 6px; align-items: baseline; }
+.gouv-membres .gm-nom { font-weight: 900; text-transform: uppercase; }
+.gouv-membres .gm-secteur { color: var(--sos-grey-1, #aca69a); }
+.filet.pointille { border-bottom: 1px dotted var(--black-100, #000); margin: 8px 0; }
