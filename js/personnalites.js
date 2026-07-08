@@ -109,15 +109,15 @@ const Perso = {
         <div class="bloc-metier">
           <h4 class="heading-4-nom-prenom grey">${this.esc(metiers)}</h4>
         </div>
-        <div class="fontello-statut"><span class="badge-statut ${this.STATUT_CLASSES[p.statut] || ''}">${this.STATUTS[p.statut] || ''}</span></div>
+        <div class="fontello-statut _${p.statut}" title="${this.STATUTS[p.statut] || ''}">${[ICO.cross, ICO.cross, ICO.cond, ICO.check2][p.statut] || ''}</div>
       </div>
       <div class="boutons-perso-group">
         <a href="#" class="like-bloc btn-like ${liked ? 'active' : ''}" title="Like">
-          <div class="_2-picto-fontello-bouton black-stroke ico">&#9829;</div>
+          <div class="_2-picto-fontello-bouton black-stroke">${ICO.like}</div>
           <div class="_w-courant _w-bold _w-pink"><sup class="like-count">${this.likesCount[p.id] || 0}</sup></div>
         </a>
         <a href="#" class="_2-mini-bouton mini w-inline-block btn-pin ${pinned ? 'active' : ''}" title="Épingler">
-          <div class="_2-picto-fontello-bouton ico">&#128204;</div>
+          <div class="_2-picto-fontello-bouton">${ICO.pin}</div>
           <h6 class="heading-dyn mini">épingler</h6>
         </a>
         ${Auth.isAdmin() ? '<a href="#" class="_2-mini-bouton mini w-inline-block btn-edit" title="Modifier (admin)"><div class="_2-picto-fontello-bouton ico">&#9998;</div></a>' : ''}

@@ -1,3 +1,25 @@
+// Icônes Fontello de la maquette (codes extraits du site publié)
+window.ICO = {
+  pin: '\ue80a',       // épingler
+  share: '\ue835',     // faire suivre (gouvernement)
+  shareMini: '\ue833', // faire suivre (personnalité)
+  draft: '\ue89d',     // brouillon (mini)
+  draftBig: '\uf068',  // brouillon (gros bouton)
+  loupe: '\ue801',     // loupe
+  people: '\ue81f',    // choisir dans la liste / compte
+  like: '\ue808',      // coeur
+  comment: '\ue896',   // commenter
+  check: '\ue891',     // valider / ajouter
+  check2: '\ue821',    // valider (variante) / statut ok
+  cross: '\ue822',     // croix / statut jamais
+  cond: '\ue844',      // statut sous condition
+  cancel: '\ue838',    // annuler
+  save: '\ue81b',      // enregistrer
+  send: '\ue800',      // envoyer
+  addMin: '\ue823',    // ajouter ministère
+  addDel: '\ue839'     // ajouter délégué
+};
+
 // ============================================================
 // SOSGOUV - ui.js
 // Navigation par sections (simulation de pages), gestion des

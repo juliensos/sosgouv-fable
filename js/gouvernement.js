@@ -174,7 +174,7 @@ const Gouv = {
         <input class="mon-input3 w-input poste-perso-search" maxlength="256" placeholder="nom du ministre" type="text" value="${perso}" autocomplete="off"/>
         <div class="_3-gov-mini-buttons">
           <a href="#" class="_2-mini-bouton loupe w-inline-block btn-loupe" title="Parcourir toutes les personnalités">
-            <div class="_2-picto-fontello-bouton ico">&#128269;</div>
+            <div class="_2-picto-fontello-bouton">${ICO.loupe}</div>
           </a>
           ${p.type !== 'regalien' ? '<a href="#" class="_2-mini-bouton w-inline-block btn-remove-poste" title="Supprimer ce poste"><div class="_2-picto-fontello-bouton ico">&times;</div></a>' : ''}
         </div>
@@ -548,20 +548,30 @@ const Gouv = {
     this.published.sort((a, b) => epingleDabord(a, b) || cmp(a, b));
   },
 
+  estPret(g) {
+    const postes = g.postes_gouvernement || [];
+    return postes.length > 0
+      && postes.every(p => p.personnalite_id)
+      && postes.every(p => p.personnalites && p.personnalites.statut === 3);
+  },
+
   renderPublished() {
     const cont = document.getElementById('liste-gouvernements');
     if (!cont) return;
-    if (!this.published.length) {
-      cont.innerHTML = '<div class="empty-msg">Aucun gouvernement publié pour le moment.</div>';
+    const liste = this.onlyReady ? this.published.filter(g => this.estPret(g)) : this.published;
+    if (!liste.length) {
+      cont.innerHTML = '<div class="empty-msg">' +
+        (this.onlyReady && this.published.length
+          ? 'Aucun gouvernement "prêt à gouverner" pour le moment (décochez le filtre pour tout voir).'
+          : 'Aucun gouvernement publié pour le moment.') + '</div>';
       return;
     }
-    cont.innerHTML = this.published.map(g => {
+    cont.innerHTML = liste.map(g => {
       const st = (this.stats && this.stats[g.id]) || {};
-      const postes = (g.postes_gouvernement || []).slice().sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
-      // Prêt à gouverner : tous les postes pourvus ET tous les membres en statut "ok"
-      const pret = postes.length > 0
-        && postes.every(p => p.personnalite_id)
-        && postes.every(p => p.personnalites && p.personnalites.statut === 3);
+      // Seuls les postes pourvus apparaissent sur la carte
+      const postes = (g.postes_gouvernement || []).slice()
+        .sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+      const pret = this.estPret(g);
       const membres = postes.map(p => {
         const perso = p.personnalites;
         const role = p.secteurs ? p.secteurs.nom
@@ -572,15 +582,16 @@ const Gouv = {
       }).join('');
       const pinned = this.epingles.has(g.id);
       const note = st.note_moyenne != null ? String(st.note_moyenne).replace('.', ',') : null;
-      const regs = postes.filter(p => p.type === 'regalien');
-      const autres = postes.filter(p => p.type !== 'regalien');
+      const pourvus = postes.filter(p => p.personnalites);
+      const regs = pourvus.filter(p => p.type === 'regalien');
+      const autres = pourvus.filter(p => p.type !== 'regalien');
       const ligne = p => {
         const perso = p.personnalites;
         const role = p.secteurs ? p.secteurs.nom
           : (p.type === 'delegue' ? (p.fonction_delegue || 'délégué') : (p.nom_poste_personnalise || ''));
         return '<div class="fonction-perso gouv-membre">' +
-          '<a href="#" class="w-inline-block"><div class="_3-name-gov-pub gm-nom">' +
-          (perso ? Perso.esc((perso.prenom || '') + ' ' + perso.nom) : '<em>non attribué</em>') +
+          '<a href="#" class="w-inline-block membre-fiche" data-perso-id="' + (perso ? perso.id : '') + '"><div class="_3-name-gov-pub gm-nom">' +
+          Perso.esc((perso.prenom || '') + ' ' + perso.nom) +
           '</div></a> <div class="secteurs gm-secteur">' + Perso.esc(role) + '</div></div>';
       };
       const maNote = this.votesUser[g.id] || 0;
@@ -592,8 +603,8 @@ const Gouv = {
             ${pret ? '<div class="badge-pret">prêt à gouverner</div>' : ''}
             <div class="bouton-gov-detail">
               <a href="#" class="_2-mini-bouton w-inline-block btn-gouv-detail"><h6 class="heading-dyn"><strong class="heading-bold-text">détails</strong></h6></a>
-              <a href="#" class="_2-mini-bouton w-inline-block btn-gouv-share" title="Faire suivre"><div class="_2-picto-fontello-bouton ico">&#9993;</div></a>
-              <a href="#" class="_2-mini-bouton w-inline-block btn-gouv-pin ${pinned ? 'active' : ''}" title="Épingler"><div class="_2-picto-fontello-bouton ico">&#128204;</div></a>
+              <a href="#" class="_2-mini-bouton w-inline-block btn-gouv-share" title="Faire suivre"><div class="_2-picto-fontello-bouton">${ICO.share}</div></a>
+              <a href="#" class="_2-mini-bouton w-inline-block btn-gouv-pin ${pinned ? 'active' : ''}" title="Épingler"><div class="_2-picto-fontello-bouton">${ICO.pin}</div></a>
               ${Auth.isAdmin() ? '<a href="#" class="_2-mini-bouton w-inline-block btn-gouv-del" title="Supprimer (admin)"><div class="_2-picto-fontello-bouton ico">&#128465;</div></a>' : ''}
             </div>
             <div class="radio-button-form">
@@ -639,6 +650,13 @@ const Gouv = {
       if (detail) detail.addEventListener('click', () => this.openDetail(id));
       const del = card.querySelector('.btn-gouv-del');
       if (del) del.addEventListener('click', () => this.deleteGouv(id));
+      card.querySelectorAll('.membre-fiche').forEach(a => a.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const pid = a.dataset.persoId;
+        if (!pid || !window.Perso) return;
+        if (!Perso.all || !Perso.all.length) await Perso.loadList();
+        Perso.openFiche(pid);
+      }));
     });
   },
 
@@ -805,6 +823,41 @@ const Gouv = {
       this.sortPublished();
       this.renderPublished();
     });
+
+    // Dropdown de tri (maquette) : bascule + choix
+    const triToggle = document.getElementById('triGouvToggle');
+    const triList = document.getElementById('triGouvList');
+    if (triToggle && triList) {
+      triToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        triList.classList.toggle('w--open');
+      });
+      document.addEventListener('click', (e) => {
+        if (!triList.contains(e.target) && !triToggle.contains(e.target)) triList.classList.remove('w--open');
+      });
+      triList.querySelectorAll('[data-tri]').forEach(a => a.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.tri = a.dataset.tri;
+        const label = document.getElementById('triGouvLabel');
+        if (label) label.textContent = a.textContent.trim();
+        triList.classList.remove('w--open');
+        this.sortPublished();
+        this.renderPublished();
+      }));
+    }
+
+    // Filtre "prêt à gouverner"
+    const pretBox = document.getElementById('filtrePret');
+    if (pretBox) {
+      this.onlyReady = pretBox.checked;
+      pretBox.addEventListener('change', () => {
+        this.onlyReady = pretBox.checked;
+        const visu = pretBox.closest('label') && pretBox.closest('label').querySelector('.w-checkbox-input');
+        if (visu) visu.classList.toggle('w--redirected-checked', pretBox.checked);
+        this.renderPublished();
+      });
+    }
   }
 };
 
