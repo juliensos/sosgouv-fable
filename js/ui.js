@@ -1,25 +1,28 @@
 // Icônes Fontello de la maquette (codes extraits du site publié)
 window.ICO = {
-  pin: '\ue80a',       // épingler
-  share: '\ue835',     // faire suivre (gouvernement)
-  shareMini: '\ue833', // faire suivre (personnalité)
-  draft: '\ue89d',     // brouillon (mini)
-  draftBig: '\uf068',  // brouillon (gros bouton)
-  loupe: '\ue801',     // loupe
-  people: '\ue81f',    // choisir dans la liste / compte
-  like: '\ue808',      // coeur
-  comment: '\ue896',   // commenter
-  check: '\ue891',     // valider / ajouter
-  check2: '\ue821',    // valider (variante) / statut ok
-  cross: '\ue822',     // croix / statut jamais
-  cond: '\ue844',      // statut sous condition
-  cancel: '\ue838',    // annuler
-  save: '\ue81b',      // enregistrer
-  send: '\ue800',      // envoyer
-  addMin: '\ue823',    // ajouter ministère
-  addDel: '\ue839',    // ajouter délégué
-  trash: '<svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M5.5 1h5l.5 1H14v1.5H2V2h3zM3 4.5h10L12.2 15H3.8zm3 2v6h1.2v-6zm2.8 0v6H10v-6z"/></svg>',
-  edit: '<svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor"><path d="M11.3 1.3l3.4 3.4L5.4 14H2v-3.4zM12.4 0l-1.7 1.7 3.6 3.6L16 3.6z"/></svg>'
+  pin: '\ue80a',        // icon-pin, épingler
+  share: '\ue835',      // icon-mail-2, faire suivre (gouvernement)
+  shareMini: '\ue833',  // icon-mail-1, faire suivre (personnalité)
+  draft: '\ue89d',      // icon-folder-open-1, brouillon (mini)
+  draftBig: '\uf068',   // icon-folder-open, brouillon (gros bouton)
+  loupe: '\ue801',      // icon-search
+  people: '\ue81f',     // icon-user-1
+  like: '\ue808',       // icon-heart-empty
+  likeFull: '\ue802',   // icon-heart, coeur plein (liké)
+  comment: '\ue896',    // icon-comment-1
+  check: '\ue891',      // icon-up-fat, valider / ajouter
+  check2: '\ue821',     // icon-ok-1, statut ok
+  cross: '\ue822',      // icon-cancel-1, croix / statut jamais
+  cond: '\ue844',       // icon-dot-3, statut sous condition
+  cancel: '\ue838',     // icon-cancel-3, annuler
+  save: '\ue81b',       // icon-ok, enregistrer
+  send: '\ue800',       // icon-paper-plane, envoyer
+  addMin: '\ue823',     // icon-plus, ajouter ministère
+  addDel: '\ue839',     // icon-plus-circle-1, ajouter délégué
+  trash: '\uf083',      // icon-trash, corbeille
+  edit: '\ue83e',       // icon-pencil, modifier
+  starFull: '\ue806',   // icon-star
+  starEmpty: '\ue807'   // icon-star-empty
 };
 
 // ============================================================

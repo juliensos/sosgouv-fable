@@ -113,15 +113,15 @@ const Perso = {
       </div>
       <div class="boutons-perso-group">
         <a href="#" class="like-bloc btn-like ${liked ? 'active' : ''}" title="Like">
-          <div class="_2-picto-fontello-bouton black-stroke">${ICO.like}</div>
+          <div class="_2-picto-fontello-bouton black-stroke">${liked ? ICO.likeFull : ICO.like}</div>
           <div class="_w-courant _w-bold _w-pink"><sup class="like-count">${this.likesCount[p.id] || 0}</sup></div>
         </a>
         <a href="#" class="_2-mini-bouton mini w-inline-block btn-pin ${pinned ? 'active' : ''}" title="Épingler">
           <div class="_2-picto-fontello-bouton">${ICO.pin}</div>
           <h6 class="heading-dyn mini">épingler</h6>
         </a>
-        ${Auth.isAdmin() ? '<a href="#" class="_2-mini-bouton mini w-inline-block btn-edit" title="Modifier (admin)"><div class="_2-picto-fontello-bouton picto-svg">${ICO.edit}</div></a>' : ''}
-        ${(Auth.isAdmin() || (Auth.isLoggedIn() && p.ajoute_par === Auth.currentUser.id)) ? '<a href="#" class="_2-mini-bouton mini w-inline-block btn-del-perso" title="Supprimer"><div class="_2-picto-fontello-bouton picto-svg">${ICO.trash}</div></a>' : ''}
+        ${Auth.isAdmin() ? '<a href="#" class="_2-mini-bouton mini w-inline-block btn-edit" title="Modifier (admin)"><div class="_2-picto-fontello-bouton">' + ICO.edit + '</div></a>' : ''}
+        ${(Auth.isAdmin() || (Auth.isLoggedIn() && p.ajoute_par === Auth.currentUser.id)) ? '<a href="#" class="_2-mini-bouton mini w-inline-block btn-del-perso" title="Supprimer"><div class="_2-picto-fontello-bouton">' + ICO.trash + '</div></a>' : ''}
       </div>
       ${p.short_bio ? '<p class="short-bio">' + this.esc(p.short_bio) + '</p>' : ''}
     </div>`;
@@ -205,25 +205,31 @@ const Perso = {
     const liens = autres.map(l =>
       '<a class="fiche-lien" href="' + this.esc(l.url || l) + '" target="_blank" rel="noopener">&#128279; ' + this.esc(l.titre || l.url || l) + '</a>'
     ).join('');
+    // Découpage de la bio en sections (format des fiches importées)
+    let expertise = '', engagements = '', bioLibre = '';
+    if (p.bio) {
+      const m = p.bio.match(/Domaines de recherche et expertise\s*:\s*([\s\S]*?)(?:\n\s*\n|$)(?:Engagements et positionnements politiques\s*:\s*([\s\S]*))?/);
+      if (m) {
+        expertise = (m[1] || '').trim();
+        engagements = (m[2] || '').trim();
+      } else {
+        bioLibre = p.bio;
+      }
+    }
     cont.innerHTML = `
-      <div class="descript-photo-bio">
-        ${p.photo_url
-          ? '<img class="image-perso" src="' + this.esc(p.photo_url) + '" alt="" width="100" height="100"/>'
-          : '<div class="image-perso-placeholder"></div>'}
-        <div class="block-infos-fiche">
-          <div class="name-line">
-            <span class="heading-7">${this.esc(p.nom)}</span>
-            <span class="heading-9">${this.esc(p.prenom || '')}</span>
-          </div>
-          <span class="metier">${this.esc((p.metiers || []).join(', '))}</span>
-          <span class="badge-statut ${this.STATUT_CLASSES[p.statut] || ''}">${this.STATUTS[p.statut] || ''}</span>
-        </div>
+      <div class="fiche-entete">
+        <h1 class="fiche-nom">${this.esc(p.nom)} ${this.esc(p.prenom || '')}</h1>
+        <span class="fiche-metier-grey">${this.esc((p.metiers || []).join(', '))}</span>
+        <span class="fontello-statut _${p.statut}" title="${this.STATUTS[p.statut] || ''}">${[ICO.cross, ICO.cross, ICO.cond, ICO.check2][p.statut] || ''}</span>
       </div>
-      ${p.short_bio ? '<h4>Biographie</h4><p class="paragraph-2 fiche-shortbio">' + this.esc(p.short_bio) + '</p>' : ''}
-      ${p.bio ? '<div class="paragraph-2 fiche-bio">' + this.esc(p.bio) + '</div>' : ''}
-      ${videosHtml ? '<h4>Médias</h4><div class="grid-video fiche-videos">' + videosHtml + '</div>' : ''}
-      ${liens ? '<div class="fiche-liens">' + liens + '</div>' : ''}
+      ${p.short_bio ? '<p class="fiche-para">' + this.esc(p.short_bio) + '</p>' : ''}
+      ${expertise ? '<h4 class="fiche-h">Domaines de recherche et expertise</h4><p class="fiche-para">' + this.esc(expertise) + '</p>' : ''}
+      ${engagements ? '<h4 class="fiche-h">Engagements et positionnements politiques</h4><p class="fiche-para">' + this.esc(engagements) + '</p>' : ''}
+      ${bioLibre ? '<p class="fiche-para">' + this.esc(bioLibre) + '</p>' : ''}
       <div id="fiche-propositions"></div>
+      ${(videosHtml || liens) ? '<div class="fiche-filet"></div><h4 class="fiche-h">Médias</h4>' : ''}
+      ${videosHtml ? '<div class="grid-video fiche-videos">' + videosHtml + '</div>' : ''}
+      ${liens ? '<div class="fiche-liens">' + liens + '</div>' : ''}
     `;
     UI.openModal('modal-fiche');
     this.loadPropositions(id);
@@ -234,19 +240,22 @@ const Perso = {
     const cont = document.getElementById('fiche-propositions');
     if (!cont) return;
     try {
-      const [postes, gouvs] = await Promise.all([
+      const [postes, gouvs, users] = await Promise.all([
         sb.from('postes_gouvernement').select('*').eq('personnalite_id', id),
-        sb.from('gouvernements').select('id, titre, is_published')
+        sb.from('gouvernements').select('id, titre, is_published, created_by'),
+        sb.from('users').select('id, username')
       ]);
       const items = (postes.data || []).map(po => {
         const g = (gouvs.data || []).find(x => x.id === po.gouvernement_id && x.is_published);
         if (!g) return null;
+        const u = (users.data || []).find(x => x.id === g.created_by);
         const role = po.nom_poste_personnalise || po.fonction_delegue || 'Membre';
-        return '<div class="fiche-proposition">' + this.esc(role) +
-          ' dans <span class="fp-gouv">' + this.esc(g.titre || 'Sans titre') + '</span></div>';
+        return '<div class="fiche-proposition"><span class="fp-poste">' + this.esc(role) + '</span>' +
+          ' <span class="fp-par">par</span> <span class="fp-user">' + this.esc(u ? u.username : '?') + '</span>' +
+          ' <span class="fp-gouv">(' + this.esc(g.titre || 'Sans titre') + ')</span></div>';
       }).filter(Boolean);
       if (items.length) {
-        cont.innerHTML = '<h4 class="fiche-sous-titre">Personnalité proposée au poste de</h4>' + items.join('');
+        cont.innerHTML = '<div class="fiche-filet"></div><h4 class="fiche-h">Personnalité proposée au poste de</h4>' + items.join('');
       }
     } catch (err) { /* section facultative */ }
   },

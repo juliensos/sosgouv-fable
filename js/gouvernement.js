@@ -605,7 +605,7 @@ const Gouv = {
               <a href="#" class="_2-mini-bouton w-inline-block btn-gouv-detail"><h6 class="heading-dyn"><strong class="heading-bold-text">détails</strong></h6></a>
               <a href="#" class="_2-mini-bouton w-inline-block btn-gouv-share" title="Faire suivre"><div class="_2-picto-fontello-bouton">${ICO.share}</div></a>
               <a href="#" class="_2-mini-bouton w-inline-block btn-gouv-pin ${pinned ? 'active' : ''}" title="Épingler"><div class="_2-picto-fontello-bouton">${ICO.pin}</div></a>
-              ${Auth.isAdmin() ? '<a href="#" class="_2-mini-bouton w-inline-block btn-gouv-del" title="Supprimer (admin)"><div class="_2-picto-fontello-bouton picto-svg">${ICO.trash}</div></a>' : ''}
+              ${Auth.isAdmin() ? '<a href="#" class="_2-mini-bouton w-inline-block btn-gouv-del" title="Supprimer (admin)"><div class="_2-picto-fontello-bouton">' + ICO.trash + '</div></a>' : ''}
             </div>
             <div class="radio-button-form">
               <div class="div-block-323 gouv-vote" data-id="${g.id}">
@@ -615,10 +615,12 @@ const Gouv = {
               </div>
               <div class="_w-courant mini-jaune">Votre note <span class="gouv-nbvotes">(${st.nb_votes || 0})</span></div>
             </div>
-            <div class="_3-star-bloc">
+            <div class="note-star-bloc">
               ${note != null
-                ? '<div class="_w-courant _w-bold _w-pink note note-moy">' + note + '</div>' +
-                  '<div class="star w-embed"><div class="star"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="100%" height="auto"><polygon points="150 41.3 190.19 0 204.35 55.86 259.81 40.19 244.14 95.65 300 109.81 258.7 150 300 190.19 244.14 204.35 259.81 259.81 204.35 244.14 190.19 300 150 258.7 109.81 300 95.65 244.14 40.19 259.81 55.86 204.35 0 190.19 41.3 150 0 109.81 55.86 95.65 40.19 40.19 95.65 55.86 109.81 0 150 41.3" fill="currentColor"/></svg></div></div>'
+                ? '<svg class="note-star" viewBox="0 0 300 300" width="56" height="56" xmlns="http://www.w3.org/2000/svg">' +
+                  '<polygon points="150 41.3 190.19 0 204.35 55.86 259.81 40.19 244.14 95.65 300 109.81 258.7 150 300 190.19 244.14 204.35 259.81 259.81 204.35 244.14 190.19 300 150 258.7 109.81 300 95.65 244.14 40.19 259.81 55.86 204.35 0 190.19 41.3 150 0 109.81 55.86 95.65 40.19 40.19 95.65 55.86 109.81 0 150 41.3" fill="#ffbb47"/>' +
+                  '<text x="150" y="150" text-anchor="middle" dominant-baseline="central" font-size="88" font-weight="900" fill="#ffffff" font-family="Pinokiosanstrial, Arial, sans-serif" class="note-moy-svg">' + note + '</text>' +
+                  '</svg><span class="note-moy" style="display:none">' + note + '</span>'
                 : ''}
             </div>
           </div>
@@ -749,7 +751,7 @@ const Gouv = {
       '<h1 class="detail-titre">' + Perso.esc(g.titre) + '</h1>' +
       '<div class="vote gouv-vote detail-vote">' +
       [1,2,3,4,5].map(n =>
-        '<span class="etoile detail-etoile ' + ((this.votesUser[g.id] || 0) >= n ? 'pleine active' : '') + '" data-note="' + n + '" title="' + n + '/5">&#9733;</span>'
+        '<span class="etoile detail-etoile fontello-icon ' + ((this.votesUser[g.id] || 0) >= n ? 'pleine active' : '') + '" data-note="' + n + '" title="' + n + '/5">' + ((this.votesUser[g.id] || 0) >= n ? ICO.starFull : ICO.starEmpty) + '</span>'
       ).join('') + '</div>' +
       '<div class="cr-e-par"><span class="_w-courant _w-mini-grey">créé par</span> <span class="_w-courant _w-bold cap">' + Perso.esc(g.users ? g.users.username : '?') + '</span></div>' +
       (g.description ? '<p class="detail-desc">' + Perso.esc(g.description) + '</p>' : '') +
