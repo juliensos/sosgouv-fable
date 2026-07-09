@@ -95,7 +95,16 @@ const UI = {
 
     // Footer admin (jaune) visible uniquement pour les admins
     const adminFooter = document.getElementById('adminFooter');
-    if (adminFooter) adminFooter.style.display = Auth.isAdmin() ? 'flex' : 'none';
+    if (adminFooter) {
+      const admin = Auth.isAdmin();
+      adminFooter.style.display = admin ? 'flex' : 'none';
+      // Le conteneur parent peut être masqué par le CSS Webflow : on force aussi
+      let parent = adminFooter.parentElement;
+      while (parent && parent !== document.body) {
+        if (admin && getComputedStyle(parent).display === 'none') parent.style.display = 'block';
+        parent = parent.parentElement;
+      }
+    }
   },
 
   // ---------- Messages ----------
@@ -309,6 +318,21 @@ const UI = {
 
     this.updateMenu();
     this.showSection(0);
+
+    // La session locale peut être en retard sur la base (ex : passage admin) :
+    // on rafraîchit le profil au chargement.
+    if (Auth.isLoggedIn()) {
+      sb.from('users').select('nom, prenom, email, is_admin')
+        .eq('id', Auth.currentUser.id).maybeSingle()
+        .then(({ data }) => {
+          if (data) {
+            Object.assign(Auth.currentUser, data);
+            Auth.saveSession(Auth.currentUser);
+            this.updateMenu();
+          }
+        })
+        .catch(() => { /* hors ligne : on garde la session */ });
+    }
   },
 
 
