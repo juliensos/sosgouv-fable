@@ -1,0 +1,300 @@
+/* ============================================================
+   SOSGOUV, CSS applicatif de la version design.
+   Le graphisme vient du CSS Webflow publié (5310d7a46).
+   Ici : mécanique (menus, modaux, toasts, autocomplete) et
+   compléments pour les contenus générés en JS.
+   ============================================================ */
+
+/* Les pictos Fontello de la maquette utilisent des glyphes privés
+   que nous ne connaissons pas : nos icônes unicode reprennent leur
+   place avec une police standard. */
+.ico {
+  font-family: Arial, "Segoe UI Emoji", sans-serif !important;
+  font-size: 12px;
+  line-height: 1;
+}
+.croix { cursor: pointer; }
+
+/* ---- Menus du header (bascule JS, sans webflow.js) ---- */
+#menuCompte, #menuGeneral { flex-direction: column; }
+.menu-link-off { opacity: 0.35; pointer-events: none; }
+
+/* ---- Modaux : les pm/bm-parent sont cachés par défaut,
+       le JS les affiche en bloc plein écran ---- */
+.pm-parent, .bm-parent {
+  position: fixed;
+  inset: 0;
+  z-index: 1600;
+  display: none;
+  justify-content: center;
+  align-items: flex-start;
+  overflow-y: auto;
+  padding: 40px 12px;
+  background: rgba(0, 0, 0, 0.45);
+}
+._3-fond-modal { position: fixed; inset: 0; z-index: 1500; background: rgba(0,0,0,0.45); }
+.pm-parent .cont-flex-50-50, .bm-parent .cont-flex-50-50 { position: relative; width: min(94vw, 640px); }
+.bm-parent .cont-flex-50-50 { width: min(94vw, 760px); }
+._3-small-modal-stroke, ._3-big-modal-stroke { background: var(--sos-white, #fff); border: 1px solid var(--black-100, #000); padding: 16px; max-height: 82vh; overflow-y: auto; }
+._3-close-bouton { position: absolute; right: -6px; top: -14px; z-index: 10; background: var(--sos-white, #fff); border: 1px solid var(--black-100, #000); border-radius: 20px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
+
+/* ---- Toast ---- */
+.toast, #sosgouv-toast {
+  position: fixed;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--black-100, #000);
+  color: #fff;
+  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 5px;
+  z-index: 2200;
+  max-width: 90vw;
+}
+
+/* ---- Etats ---- */
+.loading, .empty-msg, .esp-vide, .adm-lien-vide { color: var(--sos-grey-1, #aca69a); font-style: italic; padding: 8px 0; font-size: 12px; }
+.error-msg { color: var(--red, #b81515); padding: 8px 0; }
+
+/* ---- Liste des personnalités ---- */
+.groupe-lettre { color: var(--sos-yellow, #ffbb47); text-transform: uppercase; font-weight: 900; margin: 12px 0 4px; font-size: 1rem; }
+.badge-statut { text-transform: uppercase; font-weight: 900; font-size: 11px; }
+.statut-ok { color: var(--sos-green, #5ac6b1); }
+.statut-jamais { color: var(--sos-new-grey, #897f78); }
+.statut-cond { color: var(--red, #b81515); }
+.statut-neant { color: var(--sos-grey-1, #aca69a); }
+.like-bloc { text-decoration: none; }
+.btn-like.active .ico { color: var(--red, #b81515); }
+.btn-pin.active .ico, .btn-gouv-pin.active .ico { color: var(--sos-yellow, #ffbb47); }
+
+/* ---- Cartes gouvernement ---- */
+.badge-pret { color: var(--sos-green, #5ac6b1); text-transform: uppercase; font-weight: 900; font-size: 11px; white-space: nowrap; }
+.note-moy { }
+.etoile { cursor: pointer; color: var(--sos-grey-1, #aca69a); font-size: 18px; background: none; border: none; padding: 0 1px; font-family: Arial, sans-serif; }
+.etoile.pleine, .etoile:hover { color: var(--sos-yellow, #ffbb47); }
+.gov-card-boutons { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 0 12px; }
+.gouv-desc { margin: 6px 0; }
+
+/* ---- Détail gouvernement ---- */
+.detail-poste { display: flex; gap: 8px; margin-bottom: 4px; font-size: 12px; }
+.dp-intitule { color: var(--sos-grey-1, #aca69a); }
+.dp-perso { font-weight: 700; }
+.comm-add-row { display: flex; gap: 6px; margin-top: 10px; align-items: center; }
+.comm-add-row input { flex: 1; }
+.comm-item { border-bottom: 0.5px dashed var(--sos-grey-1, #aca69a); padding: 6px 0; font-size: 12px; }
+.comm-auteur { color: var(--sos-link2, #c2815c); font-weight: 700; }
+.cr-e-par { margin: 4px 0 8px; }
+
+/* ---- Composer ---- */
+.poste-perso-row { position: relative; }
+._3-gov-line-1 { display: flex; align-items: center; gap: 6px; }
+._3-gov-line-1 .poste-perso-search { flex: 1; }
+.autocomplete-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--sos-white, #fff);
+  border: 1px solid var(--black-100, #000);
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 900;
+}
+.autocomplete-item { padding: 4px 8px; cursor: pointer; font-size: 12px; }
+.autocomplete-item:hover { background: var(--light-grey, #e7e7e7); }
+.ac-metier { color: var(--sos-grey-1, #aca69a); font-style: italic; font-size: 10px; }
+.poste-intitule-verrou { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.poste-secteur-select, .poste-fusion-select { border: 1px solid var(--sos-grey-1, #aca69a); background: var(--sos-white, #fff); font-size: 12px; padding: 4px 8px; }
+.poste-secteur-select.placeholder, .poste-fusion-select.placeholder { color: var(--sos-grey-1, #aca69a); }
+.fusion-tag { display: inline-flex; align-items: center; gap: 4px; background: var(--light-grey, #e7e7e7); border-radius: 5px; padding: 2px 8px; font-size: 10px; }
+.btn-icone { background: none; border: none; cursor: pointer; padding: 0 2px; font-size: 13px; }
+.btn-fusion-del, .adm-lien-del { color: var(--red, #b81515); }
+.composer-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.bloc-v-gap10 { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+
+/* ---- Fiche personnalité ---- */
+.descript-photo-bio { display: flex; gap: 15px; margin-bottom: 12px; }
+.image-perso-placeholder { width: 100px; height: 100px; background: var(--sos-grey-1, #aca69a); flex: none; }
+.block-infos-fiche { display: flex; flex-direction: column; gap: 4px; }
+.grid-video { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 600px) { .grid-video { grid-template-columns: 1fr; } }
+.fiche-video iframe { width: 100%; aspect-ratio: 16 / 9; border: none; }
+.fiche-video-titre { font-size: 10px; color: var(--sos-grey-1, #aca69a); margin-top: 2px; }
+.fiche-lien { color: var(--sos-link2, #c2815c); text-decoration: underline; font-size: 12px; display: flex; }
+.fiche-proposition { font-size: 12px; padding: 2px 0; }
+.fp-gouv { font-weight: 700; }
+.fiche-sous-titre { color: var(--sos-new-grey, #897f78); text-transform: uppercase; font-size: 12px; margin: 14px 0 4px; }
+
+/* ---- Espace personnel ---- */
+.div-activit { margin-top: 20px; border-top: 0.5px dashed var(--black-100, #000); padding-top: 12px; }
+.esp-bloc { margin-bottom: 12px; }
+.esp-liste { display: flex; flex-direction: column; gap: 3px; }
+.esp-item { color: var(--sos-link2, #c2815c); text-decoration: underline; font-size: 12px; display: flex; }
+.esp-note { color: var(--sos-yellow, #ffbb47); }
+.esp-comm { font-size: 12px; background: var(--light-grey, #e7e7e7); padding: 4px 8px; border-radius: 5px; }
+.esp-comm-cible { color: var(--sos-grey-1, #aca69a); font-style: italic; }
+._3-form-gap-10 { display: flex; flex-direction: column; gap: 10px; }
+
+/* ---- Editeur admin ---- */
+.adm-liens-bloc { margin: 12px 0; border-top: 0.5px dashed var(--black-100, #000); padding-top: 10px; }
+.adm-lien-item { display: flex; align-items: center; gap: 6px; padding: 3px 0; font-size: 12px; }
+.adm-lien-titre { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm-liens-form { display: flex; flex-direction: column; gap: 5px; }
+
+/* ---- Footer ---- */
+.version-switch { display: block; text-align: center; font-size: 10px; color: var(--sos-grey-1, #aca69a); text-decoration: underline; padding: 6px 0; }
+.admine-part { background: var(--sos-yellow, #ffbb47); }
+
+/* ---- Carte gouvernement, maquette de juillet ---- */
+.govlinedetails { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.bouton-gov-detail { display: flex; gap: 6px; margin-left: auto; }
+.radio-button-form { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.div-block-323.gouv-vote { display: flex; gap: 4px; }
+.radio-button-3.etoile {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 1.5px solid var(--black-100, #000);
+  background: var(--sos-white, #fff);
+  display: inline-block; cursor: pointer; padding: 0; font-size: 0;
+}
+.radio-button-3.etoile.pleine, .radio-button-3.etoile:hover { background: var(--sos-yellow, #ffbb47); }
+.mini-jaune { color: var(--sos-yellow, #ffbb47); font-size: 10px; }
+.cr-e-par { display: flex; gap: 5px; align-items: center; margin: 4px 0 8px; }
+.gouv-membres .gouv-membre { display: flex; gap: 6px; align-items: baseline; }
+.gouv-membres .gm-nom { font-weight: 900; text-transform: uppercase; }
+.gouv-membres .gm-secteur { color: var(--sos-grey-1, #aca69a); }
+.filet.pointille { border-bottom: 1px dotted var(--black-100, #000); margin: 8px 0; }
+
+
+/* ---- Bloc gouvernement : contour noir individuel ---- */
+.gov-compact-bloc {
+  border: 2px solid var(--black-100, #000);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  background: var(--sos-white, #fff);
+}
+._3-gov-content { display: flex; flex-direction: column; }
+
+/* ---- Correctifs v15 ---- */
+/* Pas de contour sur le grand conteneur de la page gouvernements */
+#section-1, #section-1 ._3-gov-content { border: none !important; }
+
+
+/* Bouton détails : libellé visible dans son cadre */
+.btn-gouv-detail { border: 2px solid var(--black-100, #000); border-radius: 6px; padding: 3px 10px; }
+.btn-gouv-detail h6, .btn-gouv-detail .heading-dyn { display: block !important; margin: 0; font-size: 11px; font-weight: 900; text-transform: uppercase; }
+
+/* Pictos SVG (corbeille, crayon) alignés sur les pictos fontello */
+.picto-svg { display: flex; align-items: center; justify-content: center; }
+.picto-svg svg { display: block; }
+
+/* Modal détail : mise en page maquette */
+.detail-titre { color: var(--sos-yellow, #ffbb47); text-transform: uppercase; font-size: 18px; font-weight: 900; margin: 0 0 4px; }
+.detail-vote { display: flex; gap: 4px; margin-bottom: 8px; }
+.detail-etoile { width: auto; height: auto; border: none !important; border-radius: 0; background: none !important; font-size: 22px; line-height: 1; color: var(--light-grey, #e7e7e7); font-family: Arial, sans-serif; padding: 0; }
+.detail-etoile.pleine, .detail-etoile:hover { color: var(--sos-yellow, #ffbb47) !important; background: none !important; }
+.detail-desc { margin: 6px 0 10px; }
+#detail-contenu h4 { margin: 14px 0 4px; }
+.btn-envoyer-comm { flex: none; }
+
+
+/* ---- v16 : étoile-note SVG, détail, fiche ---- */
+.note-star-bloc { flex: none; margin-left: 6px; line-height: 0; }
+.note-star { display: block; }
+
+.detail-etoile { font-size: 20px; line-height: 1; color: var(--sos-yellow, #ffbb47); background: none !important; border: none !important; width: auto; height: auto; border-radius: 0; padding: 0; cursor: pointer; }
+.detail-etoile:not(.pleine) { opacity: 0.9; }
+
+/* Fiche personnalité */
+.fiche-entete { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.fiche-nom { color: var(--sos-yellow, #ffbb47); text-transform: uppercase; font-weight: 900; font-size: 18px; margin: 0; }
+.fiche-metier-grey { color: var(--sos-grey-1, #aca69a); text-transform: uppercase; font-size: 14px; }
+.fiche-h { color: var(--black-100, #000); text-transform: uppercase; font-weight: 900; font-size: 13px; margin: 12px 0 4px; }
+.fiche-para { margin: 0 0 8px; }
+.fiche-filet { border-top: 1px solid var(--black-100, #000); margin: 14px 0 10px; }
+.fiche-proposition { text-transform: uppercase; font-size: 12px; padding: 2px 0; }
+.fp-poste { font-weight: 700; }
+.fp-par { text-transform: none; }
+.fp-user { color: var(--sos-yellow, #ffbb47); text-decoration: underline; font-weight: 700; }
+.fp-gouv { color: var(--sos-grey-1, #aca69a); text-transform: none; }
+.fiche-lien { color: var(--sos-yellow, #ffbb47); }
+
+/* ---- v17 : modaux, admin, commentaires, dropdowns ---- */
+/* Le contenu des modaux repris de la maquette doit toujours être visible */
+.pm-parent ._3-small-modal-stroke, .pm-parent ._3-petit-modal-content,
+.pm-parent ._w-connect-bloc, .bm-parent ._3-big-modal-stroke {
+  display: block !important;
+  opacity: 1 !important;
+}
+.pm-parent .w-form-done, .pm-parent .w-form-fail { display: none !important; }
+
+/* Admin membres */
+.admin-membre-ligne { display: flex; align-items: center; gap: 10px; padding: 5px 0; border-bottom: 0.5px dashed var(--sos-grey-1, #aca69a); font-size: 12px; }
+.am-user { font-weight: 900; text-transform: uppercase; }
+.am-badge { color: var(--sos-yellow, #ffbb47); font-size: 10px; }
+.am-infos { color: var(--sos-grey-1, #aca69a); flex: 1; }
+.am-moi { color: var(--sos-grey-1, #aca69a); font-style: italic; font-size: 10px; }
+
+/* Admin secteurs */
+.admin-secteur-bloc { padding: 8px 0; border-bottom: 0.5px dashed var(--sos-grey-1, #aca69a); }
+.as-type { color: var(--sos-grey-1, #aca69a); font-weight: 400; text-transform: none; font-size: 11px; }
+.as-tags { display: flex; flex-wrap: wrap; gap: 5px; margin: 5px 0; }
+.as-form { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.as-select { border: 1px solid var(--sos-grey-1, #aca69a); font-size: 12px; padding: 4px 8px; background: #fff; }
+.as-new { flex: 1; min-width: 180px; }
+
+/* Réponses aux commentaires */
+.comm-reponse { margin-left: 24px; border-left: 2px solid var(--light-grey, #e7e7e7); padding-left: 10px; }
+.comm-repondre { color: var(--sos-grey-1, #aca69a); font-size: 10px; text-decoration: underline; margin-left: 6px; }
+.comm-reponse-form { display: flex; gap: 6px; margin-top: 4px; align-items: center; }
+.comm-reponse-form input { flex: 1; }
+
+/* Dropdowns harmonisés (liste des personnalités) */
+.drops-perso { display: flex; gap: 12px; align-items: center; }
+._2-drops-down-new { position: relative; }
+.dropdown-list-4 { display: none; position: absolute; top: 100%; left: 0; min-width: 190px; background: var(--sos-white, #fff); border: 1px solid var(--black-100, #000); z-index: 950; }
+.dropdown-list-4.w--open { display: block; }
+._w-dropdown-copy { cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
+
+/* ---- v18 : fonds internes des modaux maquette neutralisés ---- */
+.pm-parent ._3-fond-modal, .bm-parent ._3-fond-modal { display: none !important; }
+
+/* ---- Footer admin : espacement des liens ---- */
+.admine-part { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+.admine-part .link-admin { white-space: nowrap; }
+
+/* ---- Footer admin : autonome, insensible au CSS Webflow ---- */
+._3-cont-foot {
+  display: block !important;
+  position: static !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  opacity: 1 !important;
+}
+#adminFooter.admine-part {
+  background: var(--sos-yellow, #ffbb47) !important;
+  padding: 10px 16px !important;
+  margin-top: 20px !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  height: auto !important;
+  position: static !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 100;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+#adminFooter .link-admin {
+  color: var(--black-100, #000) !important;
+  font-weight: 700;
+  text-decoration: underline;
+  display: inline !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  font-size: 12px;
+}
