@@ -847,6 +847,8 @@ const Gouv = {
 
   // ================== INIT ==================
   init() {
+    if (this._initDone) return;
+    this._initDone = true;
     const btnMin = document.getElementById('btnAddMinistere');
     if (btnMin) btnMin.addEventListener('click', (e) => { e.preventDefault(); this.addMinistere(); });
     const btnDel = document.getElementById('btnAddDelegue');

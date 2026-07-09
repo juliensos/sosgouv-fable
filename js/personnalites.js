@@ -383,18 +383,51 @@ const Perso = {
   },
 
   init() {
+    if (this._initDone) return;
+    this._initDone = true;
     const btnAdd = document.getElementById('btnAddPerso');
     if (btnAdd) btnAdd.addEventListener('click', (e) => { e.preventDefault(); this.addSimple(); });
 
     const selStatut = document.getElementById('filtreStatut');
-    if (selStatut) selStatut.addEventListener('change', () => {
+    if (selStatut && selStatut.tagName === 'SELECT') selStatut.addEventListener('change', () => {
       this.filtreStatut = selStatut.value;
       this.render();
     });
 
     const selOrdre = document.getElementById('filtreOrdre');
-    if (selOrdre) selOrdre.addEventListener('change', () => {
+    if (selOrdre && selOrdre.tagName === 'SELECT') selOrdre.addEventListener('change', () => {
       this.ordre = selOrdre.value;
+      this.render();
+    });
+
+    // Dropdowns maquette (mêmes composants que la page gouvernements)
+    const bindDrop = (toggleId, listId, labelId, attr, cb) => {
+      const toggle = document.getElementById(toggleId);
+      const list = document.getElementById(listId);
+      if (!toggle || !list) return;
+      toggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        document.querySelectorAll('.dropdown-list-4.w--open').forEach(l => { if (l !== list) l.classList.remove('w--open'); });
+        list.classList.toggle('w--open');
+      });
+      document.addEventListener('click', (e) => {
+        if (!list.contains(e.target) && !toggle.contains(e.target)) list.classList.remove('w--open');
+      });
+      list.querySelectorAll('[' + attr + ']').forEach(a => a.addEventListener('click', (e) => {
+        e.preventDefault();
+        const label = document.getElementById(labelId);
+        if (label) label.textContent = a.textContent.trim();
+        list.classList.remove('w--open');
+        cb(a.getAttribute(attr));
+      }));
+    };
+    bindDrop('filtreStatutToggle', 'filtreStatutList', 'filtreStatutLabel', 'data-statut', v => {
+      this.filtreStatut = v === '' ? 'tous' : Number(v);
+      this.render();
+    });
+    bindDrop('ordreListeToggle', 'ordreListeList', 'ordreListeLabel', 'data-ordre', v => {
+      this.ordre = v;
       this.render();
     });
 

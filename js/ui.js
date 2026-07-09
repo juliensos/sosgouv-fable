@@ -54,7 +54,7 @@ const UI = {
 
   // ---------- Modaux ----------
   openModal(id) {
-    const fond = document.querySelector('._3-fond-modal');
+    const fond = document.getElementById('fondModal');
     const modal = document.getElementById(id);
     if (fond) fond.style.display = 'block';
     if (modal) modal.style.display = 'block';
@@ -113,6 +113,8 @@ const UI = {
 
   // ---------- Initialisation ----------
   init() {
+    if (this._initDone) return;
+    this._initDone = true;
     // Menus du header (compte + général), bascule manuelle
     const menus = [
       { btn: document.getElementById('btnCompte'), menu: document.getElementById('menuCompte') },
@@ -179,7 +181,7 @@ const UI = {
     });
 
     // Fermeture des modaux (fond + croix)
-    const fond = document.querySelector('._3-fond-modal');
+    const fond = document.getElementById('fondModal');
     if (fond) fond.addEventListener('click', () => this.closeModals());
     document.querySelectorAll('[data-close-modal]').forEach(btn => {
       btn.addEventListener('click', (e) => { e.preventDefault(); this.closeModals(); });
