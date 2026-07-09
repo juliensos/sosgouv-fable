@@ -195,8 +195,8 @@ const Perso = {
     const cont = document.getElementById('fiche-contenu');
     if (!cont) return;
     const liensArr = Array.isArray(p.liens) ? p.liens : [];
-    const videos = liensArr.filter(l => l && l.type === 'video');
-    const autres = liensArr.filter(l => !l || l.type !== 'video');
+    const videos = liensArr.filter(l => l && (l.type === 'video' || this.videoEmbedUrl(l.url)));
+    const autres = liensArr.filter(l => l && l.type !== 'video' && !this.videoEmbedUrl(l.url));
     const videosHtml = videos.map(l => {
       const embed = this.videoEmbedUrl(l.url);
       if (embed) return '<div class="fiche-video"><iframe src="' + this.esc(embed) + '" frameborder="0" allowfullscreen loading="lazy"></iframe><div class="fiche-video-titre">' + this.esc(l.titre || '') + '</div></div>';

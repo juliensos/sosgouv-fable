@@ -617,7 +617,7 @@ const Gouv = {
             </div>
             <div class="note-star-bloc">
               ${note != null
-                ? '<svg class="note-star" viewBox="0 0 300 300" width="56" height="56" xmlns="http://www.w3.org/2000/svg">' +
+                ? '<svg class="note-star" viewBox="0 0 300 300" width="44" height="44" xmlns="http://www.w3.org/2000/svg">' +
                   '<polygon points="150 41.3 190.19 0 204.35 55.86 259.81 40.19 244.14 95.65 300 109.81 258.7 150 300 190.19 244.14 204.35 259.81 259.81 204.35 244.14 190.19 300 150 258.7 109.81 300 95.65 244.14 40.19 259.81 55.86 204.35 0 190.19 41.3 150 0 109.81 55.86 95.65 40.19 40.19 95.65 55.86 109.81 0 150 41.3" fill="#ffbb47"/>' +
                   '<text x="150" y="150" text-anchor="middle" dominant-baseline="central" font-size="88" font-weight="900" fill="#ffffff" font-family="Pinokiosanstrial, Arial, sans-serif" class="note-moy-svg">' + note + '</text>' +
                   '</svg><span class="note-moy" style="display:none">' + note + '</span>'
@@ -707,12 +707,22 @@ const Gouv = {
   },
 
   share(id) {
+    const g = this.published.find(x => x.id === id);
+    if (!g) return;
+    const postes = (g.postes_gouvernement || []).slice()
+      .sort((a, b) => (a.ordre || 0) - (b.ordre || 0))
+      .filter(p => p.personnalites);
+    const lignes = postes.map(p => {
+      const role = p.nom_poste_personnalise || (p.secteurs ? p.secteurs.nom : '') || p.fonction_delegue || '';
+      return '- ' + role + ' : ' + (p.personnalites.prenom || '') + ' ' + p.personnalites.nom;
+    }).join('\n');
     const url = location.origin + location.pathname + '#gouv-' + id;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url).then(() => UI.toast('Lien copié !'));
-    } else {
-      UI.toast(url);
-    }
+    const sujet = 'SOSGOUV : ' + (g.titre || 'un gouvernement à découvrir');
+    const corps = 'Je te partage le gouvernement « ' + (g.titre || '') + ' » composé sur SOSGOUV :\n\n'
+      + lignes + '\n\n'
+      + (g.description ? g.description + '\n\n' : '')
+      + 'À découvrir et noter ici : ' + url;
+    window.location.href = 'mailto:?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
   },
 
   // ---------- Détail + commentaires ----------
@@ -780,31 +790,57 @@ const Gouv = {
         .eq('gouvernement_id', gouvId)
         .order('created_at', { ascending: true });
       if (error) throw error;
-      cont.innerHTML = (data && data.length)
-        ? data.map(c =>
-            '<div class="comm-item"><span class="comm-auteur">' +
-            Perso.esc(c.users ? c.users.username : '?') + '</span> ' +
-            Perso.esc(c.contenu) + '</div>'
-          ).join('')
+      const tous = data || [];
+      const racines = tous.filter(c => !c.parent_id);
+      const reponsesDe = pid => tous.filter(c => c.parent_id === pid);
+      const rend = (c, prof) =>
+        '<div class="comm-item' + (prof ? ' comm-reponse' : '') + '">' +
+        '<span class="comm-auteur">' + Perso.esc(c.users ? c.users.username : '?') + '</span> ' +
+        Perso.esc(c.contenu) +
+        ' <a href="#" class="comm-repondre">répondre</a>' +
+        '<div class="comm-reponse-form" style="display:none">' +
+        '<input type="text" class="mon-input5 w-input comm-reponse-input" placeholder="Votre réponse…">' +
+        '<a href="#" class="_2-mini-bouton w-inline-block comm-reponse-send" data-cid="' + c.id + '"><div class="_2-picto-fontello-bouton">' + ICO.send + '</div></a>' +
+        '</div></div>' +
+        reponsesDe(c.id).map(r => rend(r, prof + 1)).join('');
+      cont.innerHTML = racines.length
+        ? racines.map(c => rend(c, 0)).join('')
         : '<div class="empty-msg">Aucun commentaire.</div>';
+
+      cont.querySelectorAll('.comm-repondre').forEach(a => a.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!Auth.isLoggedIn()) return UI.toast('Connectez-vous pour répondre.');
+        const form = a.parentElement.querySelector('.comm-reponse-form');
+        if (form) form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+      }));
+      cont.querySelectorAll('.comm-reponse-send').forEach(btn => btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const input = btn.parentElement.querySelector('.comm-reponse-input');
+        this.addComment(gouvId, btn.dataset.cid, input ? input.value.trim() : '');
+      }));
     } catch (err) {
       cont.innerHTML = '<div class="error-msg">Erreur : ' + err.message + '</div>';
     }
   },
 
-  async addComment(gouvId) {
+  async addComment(gouvId, parentId, contenuDirect) {
     if (!Auth.isLoggedIn()) return UI.toast('Connectez-vous pour commenter.');
-    const input = document.getElementById('newComment');
-    const contenu = input.value.trim();
+    let contenu = contenuDirect;
+    if (contenu == null) {
+      const input = document.getElementById('newComment');
+      contenu = input ? input.value.trim() : '';
+    }
     if (!contenu) return;
     try {
       const { error } = await sb.from('commentaires').insert({
         user_id: Auth.currentUser.id,
         gouvernement_id: gouvId,
+        parent_id: parentId || null,
         contenu
       });
       if (error) throw error;
-      input.value = '';
+      const champ = document.getElementById('newComment');
+      if (champ && contenuDirect == null) champ.value = '';
       this.loadComments(gouvId);
     } catch (err) { UI.toast('Erreur : ' + err.message); }
   },

@@ -161,6 +161,9 @@ const UI = {
       }
     }
 
+    // Les formulaires Webflow ne doivent jamais soumettre (rechargement de page)
+    document.querySelectorAll('form').forEach(f => f.addEventListener('submit', (e) => e.preventDefault()));
+
     // Logo : retour à l'état initial de la page
     document.querySelectorAll('.bloclogo a').forEach(a => a.addEventListener('click', (e) => {
       e.preventDefault();
@@ -235,10 +238,24 @@ const UI = {
     if (openActivite) openActivite.addEventListener('click', (e) => {
       e.preventDefault();
       if (!Auth.isLoggedIn()) return this.openModal('modal-connect');
-      this.openModal('modal-infos');
+      this.openModal('modal-activite');
       this.loadEspacePerso();
-      const act = document.getElementById('espace-perso');
-      if (act && act.scrollIntoView) act.scrollIntoView({ block: 'start' });
+    });
+
+    // Pages admin du footer
+    const admMembres = document.getElementById('openAdminMembres');
+    if (admMembres) admMembres.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!Auth.isAdmin()) return;
+      this.openModal('modal-admin-membres');
+      this.loadAdminMembres();
+    });
+    const admSecteurs = document.getElementById('openAdminSecteurs');
+    if (admSecteurs) admSecteurs.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!Auth.isAdmin()) return;
+      this.openModal('modal-admin-secteurs');
+      this.loadAdminSecteurs();
     });
     const logoutMenu = document.getElementById('btnLogoutMenu');
     if (logoutMenu) logoutMenu.addEventListener('click', (e) => {
@@ -286,11 +303,118 @@ const UI = {
           Auth.saveSession(Auth.currentUser);
         }
       } catch (err) { /* on garde les valeurs de session */ }
-      this.loadEspacePerso();
     });
 
     this.updateMenu();
     this.showSection(0);
+  },
+
+
+  // ---------- Admin : membres ----------
+  async loadAdminMembres() {
+    const cont = document.getElementById('admin-membres-liste');
+    if (!cont) return;
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    try {
+      const { data, error } = await sb.from('users').select('id, username, nom, prenom, email, is_admin, created_at');
+      if (error) throw error;
+      cont.innerHTML = (data || []).map(u =>
+        '<div class="admin-membre-ligne">' +
+        '<span class="am-user">' + esc(u.username) + (u.is_admin ? ' <span class="am-badge">admin</span>' : '') + '</span>' +
+        '<span class="am-infos">' + esc([u.prenom, u.nom].filter(Boolean).join(' ')) + (u.email ? ' · ' + esc(u.email) : '') + '</span>' +
+        (u.id !== Auth.currentUser.id
+          ? '<a href="#" class="_2-mini-bouton w-inline-block am-del" data-id="' + esc(u.id) + '" data-username="' + esc(u.username) + '" title="Supprimer ce compte"><div class="_2-picto-fontello-bouton">' + ICO.trash + '</div></a>'
+          : '<span class="am-moi">vous</span>') +
+        '</div>'
+      ).join('') || '<div class="empty-msg">Aucun membre.</div>';
+      cont.querySelectorAll('.am-del').forEach(btn => btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const username = btn.dataset.username;
+        if (!window.confirm('Supprimer le compte « ' + username + ' » ? Ses gouvernements, votes, likes et commentaires seront supprimés. Définitif.')) return;
+        try {
+          const { error } = await sb.from('users').delete().eq('id', btn.dataset.id);
+          if (error) throw error;
+          this.toast('Compte « ' + username + ' » supprimé.');
+          this.loadAdminMembres();
+        } catch (err) { this.toast('Erreur : ' + err.message); }
+      }));
+    } catch (err) {
+      cont.innerHTML = '<div class="error-msg">Erreur : ' + esc(err.message) + '</div>';
+    }
+  },
+
+  // ---------- Admin : secteurs et sous-secteurs par défaut ----------
+  async loadAdminSecteurs() {
+    const cont = document.getElementById('admin-secteurs-liste');
+    if (!cont) return;
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    try {
+      const [sec, sous, liens] = await Promise.all([
+        sb.from('secteurs').select('*').order('nom', { ascending: true }),
+        sb.from('sous_secteurs').select('*').order('nom', { ascending: true }),
+        sb.from('secteurs_sous_secteurs_defaut').select('*')
+      ]);
+      if (sec.error) throw sec.error;
+      const sousById = {};
+      (sous.data || []).forEach(s => sousById[s.id] = s);
+      cont.innerHTML = (sec.data || []).map(s => {
+        const assoc = (liens.data || []).filter(l => l.secteur_id === s.id);
+        const tags = assoc.map(l => {
+          const ss = sousById[l.sous_secteur_id];
+          return ss ? '<span class="fusion-tag">' + esc(ss.nom) +
+            ' <button class="btn-icone as-del" data-secteur="' + s.id + '" data-sous="' + ss.id + '" title="Retirer">&times;</button></span>' : '';
+        }).join('');
+        const options = (sous.data || [])
+          .filter(ss => !assoc.some(l => l.sous_secteur_id === ss.id))
+          .map(ss => '<option value="' + ss.id + '">' + esc(ss.nom) + '</option>').join('');
+        return '<div class="admin-secteur-bloc">' +
+          '<h4 class="fiche-h">' + esc(s.nom) + ' <span class="as-type">' + (s.type === 'regalien' ? 'régalien' : 'non régalien') + '</span></h4>' +
+          '<div class="as-tags">' + (tags || '<span class="esp-vide">aucun sous-secteur par défaut</span>') + '</div>' +
+          '<div class="as-form">' +
+          '<select class="as-select mon-inputdrop" data-secteur="' + s.id + '"><option value="" disabled selected>associer un sous-secteur…</option>' + options + '</select>' +
+          '<input type="text" class="mon-input5 w-input as-new" data-secteur="' + s.id + '" placeholder="ou créer : nom du nouveau sous-secteur"/>' +
+          '<a href="#" class="_2-mini-bouton w-inline-block as-add" data-secteur="' + s.id + '"><div class="_2-picto-fontello-bouton">' + ICO.addMin + '</div></a>' +
+          '</div></div>';
+      }).join('');
+
+      // Retirer une association
+      cont.querySelectorAll('.as-del').forEach(btn => btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        try {
+          const { error } = await sb.from('secteurs_sous_secteurs_defaut').delete()
+            .eq('secteur_id', btn.dataset.secteur).eq('sous_secteur_id', btn.dataset.sous);
+          if (error) throw error;
+          if (window.Gouv) Gouv.referentielsCharges = false;
+          this.loadAdminSecteurs();
+        } catch (err) { this.toast('Erreur : ' + err.message); }
+      }));
+      // Ajouter : depuis la liste, ou création d'un nouveau sous-secteur
+      cont.querySelectorAll('.as-add').forEach(btn => btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const secId = btn.dataset.secteur;
+        const bloc = btn.closest('.as-form');
+        const sel = bloc.querySelector('.as-select');
+        const inp = bloc.querySelector('.as-new');
+        try {
+          let sousId = sel.value || null;
+          const nom = inp.value.trim();
+          if (!sousId && nom) {
+            const { data: created, error: cErr } = await sb.from('sous_secteurs').insert({ nom }).select().single();
+            if (cErr) throw cErr;
+            sousId = created.id;
+          }
+          if (!sousId) return this.toast('Choisissez un sous-secteur ou saisissez un nom.');
+          const { error } = await sb.from('secteurs_sous_secteurs_defaut').insert({ secteur_id: secId, sous_secteur_id: sousId });
+          if (error) throw error;
+          if (window.Gouv) Gouv.referentielsCharges = false;
+          this.loadAdminSecteurs();
+        } catch (err) { this.toast('Erreur : ' + err.message); }
+      }));
+    } catch (err) {
+      cont.innerHTML = '<div class="error-msg">Erreur : ' + esc(err.message) + '</div>';
+    }
   },
 
   // ---------- Espace personnel : mon activité ----------
