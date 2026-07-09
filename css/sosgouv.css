@@ -259,3 +259,42 @@
 
 /* ---- v18 : fonds internes des modaux maquette neutralisés ---- */
 .pm-parent ._3-fond-modal, .bm-parent ._3-fond-modal { display: none !important; }
+
+/* ---- Footer admin : espacement des liens ---- */
+.admine-part { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+.admine-part .link-admin { white-space: nowrap; }
+
+/* ---- Footer admin : autonome, insensible au CSS Webflow ---- */
+._3-cont-foot {
+  display: block !important;
+  position: static !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  opacity: 1 !important;
+}
+#adminFooter.admine-part {
+  background: var(--sos-yellow, #ffbb47) !important;
+  padding: 10px 16px !important;
+  margin-top: 20px !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  height: auto !important;
+  position: static !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 100;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+#adminFooter .link-admin {
+  color: var(--black-100, #000) !important;
+  font-weight: 700;
+  text-decoration: underline;
+  display: inline !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  font-size: 12px;
+}
