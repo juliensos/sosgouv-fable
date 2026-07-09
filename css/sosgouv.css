@@ -255,3 +255,7 @@
 .dropdown-list-4 { display: none; position: absolute; top: 100%; left: 0; min-width: 190px; background: var(--sos-white, #fff); border: 1px solid var(--black-100, #000); z-index: 950; }
 .dropdown-list-4.w--open { display: block; }
 ._w-dropdown-copy { cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
+
+/* ---- v18 : fonds internes des modaux maquette neutralisés ---- */
+.pm-parent ._3-fond-modal, .bm-parent ._3-fond-modal { display: none !important; }
