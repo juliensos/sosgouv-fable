@@ -218,3 +218,40 @@
 .fp-user { color: var(--sos-yellow, #ffbb47); text-decoration: underline; font-weight: 700; }
 .fp-gouv { color: var(--sos-grey-1, #aca69a); text-transform: none; }
 .fiche-lien { color: var(--sos-yellow, #ffbb47); }
+
+/* ---- v17 : modaux, admin, commentaires, dropdowns ---- */
+/* Le contenu des modaux repris de la maquette doit toujours être visible */
+.pm-parent ._3-small-modal-stroke, .pm-parent ._3-petit-modal-content,
+.pm-parent ._w-connect-bloc, .bm-parent ._3-big-modal-stroke {
+  display: block !important;
+  opacity: 1 !important;
+}
+.pm-parent .w-form-done, .pm-parent .w-form-fail { display: none !important; }
+
+/* Admin membres */
+.admin-membre-ligne { display: flex; align-items: center; gap: 10px; padding: 5px 0; border-bottom: 0.5px dashed var(--sos-grey-1, #aca69a); font-size: 12px; }
+.am-user { font-weight: 900; text-transform: uppercase; }
+.am-badge { color: var(--sos-yellow, #ffbb47); font-size: 10px; }
+.am-infos { color: var(--sos-grey-1, #aca69a); flex: 1; }
+.am-moi { color: var(--sos-grey-1, #aca69a); font-style: italic; font-size: 10px; }
+
+/* Admin secteurs */
+.admin-secteur-bloc { padding: 8px 0; border-bottom: 0.5px dashed var(--sos-grey-1, #aca69a); }
+.as-type { color: var(--sos-grey-1, #aca69a); font-weight: 400; text-transform: none; font-size: 11px; }
+.as-tags { display: flex; flex-wrap: wrap; gap: 5px; margin: 5px 0; }
+.as-form { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.as-select { border: 1px solid var(--sos-grey-1, #aca69a); font-size: 12px; padding: 4px 8px; background: #fff; }
+.as-new { flex: 1; min-width: 180px; }
+
+/* Réponses aux commentaires */
+.comm-reponse { margin-left: 24px; border-left: 2px solid var(--light-grey, #e7e7e7); padding-left: 10px; }
+.comm-repondre { color: var(--sos-grey-1, #aca69a); font-size: 10px; text-decoration: underline; margin-left: 6px; }
+.comm-reponse-form { display: flex; gap: 6px; margin-top: 4px; align-items: center; }
+.comm-reponse-form input { flex: 1; }
+
+/* Dropdowns harmonisés (liste des personnalités) */
+.drops-perso { display: flex; gap: 12px; align-items: center; }
+._2-drops-down-new { position: relative; }
+.dropdown-list-4 { display: none; position: absolute; top: 100%; left: 0; min-width: 190px; background: var(--sos-white, #fff); border: 1px solid var(--black-100, #000); z-index: 950; }
+.dropdown-list-4.w--open { display: block; }
+._w-dropdown-copy { cursor: pointer; display: flex; align-items: center; gap: 6px; }
