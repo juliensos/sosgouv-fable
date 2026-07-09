@@ -277,18 +277,24 @@
 #adminFooter.admine-part {
   background: var(--sos-yellow, #ffbb47) !important;
   padding: 10px 16px !important;
-  margin-top: 20px !important;
+  margin: 0 !important;
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
   width: 100% !important;
   min-height: 0 !important;
   height: auto !important;
-  position: static !important;
   opacity: 1 !important;
   visibility: visible !important;
-  z-index: 100;
+  z-index: 2000 !important;
   gap: 20px;
   align-items: center;
   flex-wrap: wrap;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.15);
 }
+/* Laisser la place à la barre en bas de page pour les admins */
+body { scroll-padding-bottom: 50px; }
 #adminFooter .link-admin {
   color: var(--black-100, #000) !important;
   font-weight: 700;
