@@ -5,8 +5,8 @@
   <title>SOSGOUV, Imaginez votre gouvernement</title>
   <meta content="width=device-width, initial-scale=1" name="viewport"/>
   <!-- webflow-css-sync: la ligne suivante est mise à jour automatiquement -->
-  <link href="https://cdn.prod.website-files.com/68ecfda4d9b3270b98426ff5/css/sosgouv.webflow.shared.28429d67e.css" rel="stylesheet" type="text/css"/>
-  <link href="css/sosgouv.css?v22" rel="stylesheet" type="text/css"/>
+  <link href="https://cdn.prod.website-files.com/68ecfda4d9b3270b98426ff5/css/sosgouv.webflow.shared.52db24b0a.css" rel="stylesheet" type="text/css"/>
+  <link href="css/sosgouv.css?v23" rel="stylesheet" type="text/css"/>
   <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js" type="text/javascript"></script>
   <script type="text/javascript">
     if (window.WebFont) WebFont.load({ google: { families: ["Lato:400,700,900"] } });
@@ -153,53 +153,8 @@
 
 
 
-<div class="pm-parent ajouter-personnalit" id="modal-add-perso" style="display:none">
-  <div class="cont-flex-50-50">
-    <a href="#" data-close-modal class="_3-close-bouton invert w-inline-block"><div class="croix">&#xe822;</div></a>
-    <div class="_3-small-modal-stroke">
-      <div class="_3-petit-modal-content">
-        <div class="_3-title-bloc-padd-10-left"><h1 class="heading-24">ajouter une personnalité</h1></div>
-        <div class="_3-small-content-gap-10">
-          <p>Remplissez les champs pour ajouter la personnalité à la base de données. La fiche sera ensuite enrichie par les équipes de SOSGOUV.</p>
-          <div class="_3-champs-texte">
-            <input class="mon-input w-input" maxlength="256" placeholder="nom*" type="text" id="mapNom"/>
-            <input class="mon-input w-input" maxlength="256" placeholder="prénom*" type="text" id="mapPrenom"/>
-          </div>
-          <a href="#" id="mapPlus" class="_2-code-link-button w-inline-block"><div>+ ajouter des informations (métier, bio, vidéo, document)</div></a>
-          <div id="mapOptions" style="display:none" class="_3-champs-texte">
-            <input class="mon-input w-input" maxlength="256" placeholder="métier" type="text" id="mapMetier"/>
-            <textarea class="mon-input w-input" placeholder="biographie courte" rows="2" id="mapShortBio"></textarea>
-            <input class="mon-input w-input" maxlength="512" placeholder="lien vidéo (youtube, vimeo…)" type="text" id="mapVideo"/>
-            <input class="mon-input w-input" maxlength="512" placeholder="lien document ou article" type="text" id="mapDoc"/>
-          </div>
-          <div class="pubis-utons"><div class="flex---gap-10">
-            <a href="#" id="mapAjouter" class="_w-link-bloc-button publier w-inline-block"><div class="_2-picto-fontello-bouton">&#xe891;</div><h6><strong class="heading-bold-text">ajouter</strong></h6></a>
-          </div></div>
-        </div>
-      </div>
-    </div>
-    <div class="_3-fond-modal"></div>
-  </div>
-</div>
-<div class="pm-parent liste-personnalit" id="modal-liste-perso" style="display:none">
-  <div class="cont-flex-50-50">
-    <a href="#" data-close-modal class="_3-close-bouton invert w-inline-block"><div class="croix">&#xe822;</div></a>
-    <div class="_3-small-modal-stroke">
-      <div class="_3-petit-modal-content">
-        <div class="_3-title-bloc-padd-10-left"><h1 class="heading-24">Liste de personalité</h1></div>
-        <div class="_3-small-content-gap-10">
-          <p>Sélectionnez la personnalité à ajouter à ce poste</p>
-          <select id="mlpOrdre" class="mon-inputdrop w-select">
-            <option value="alpha" selected>Ordre alphabétique</option>
-            <option value="metier">Par métier</option>
-          </select>
-          <div id="mlpListe" class="mlp-liste"></div>
-        </div>
-      </div>
-    </div>
-    <div class="_3-fond-modal"></div>
-  </div>
-</div>
+
+
 <div class="pm-parent definir-delegu" id="modal-delegue" style="display:none">
   <div class="cont-flex-50-50">
     <a href="#" data-close-modal class="_3-close-bouton invert w-inline-block"><div class="croix">&#xe822;</div></a>
@@ -229,28 +184,107 @@
     <div class="_3-fond-modal"></div>
   </div>
 </div>
-<div class="pm-parent rattachement-ministere" id="modal-ministere" style="display:none">
+
+
+
+<div class="pm-parent ajouter-personnalit" id="modal-add-perso" style="display:none">
   <div class="cont-flex-50-50">
     <a href="#" data-close-modal class="_3-close-bouton invert w-inline-block"><div class="croix">&#xe822;</div></a>
     <div class="_3-small-modal-stroke">
       <div class="_3-petit-modal-content">
-        <div class="_3-title-bloc-padd-10-left"><h1 class="heading-24">ajouter un ministère</h1></div>
+        <div class="_3-title-bloc-padd-10-left"><h1 class="heading-24">ajouter une personnalité</h1></div>
         <div class="_3-small-content-gap-10">
-          <div class="bloc-gris-2">
-            <div class="_3-title-bloc-padd-10-left white"><div class="_w-courant">Choisissez un ou plusieurs secteurs:</div></div>
-            <div class="grid-collection-list" id="mmSecteurs"></div>
+          <p>Remplissez les champs pour ajouter la personnalité à la base de données. La fiche sera ensuite enrichie par les équipes de SOSGOUV.</p>
+          <div class="_3-champs-texte">
+            <input class="mon-input3 w-input" maxlength="256" placeholder="nom*" type="text" id="mapNom"/>
+            <input class="mon-input3 w-input" maxlength="256" placeholder="prénom*" type="text" id="mapPrenom"/>
+            <input class="mon-input5 w-input" maxlength="256" placeholder="Métier" type="text" id="mapMetier"/>
+            <input class="mon-input5 w-input" maxlength="512" placeholder="lien fiche wikipedia" type="text" id="mapWiki"/>
+            <div id="mapVideoRows">
+              <div class="div-block-332">
+                <input class="mon-input5 w-input map-video-input" maxlength="512" placeholder="lien video" type="text" id="mapVideo"/>
+                <a href="#" class="_w-link-bloc-button-square w-inline-block" id="mapAddVideo" title="Ajouter un autre lien vidéo"><div class="_2-picto-fontello-bouton">&#xe823;</div></a>
+              </div>
+            </div>
+            <div id="mapLienRows">
+              <div class="div-block-332">
+                <input class="mon-input5 w-input map-lien-input" maxlength="512" placeholder="lien internet" type="text" id="mapDoc"/>
+                <a href="#" class="_w-link-bloc-button-square w-inline-block" id="mapAddLien" title="Ajouter un autre lien internet"><div class="_2-picto-fontello-bouton">&#xe823;</div></a>
+              </div>
+            </div>
           </div>
-          <div class="bloc-gris-2">
-            <div class="_3-title-bloc-padd-10-left white"><div class="_w-courant">Ou créez un ministère manuellement:</div></div>
-            <input class="mon-input w-input" maxlength="120" placeholder="intitulé du ministère" type="text" id="mmManuel"/>
-          </div>
-          <div class="pubis-utons"><div class="flex---gap-10">
-            <a href="#" id="mmValider" class="_w-link-bloc-button publier w-inline-block"><div class="_2-picto-fontello-bouton">&#xe821;</div><h6><strong class="heading-bold-text">valider</strong></h6></a>
-          </div></div>
+          <div class="pubis-utons"><div class="flex---gap-10"><a href="#" id="mapAjouter" class="_w-link-bloc-button publier w-inline-block"><div class="_2-picto-fontello-bouton">&#xe891;</div><h6><strong class="heading-bold-text">ajouter</strong></h6></a></div></div>
         </div>
       </div>
     </div>
-    <div class="_3-fond-modal"></div>
+    <div class="_3-fond-modal" data-close-modal></div>
+  </div>
+</div>
+<div class="pm-parent liste-personnalit" id="modal-liste-perso" style="display:none">
+  <div class="cont-flex-50-50">
+    <a href="#" data-close-modal class="_3-close-bouton invert w-inline-block"><div class="croix">&#xe822;</div></a>
+    <div class="_3-small-modal-stroke">
+      <div class="_3-petit-modal-content">
+        <div class="_3-title-bloc-padd-10-left"><h1 class="heading-24">Liste de personalité</h1></div>
+        <div class="_3-small-content-gap-10">
+          <p>Sélectionnez la personnalité à ajouter à ce poste</p>
+          <div data-delay="0" data-hover="false" class="_2-drops-down-new w-dropdown">
+            <div class="_w-dropdown-copy w-dropdown-toggle" id="mlpOrdreToggle">
+              <div class="_2-picto-fontello-bouton">&#xe825;</div>
+              <h6><strong class="heading-bold-text" id="mlpOrdreLabel">Par ordre alphabétique</strong></h6>
+            </div>
+            <nav class="dropdown-list-4 w-dropdown-list" id="mlpOrdreList">
+              <a href="#" data-mlp-ordre="alpha" class="_w-dropdown-left w-dropdown-link">par ordre alphabétique</a>
+              <a href="#" data-mlp-ordre="metier" class="_w-dropdown-left w-dropdown-link">par métiers</a>
+            </nav>
+          </div>
+          <div id="mlpListe" class="mlp-liste"></div>
+        </div>
+      </div>
+    </div>
+    <div class="_3-fond-modal" data-close-modal></div>
+  </div>
+</div>
+<div class="pm-parent ajouter-ministere" id="modal-ministere" style="display:none">
+  <div class="cont-flex-50-50">
+    <a href="#" data-close-modal class="_3-close-bouton invert w-inline-block"><div class="croix">&#xe822;</div></a>
+    <div class="_3-small-modal-stroke">
+      <div class="_3-petit-modal-content">
+        <div class="_3-title-bloc-padd-10-left"><h1 class="heading-24">ajouter ministére</h1></div>
+        <div class="_3-small-content-gap-10">
+          <p>Sélectionnez un ou plusieurs secteurs à ajouter à votre gouvernement.</p>
+          <div class="collection-list-wrapper-2 w-dyn-list">
+            <div role="list" class="grid-collection-list w-dyn-items" id="mmSecteurs"></div>
+          </div>
+          <p>Ou créez un secteur personalisé</p>
+          <textarea placeholder="nom du secteur" maxlength="120" class="mon-input2 gras w-input" id="mmManuel"></textarea>
+          <p>Définissez l&#x27;intitulé</p>
+          <textarea placeholder="ministère de…" maxlength="120" class="mon-input2 gras w-input" id="mmManuelIntitule"></textarea>
+          <div class="pubis-utons"><div class="flex---gap-10"><a href="#" id="mmValider" class="_w-link-bloc-button publier w-inline-block"><div class="_2-picto-fontello-bouton">&#xe821;</div><h6><strong class="heading-bold-text">valider</strong></h6></a></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="_3-fond-modal" data-close-modal></div>
+  </div>
+</div>
+<div class="pm-parent choisir-secteur" id="modal-choisir-secteur" style="display:none">
+  <div class="cont-flex-50-50">
+    <a href="#" data-close-modal class="_3-close-bouton invert w-inline-block"><div class="croix">&#xe822;</div></a>
+    <div class="_3-small-modal-stroke">
+      <div class="_3-petit-modal-content">
+        <div class="_3-title-bloc-padd-10-left"><h1 class="heading-24">secteurs ministériel</h1></div>
+        <div class="_3-small-content-gap-10">
+          <p>Sélectionnez un ou plusieurs secteurs à associer au ministère.</p>
+          <div class="collection-list-wrapper-2 w-dyn-list">
+            <div role="list" class="grid-collection-list w-dyn-items" id="mcsSecteurs"></div>
+          </div>
+          <p>Ou créez un secteur personalisé</p>
+          <textarea placeholder="nom du secteur" maxlength="120" class="mon-input2 gras w-input" id="mcsManuel"></textarea>
+          <div class="pubis-utons"><div class="flex---gap-10"><a href="#" id="mcsValider" class="_w-link-bloc-button publier w-inline-block"><div class="_2-picto-fontello-bouton">&#xe821;</div><h6><strong class="heading-bold-text">valider</strong></h6></a></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="_3-fond-modal" data-close-modal></div>
   </div>
 </div>
 <div class="pm-parent choisir-sous-secteur" id="modal-sous-secteurs" style="display:none">
@@ -260,18 +294,88 @@
       <div class="_3-petit-modal-content">
         <div class="_3-title-bloc-padd-10-left"><h1 class="heading-24">sous-secteurs ministériel</h1></div>
         <div class="_3-small-content-gap-10">
-          <div class="grid-collection-list" id="sous-secteurs-contenu"></div>
-          <div class="bloc-gris-2">
-            <div class="_3-title-bloc-padd-10-left white"><div class="_w-courant">Ou créez un sous-secteur:</div></div>
-            <input class="mon-input w-input" maxlength="120" placeholder="nom du nouveau sous-secteur" type="text" id="ssNouveau"/>
+          <p>Sélectionnez un ou plusieurs sous-secteurs à associer au ministère.</p>
+          <div class="collection-list-wrapper-2 w-dyn-list">
+            <div role="list" class="grid-collection-list w-dyn-items" id="sous-secteurs-contenu"></div>
           </div>
-          <div class="pubis-utons"><div class="flex---gap-10">
-            <a href="#" id="btnCloseSous" class="_w-link-bloc-button publier w-inline-block"><div class="_2-picto-fontello-bouton">&#xe821;</div><h6><strong class="heading-bold-text">valider</strong></h6></a>
-          </div></div>
+          <p>Ou créez un sous-secteur:</p>
+          <textarea placeholder="nom du sous-secteur" maxlength="120" class="mon-input2 gras w-input" id="ssNouveau"></textarea>
+          <div class="pubis-utons"><div class="flex---gap-10"><a href="#" id="btnCloseSous" class="_w-link-bloc-button publier w-inline-block"><div class="_2-picto-fontello-bouton">&#xe821;</div><h6><strong class="heading-bold-text">valider</strong></h6></a></div></div>
         </div>
       </div>
     </div>
-    <div class="_3-fond-modal"></div>
+    <div class="_3-fond-modal" data-close-modal></div>
+  </div>
+</div>
+<div class="pm-parent modifier-intitul" id="modal-intitule" style="display:none">
+  <div class="cont-flex-50-50">
+    <a href="#" data-close-modal class="_3-close-bouton invert w-inline-block"><div class="croix">&#xe822;</div></a>
+    <div class="_3-small-modal-stroke">
+      <div class="_3-petit-modal-content">
+        <div class="_3-title-bloc-padd-10-left"><h1 class="heading-24">personalisez l&#x27;intitulé du poste</h1></div>
+        <div class="_3-small-content-gap-10">
+          <p>Le secteur sera remplacé par votre intitulé personnalisé</p>
+          <input class="mon-input4 w-input" maxlength="256" placeholder="ministre de…" type="text" id="miInput"/>
+          <div class="pubis-utons"><div class="flex---gap-10"><a href="#" id="miValider" class="_w-link-bloc-button publier w-inline-block"><div class="_2-picto-fontello-bouton">&#xe821;</div><h6><strong class="heading-bold-text">valider</strong></h6></a></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="_3-fond-modal" data-close-modal></div>
+  </div>
+</div>
+<div class="pm-parent connecter-vous" id="modal-connect-required" style="display:none">
+  <div class="cont-flex-50-50">
+    <a href="#" data-close-modal class="_3-close-bouton invert w-inline-block"><div class="croix">&#xe822;</div></a>
+    <div class="_3-small-modal-stroke">
+      <div class="_3-petit-modal-content">
+        <div class="_3-small-content-gap-10">
+          <p>Vous devez etre connecté pour utiliser cette fonctionalité.</p>
+          <div class="pubis-utons"><div class="flex---gap-10"><a href="#" id="btnConnectFromRequired" class="_w-link-bloc-button publier w-inline-block"><div class="_2-picto-fontello-bouton">&#xe81f;</div><h6><strong class="heading-bold-text">me connecter</strong></h6></a></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="_3-fond-modal" data-close-modal></div>
+  </div>
+</div>
+
+<div class="bm-parent gu" id="modal-gu" style="display:none">
+  <div class="cont-flex-50-50">
+    <a href="#" class="_3-close-bouton invert w-inline-block" data-close-modal><div class="croix">&#xe822;</div></a>
+    <div class="_3-big-modal-stroke">
+      <div class="_3-title-bloc-padd-10-left"><h1 class="heading-24">guide utilisateur</h1></div>
+      <p class="fiche-para"><em>Imaginez votre gouvernement idéal.</em> SOSGOUV permet de composer des gouvernements imaginaires à partir d&#x27;une base de personnalités, de les publier, de les noter, de les commenter et de les partager.</p>
+<h4 class="fiche-h">1. Navigation</h4>
+<p class="fiche-para">Le site s'organise autour de quatre grandes pages, accessibles par les boutons encadrés sous le logo : <strong>Gouvernements publiés</strong>, <strong>Composer un gouvernement</strong>, <strong>Ajouter une personnalité</strong> et <strong>Liste des personnalités</strong>. Un clic sur le logo SOSGOUV ramène à la page d'accueil, dans l'état initial du site.</p>
+<p class="fiche-para">En haut à droite, le bouton compte (icône personne) ouvre le menu personnel : me connecter, info. personnelles, mon activité, me déconnecter. Le bouton menu adjacent donne accès à la FAQ et au contact.</p>
+<h4 class="fiche-h">2. Compte utilisateur</h4>
+<p class="fiche-para">La création de compte demande un pseudonyme et un mot de passe ; l'email est facultatif mais nécessaire pour être recontacté. La connexion se fait par le menu compte. Une fois connecté, votre pseudonyme s'affiche dans le bouton compte.</p>
+<p class="fiche-para"><strong>Info. personnelles</strong> permet de compléter ou modifier votre nom, prénom et email. <strong>Mon activité</strong> rassemble tout ce que vous avez fait sur le site : personnalités likées et épinglées, gouvernements épinglés, brouillons en cours, votes et commentaires. Chaque élément est cliquable et ramène au contenu concerné.</p>
+<p class="fiche-para">Sans compte, vous pouvez consulter librement les gouvernements publiés et la liste des personnalités. La connexion est nécessaire pour composer, publier, voter, commenter, liker et ajouter des personnalités.</p>
+<h4 class="fiche-h">3. Liste des personnalités</h4>
+<p class="fiche-para">La liste présente toutes les personnalités de la base, regroupées par lettre alphabétique ou par métier (menu déroulant de tri). Un second menu filtre par statut. Le statut indique la position de la personnalité vis-à-vis d'une participation à un gouvernement : coche verte pour « ok », points jaunes pour « sous condition », croix pour « jamais », et néant quand la position n'est pas connue.</p>
+<p class="fiche-para">Sur chaque carte : le cœur permet de liker (le compteur affiche le total), l'épingle enregistre la personnalité dans votre activité, et le bouton brouillon l'envoie directement au premier poste vacant de votre gouvernement en cours de composition.</p>
+<p class="fiche-para">Un clic sur le nom ouvre la <strong>fiche complète</strong> : biographie, domaines de recherche et expertise, engagements et positionnements politiques, la liste des gouvernements publiés où la personnalité est proposée (avec le poste et l'auteur), et les médias associés. Les vidéos (YouTube, Vimeo, Dailymotion) sont lisibles directement dans la fiche.</p>
+<h4 class="fiche-h">4. Ajouter une personnalité</h4>
+<p class="fiche-para">Deux chemins mènent au même résultat. La page <strong>Ajouter une personnalité</strong> propose un formulaire simple : nom et prénom suffisent, la fiche sera ensuite enrichie par les équipes de SOSGOUV. Depuis le <strong>composer</strong>, le bouton jaune « personne » de chaque poste ouvre le même formulaire en fenêtre, avec en option le métier, une courte biographie, un lien vidéo et un lien document ; la personnalité créée est alors immédiatement affectée au poste.</p>
+<p class="fiche-para">Les personnalités que vous avez ajoutées peuvent être supprimées par vous, tant qu'elles ne figurent dans aucun gouvernement publié.</p>
+<h4 class="fiche-h">5. Composer un gouvernement</h4>
+<p class="fiche-para">Le composer s'ouvre avec l'ossature complète d'un gouvernement : les <strong>ministères régaliens</strong> (1er ministre, Garde des Sceaux, Affaires étrangères, Économie et Finances, Intérieur, Défense), puis les <strong>ministères de base</strong> (Éducation, Santé, Transition écologique, Agriculture, Culture, Travail, Enseignement supérieur, Transports, Logement, Numérique, Sports, Outre-mer).</p>
+<p class="fiche-para">Le nom du gouvernement et les ministères régaliens, signalés par un astérisque, sont obligatoires pour publier. La description « Vision de l'auteur » est libre.</p>
+<p class="fiche-para"><strong>Personnaliser les postes.</strong> Les intitulés régaliens sont fixes mais peuvent être complétés (champ « Compléter », sauf pour le 1er ministre). Les intitulés des autres ministères sont entièrement modifiables. Chaque poste affiche ses sous-secteurs ; le lien « modifier » ouvre la fenêtre de sélection, où l'on coche parmi tous les sous-secteurs existants ou l'on en crée un nouveau.</p>
+<p class="fiche-para"><strong>Ajouter, fusionner, supprimer.</strong> La croix rose retire un ministère. Le bouton « Ajouter ministère » ouvre une fenêtre où l'on coche un ou plusieurs secteurs à réintégrer, ou l'on crée un ministère à l'intitulé libre. Sur un ministère existant, le lien « modifier » de la ligne des secteurs permet d'en associer plusieurs au même poste (fusion, par exemple « transports + environnement »).</p>
+<p class="fiche-para"><strong>Les délégués ministériels.</strong> Le bouton « Ajouter délégué ministeriel » ouvre une fenêtre : cochez le ministère de rattachement, précisez en option un sous-secteur, et définissez la fonction (« en charge de... »). L'intitulé du délégué se compose automatiquement.</p>
+<p class="fiche-para"><strong>Nommer les ministres.</strong> Trois façons : taper un nom dans le champ (l'autocomplétion propose les personnalités correspondantes, sans tenir compte des accents ni de la casse), cliquer la loupe pour parcourir toute la liste triée par ordre alphabétique ou par métier, ou cliquer le bouton jaune pour créer une nouvelle personnalité.</p>
+<p class="fiche-para"><strong>Brouillon et publication.</strong> « Brouillon » enregistre votre travail sans le rendre visible ; vous le retrouvez dans Mon activité pour le reprendre plus tard. « Publier » rend le gouvernement visible de tous, à condition que le nom soit renseigné et que tous les postes régaliens soient pourvus.</p>
+<h4 class="fiche-h">6. Gouvernements publiés</h4>
+<p class="fiche-para">La liste des gouvernements se trie par note, nombre de votes, popularité ou date (menu déroulant), et peut se restreindre aux gouvernements « prêts à gouverner », c'est-à-dire complets et composés uniquement de personnalités au statut « ok ».</p>
+<p class="fiche-para">Chaque bloc gouvernement affiche le titre, la composition (régaliens puis autres membres, séparés d'un filet pointillé), l'auteur, la description, la note moyenne dans l'étoile jaune, et vos propres pastilles de vote (1 à 5). Un clic sur un membre ouvre sa fiche.</p>
+<p class="fiche-para">Le bouton <strong>Détails</strong> ouvre la vue complète : notation par étoiles, composition détaillée par catégorie, et les commentaires. Chacun peut commenter et répondre aux commentaires des autres (les réponses s'affichent en retrait). L'<strong>enveloppe</strong> compose un email prêt à envoyer avec toute la composition du gouvernement et le lien vers le site. L'<strong>épingle</strong> enregistre le gouvernement dans votre activité.</p>
+<h4 class="fiche-h">7. Administration</h4>
+<p class="fiche-para">Les administrateurs disposent d'un bandeau jaune fixé en bas de l'écran, avec trois accès. <strong>Personnalités</strong> ouvre la liste, où le crayon permet d'éditer chaque fiche en profondeur : identité, métiers, biographies, statut, et les documents en ligne (liens et vidéos). <strong>Membres</strong> liste les comptes et permet de supprimer les comptes de test (votre propre compte est protégé). <strong>Secteurs et sous-secteurs</strong> gère le référentiel du composer : renommer un secteur, supprimer un secteur non régalien, en créer un nouveau avec son intitulé de poste par défaut, et ajuster les sous-secteurs associés par défaut à chaque ministère. Toute modification se répercute immédiatement dans le composer.</p>
+<p class="fiche-para">Les administrateurs peuvent aussi supprimer les gouvernements et les personnalités directement depuis les listes, avec un avertissement quand une personnalité figure dans des gouvernements publiés.</p>
+<h4 class="fiche-h">8. Bon à savoir</h4>
+<p class="fiche-para">La suppression d'une personnalité utilisée dans un gouvernement publié est bloquée pour les utilisateurs ; si un administrateur la supprime malgré tout, les gouvernements concernés survivent avec un poste vacant et perdent leur badge « prêt à gouverner ». Le lien messagerie du menu est inactif : la fonctionnalité n'est pas encore développée. Une version graphique alternative du site (« version classique ») reste accessible par le lien en pied de page.</p>
+    </div>
   </div>
 </div>
 <div class="bm-parent" id="modal-detail" style="display:none">
@@ -512,16 +616,19 @@
     <a href="#" id="openAdminMembres" class="link-admin">membres</a>
     <a href="#" id="openAdminSecteurs" class="link-admin">secteurs et sous-secteurs</a>
   </div>
-  <a href="index_classique.html" class="version-switch">version classique</a>
+  <div class="foot-public-liens">
+    <a href="#" id="openGuide" class="_2-code-link-button w-inline-block"><div>guide utilisateur</div></a>
+    <a href="index_classique.html" class="version-switch">version classique</a>
+  </div>
 </div>
 </div>
 </div>
 <div class="_3-fond-modal" id="fondModal" style="display:none"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="config.js?v22"></script>
-<script src="js/auth.js?v22"></script>
-<script src="js/ui.js?v22"></script>
-<script src="js/personnalites.js?v22"></script>
-<script src="js/gouvernement.js?v22"></script>
+<script src="config.js?v23"></script>
+<script src="js/auth.js?v23"></script>
+<script src="js/ui.js?v23"></script>
+<script src="js/personnalites.js?v23"></script>
+<script src="js/gouvernement.js?v23"></script>
 </body>
 </html>
