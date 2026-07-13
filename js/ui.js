@@ -54,15 +54,32 @@ const UI = {
 
   // ---------- Modaux ----------
   openModal(id) {
-    const fond = document.getElementById('fondModal');
     const modal = document.getElementById(id);
-    if (fond) fond.style.display = 'block';
-    if (modal) modal.style.display = 'block';
+    if (!modal) return;
+    const estPM = modal.classList.contains('pm-parent');
+    if (estPM) {
+      // Les petits modaux maquette portent leur propre fond et se centrent seuls
+      modal.style.display = 'flex';
+      const fondInterne = modal.querySelector('._3-fond-modal');
+      if (fondInterne) fondInterne.style.display = 'block';
+    } else {
+      const fond = document.getElementById('fondModal');
+      if (fond) fond.style.display = 'block';
+      modal.style.display = 'block';
+    }
   },
 
   closeModals() {
-    document.querySelectorAll('._3-fond-modal').forEach(f => f.style.display = 'none');
+    const fondGlobal = document.getElementById('fondModal');
+    if (fondGlobal) fondGlobal.style.display = 'none';
     document.querySelectorAll('.modal-sosgouv, .pm-parent, .bm-parent').forEach(m => m.style.display = 'none');
+  },
+
+  // Modal "connectez-vous" : exigence de connexion avant une action
+  requireAuth() {
+    if (Auth.isLoggedIn()) return true;
+    this.openModal('modal-connect-required');
+    return false;
   },
 
   // ---------- Menu selon connexion ----------
@@ -174,6 +191,25 @@ const UI = {
 
     // Les formulaires Webflow ne doivent jamais soumettre (rechargement de page)
     document.querySelectorAll('form').forEach(f => f.addEventListener('submit', (e) => e.preventDefault()));
+
+    // Fond intégré des modaux maquette : ferme au clic
+    document.querySelectorAll('.pm-parent ._3-fond-modal, [data-close-modal]').forEach(el =>
+      el.addEventListener('click', (e) => { e.preventDefault(); this.closeModals(); }));
+
+    // Guide utilisateur (public)
+    const openGuide = document.getElementById('openGuide');
+    if (openGuide) openGuide.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.openModal('modal-gu');
+    });
+
+    // Raccourci "me connecter" du modal d'exigence de connexion
+    const fromRequired = document.getElementById('btnConnectFromRequired');
+    if (fromRequired) fromRequired.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.closeModals();
+      this.openModal('modal-connect');
+    });
 
     // Logo : retour à l'état initial de la page
     document.querySelectorAll('.bloclogo a').forEach(a => a.addEventListener('click', (e) => {
