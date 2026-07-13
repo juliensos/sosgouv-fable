@@ -58,7 +58,7 @@
 .error-msg { color: var(--red, #b81515); padding: 8px 0; }
 
 /* ---- Liste des personnalités ---- */
-.groupe-lettre { color: var(--sos-yellow, #ffbb47); text-transform: uppercase; font-weight: 900; margin: 12px 0 4px; font-size: 1rem; }
+.groupe-lettre { color: var(--black-100, #000); text-transform: uppercase; font-weight: 900; margin: 14px 0 4px; }
 .badge-statut { text-transform: uppercase; font-weight: 900; font-size: 11px; }
 .statut-ok { color: var(--sos-green, #5ac6b1); }
 .statut-jamais { color: var(--sos-new-grey, #897f78); }
@@ -304,3 +304,36 @@ body { scroll-padding-bottom: 50px; }
   visibility: visible !important;
   font-size: 12px;
 }
+
+/* ---- v22 : maquette de juillet (composer, modaux, liste) ---- */
+/* Liste des personnalités : noms en jaune, statuts colorés */
+#liste-personnalites .heading-4-nom-prenom { color: var(--sos-yellow, #ffbb47); }
+#liste-personnalites .heading-4-nom-prenom.grey { color: var(--sos-grey-1, #aca69a); }
+.fontello-statut._0, .fontello-statut._1 { color: var(--black-100, #000); }
+.fontello-statut._2 { color: var(--sos-yellow, #ffbb47); }
+.fontello-statut._3 { color: var(--sos-green, #5ac6b1); }
+
+/* Composer : descriptions de section + boutons addpink */
+.compo-section-desc { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 22px 0; text-align: center; }
+.compo-desc-txt { max-width: 560px; text-transform: uppercase; font-size: 11px; }
+._w-link-bloc-button.addpink { background: var(--sos-link2, #c2815c); }
+._w-link-bloc-button.addpink .heading-bold-text.white, ._w-link-bloc-button.addpink ._2-picto-fontello-bouton.white { color: #fff; }
+
+/* Blocs de poste : croix rose de suppression */
+._2-picto-fontello-bouton.x { cursor: pointer; }
+.fontello-icon.pink { color: var(--red, #b81515); }
+._3-gov-line-0 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.poste-intitule.heading-23 { font-weight: 900; text-transform: uppercase; border: none; background: transparent; padding: 0; font-size: inherit; width: auto; min-width: 220px; flex: 1; }
+.heading-23._2 { color: var(--sos-grey-1, #aca69a); }
+
+/* Modaux PM : grille de checkboxes et liste des personnalités */
+.grid-collection-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 14px; }
+@media (max-width: 600px) { .grid-collection-list { grid-template-columns: 1fr 1fr; } }
+.bloc-gris-2 { background: var(--light-grey, #e7e7e7); padding: 10px 12px; margin: 8px 0; }
+.mlp-liste { max-height: 55vh; overflow-y: auto; margin-top: 10px; }
+.mlp-lettre { color: var(--sos-yellow, #ffbb47); font-weight: 900; text-transform: uppercase; margin: 10px 0 3px; }
+.div-block-296 { display: flex; gap: 6px; align-items: baseline; padding: 1px 0; cursor: pointer; }
+.div-block-296:hover { background: var(--light-grey, #e7e7e7); }
+.div-block-296 .grey-courant { color: var(--sos-grey-1, #aca69a); }
+#mapOptions { display: none; flex-direction: column; gap: 10px; }
+.pm-lien-options, #mapPlus { color: var(--sos-link2, #c2815c); text-decoration: underline; font-size: 12px; }
