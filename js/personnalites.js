@@ -85,7 +85,7 @@ const Perso = {
         : (p.nom || '?').charAt(0).toUpperCase();
       if (groupKey !== currentGroup) {
         currentGroup = groupKey;
-        html += '<div class="groupe-lettre">' + this.esc(groupKey) + '</div>';
+        html += '<h2 class="heading-31 groupe-lettre">' + this.esc(groupKey) + '</h2>';
       }
       html += this.cardHTML(p);
     }
@@ -118,7 +118,9 @@ const Perso = {
         </a>
         <a href="#" class="_2-mini-bouton mini w-inline-block btn-pin ${pinned ? 'active' : ''}" title="Épingler">
           <div class="_2-picto-fontello-bouton">${ICO.pin}</div>
-          <h6 class="heading-dyn mini">épingler</h6>
+        </a>
+        <a href="#" class="_2-mini-bouton mini w-inline-block btn-draft" title="Ajouter à mon brouillon de gouvernement">
+          <div class="_2-picto-fontello-bouton">${ICO.draft}</div>
         </a>
         ${Auth.isAdmin() ? '<a href="#" class="_2-mini-bouton mini w-inline-block btn-edit" title="Modifier (admin)"><div class="_2-picto-fontello-bouton">' + ICO.edit + '</div></a>' : ''}
         ${(Auth.isAdmin() || (Auth.isLoggedIn() && p.ajoute_par === Auth.currentUser.id)) ? '<a href="#" class="_2-mini-bouton mini w-inline-block btn-del-perso" title="Supprimer"><div class="_2-picto-fontello-bouton">' + ICO.trash + '</div></a>' : ''}
@@ -131,6 +133,19 @@ const Perso = {
     cont.querySelectorAll('.perso-card').forEach(card => {
       const id = card.dataset.id;
       const btnLike = card.querySelector('.btn-like');
+      const btnDraft = card.querySelector('.btn-draft');
+      if (btnDraft) btnDraft.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!Auth.isLoggedIn()) return UI.toast('Connectez-vous pour composer un gouvernement.');
+        if (!window.Gouv || !Gouv.composerState) return UI.toast('Ouvrez d\'abord le composer.');
+        const vacant = Gouv.composerState.postes.find(x => !x.personnalite);
+        if (!vacant) return UI.toast('Tous les postes de votre brouillon sont pourvus.');
+        const perso = (this.all || []).find(x => x.id === id) || (Gouv.persosCache || []).find(x => x.id === id);
+        if (!perso) return;
+        Gouv.assignPerso(vacant.uid, perso);
+        UI.toast(((perso.prenom || '') + ' ' + perso.nom).trim() + ' → ' + (vacant.intitule || 'poste'));
+      });
+
       const btnPin = card.querySelector('.btn-pin');
       const btnFiche = card.querySelector('.btn-fiche');
       const btnEdit = card.querySelector('.btn-edit');
@@ -288,8 +303,24 @@ const Perso = {
     if (!p) return;
     const droit = Auth.isAdmin() || (Auth.isLoggedIn() && p.ajoute_par === Auth.currentUser.id);
     if (!droit) return UI.toast('Vous ne pouvez supprimer que les personnalités que vous avez ajoutées.');
-    if (!window.confirm('Supprimer ' + ((p.prenom ? p.prenom + ' ' : '') + p.nom) + ' ? Cette action est définitive.')) return;
+    const nomComplet = (p.prenom ? p.prenom + ' ' : '') + p.nom;
     try {
+      // Protection : présence dans des gouvernements publiés
+      const [postes, gouvs] = await Promise.all([
+        sb.from('postes_gouvernement').select('gouvernement_id').eq('personnalite_id', id),
+        sb.from('gouvernements').select('id, is_published')
+      ]);
+      const publies = new Set((gouvs.data || []).filter(g => g.is_published).map(g => g.id));
+      const nbPublies = new Set((postes.data || [])
+        .map(po => po.gouvernement_id)
+        .filter(gid => publies.has(gid))).size;
+      if (nbPublies > 0 && !Auth.isAdmin()) {
+        return UI.toast(nomComplet + ' figure dans ' + nbPublies + ' gouvernement(s) publié(s) : suppression impossible.');
+      }
+      const message = nbPublies > 0
+        ? 'Attention : ' + nomComplet + ' figure dans ' + nbPublies + ' gouvernement(s) publié(s). Les postes concernés deviendront vacants. Supprimer quand même ?'
+        : 'Supprimer ' + nomComplet + ' ? Cette action est définitive.';
+      if (!window.confirm(message)) return;
       const { error } = await sb.from('personnalites').delete().eq('id', id);
       if (error) throw error;
       UI.toast('Personnalité supprimée.');

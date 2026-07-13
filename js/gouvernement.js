@@ -17,7 +17,8 @@ const Gouv = {
 
   // ================== REFERENTIELS ==================
   async loadReferentiels() {
-    if (this.refLoaded) return;
+    if (this.refLoaded && this.referentielsCharges !== false) return;
+    this.referentielsCharges = true;
     const [sec, liaison, sousSec] = await Promise.all([
       sb.from('secteurs').select('*').order('ordre', { ascending: true }),
       sb.from('secteurs_sous_secteurs_defaut').select('*'),
@@ -25,6 +26,7 @@ const Gouv = {
     ]);
     if (sec.error) throw sec.error;
     this.secteurs = sec.data || [];
+    this.sousSecteursTous = sousSec.data || [];
     const sousById = {};
     (sousSec.data || []).forEach(s => sousById[s.id] = s);
     this.sousSecteursDefaut = {};
@@ -77,14 +79,25 @@ const Gouv = {
     this.composerState = {
       titre: '',
       description: '',
-      postes: this.regaliens().map((s, i) => ({
-        uid: 'reg-' + i,
-        type: 'regalien',
-        secteur: s,
-        intitule: s.intitule_poste_defaut || s.nom,
-        personnalite: null,
-        sousSecteurs: (this.sousSecteursDefaut[s.id] || []).slice()
-      }))
+      postes: [
+        ...this.regaliens().map((s, i) => ({
+          uid: 'reg-' + i,
+          type: 'regalien',
+          secteur: s,
+          intitule: s.intitule_poste_defaut || s.nom,
+          personnalite: null,
+          sousSecteurs: (this.sousSecteursDefaut[s.id] || []).slice()
+        })),
+        ...this.nonRegaliens().map((s, i) => ({
+          uid: 'nr-' + i,
+          type: 'non_regalien',
+          secteur: s,
+          intitule: s.intitule_poste_defaut || s.nom,
+          personnalite: null,
+          fusion: [],
+          sousSecteurs: (this.sousSecteursDefaut[s.id] || []).slice()
+        }))
+      ]
     };
     this.renderComposer();
   },
@@ -166,60 +179,66 @@ const Gouv = {
     const perso = p.personnalite
       ? Perso.esc((p.personnalite.prenom || '') + ' ' + p.personnalite.nom)
       : '';
-    const sous = (p.sousSecteurs || []).map(s => Perso.esc(s.nom)).join(' · ');
-    const typeLabel = { regalien: 'Régalien', non_regalien: 'Ministère', delegue: 'Délégué ministériel' }[p.type];
-    return `
-    <div class="poste-bloc poste-${p.type} _3-bloc-min-r" id="poste-${p.uid}">
+    const sous = (p.sousSecteurs || []).map(s => Perso.esc(s.nom)).join(', ');
+    const secteursLies = p.secteur
+      ? [p.secteur].concat(p.fusion || []).map(s => Perso.esc(s.nom)).join(' + ')
+      : '';
+    const placeholder = p.type === 'delegue' ? 'nom. du delegué ministériel'
+      : (p.type === 'regalien' ? 'nom du ministre*' : 'Nom du ministre');
+    const ligne1 = `
       <div class="_3-gov-line-1 poste-perso-row">
-        <input class="mon-input3 w-input poste-perso-search" maxlength="256" placeholder="nom du ministre" type="text" value="${perso}" autocomplete="off"/>
+        <input class="mon-input3 w-input poste-perso-search" maxlength="256" placeholder="${placeholder}" type="text" value="${perso}" autocomplete="off"/>
         <div class="_3-gov-mini-buttons">
-          <a href="#" class="_2-mini-bouton loupe w-inline-block btn-loupe" title="Parcourir toutes les personnalités">
+          <a href="#" class="_2-mini-bouton loupe w-inline-block btn-loupe" title="Choisir dans la liste des personnalités">
             <div class="_2-picto-fontello-bouton">${ICO.loupe}</div>
           </a>
-          ${p.type !== 'regalien' ? '<a href="#" class="_2-mini-bouton w-inline-block btn-remove-poste" title="Supprimer ce poste"><div class="_2-picto-fontello-bouton ico">&times;</div></a>' : ''}
+          <a href="#" class="_2-mini-bouton people w-inline-block btn-add-perso" title="Ajouter une nouvelle personnalité">
+            <div class="_2-picto-fontello-bouton">${ICO.people}</div>
+          </a>
+          ${p.type !== 'regalien' ? '<a href="#" class="_2-picto-fontello-bouton x w-inline-block btn-remove-poste" title="Supprimer ce poste"><div class="fontello-icon pink">' + ICO.cross + '</div></a>' : ''}
         </div>
         <div class="autocomplete-results" style="display:none"></div>
+      </div>`;
+    if (p.type === 'regalien') {
+      return `
+    <div class="poste-bloc poste-regalien _3-bloc-min-r" id="poste-${p.uid}">
+      <div class="_3-gov-line-0">
+        <h3 class="heading-23 intitule-base">${Perso.esc(p.intitule)}</h3>
+        ${p.secteur && p.secteur.nom === 'Matignon' ? '' : '<input type="text" class="mon-input3 w-input poste-suffixe" value="' + Perso.esc(p.suffixe || '') + '" placeholder="Compléter">'}
       </div>
       <div class="_3-gov-line-2">
-        ${p.type === 'regalien'
-          ? '<div class="poste-intitule-verrou"><h3 class="heading-23 intitule-base">' + Perso.esc(p.intitule) + '</h3>' +
-            (p.secteur && p.secteur.nom === 'Matignon'
-              ? ''
-              : '<input type="text" class="mon-input3 w-input poste-suffixe" value="' + Perso.esc(p.suffixe || '') + '" placeholder="Compléter">') +
-            '</div>'
-          : ''}
-        ${p.type === 'non_regalien'
-          ? '<div class="poste-intitule-verrou">' +
-            '<select class="poste-secteur-select mon-inputdrop' + (p.secteur ? '' : ' placeholder') + '">' +
-            '<option value="" disabled' + (p.secteur ? '' : ' selected') + '>Secteur</option>' +
-            this.nonRegaliens().map(s =>
-              '<option value="' + s.id + '"' + (p.secteur && p.secteur.id === s.id ? ' selected' : '') + '>' + Perso.esc(s.nom) + '</option>'
-            ).join('') + '</select>' +
-            (p.secteur
-              ? (p.fusion || []).map((s, fi) =>
-                  '<span class="fusion-tag">+ ' + Perso.esc(s.nom) + ' <button class="btn-icone btn-fusion-del" data-fi="' + fi + '" title="Retirer">&times;</button></span>'
-                ).join('') +
-                '<select class="poste-fusion-select mon-inputdrop placeholder">' +
-                '<option value="" disabled selected>+ fusionner avec…</option>' +
-                this.nonRegaliens()
-                  .filter(s => s.id !== p.secteur.id && !(p.fusion || []).some(f => f.id === s.id))
-                  .map(s => '<option value="' + s.id + '">' + Perso.esc(s.nom) + '</option>').join('') +
-                '</select>' +
-                '<input type="text" class="mon-input3 w-input poste-intitule intitule" value="' + Perso.esc(p.intitule) + '" placeholder="Intitulé du poste">'
-              : '')
-            + '</div>'
-          : ''}
-        ${p.type === 'delegue'
-          ? '<div class="poste-intitule-verrou">' +
-            '<input type="text" class="mon-input3 w-input poste-intitule intitule" value="' + Perso.esc(p.intitule) + '" placeholder="Intitulé du poste">' +
-            '<input type="text" class="mon-input3 w-input poste-fonction" value="' + Perso.esc(p.fonction || '') + '" placeholder="Fonction (ex : chargé de la transition énergétique)">' +
-            '</div>'
-          : ''}
-        ${p.type !== 'delegue'
-          ? '<div class="_3-sous-secteur poste-sous-secteurs">' + (sous || '<em>Aucun sous-secteur</em>') +
-            ' <a href="#" class="_2-code-link-button btn-edit-sous">modifier</a></div>'
-          : ''}
+        <div class="_3-sous-secteur poste-sous-secteurs">${sous || '<em>Aucun sous-secteur</em>'}</div>
+        <a href="#" class="_2-code-link-button w-inline-block btn-edit-sous"><div>modifier</div></a>
       </div>
+      ${ligne1}
+    </div>`;
+    }
+    if (p.type === 'non_regalien') {
+      return `
+    <div class="poste-bloc poste-non_regalien _3-bloc-min-nr-step2 n" id="poste-${p.uid}">
+      <div class="_3-gov-line-0">
+        <input type="text" class="mon-input3 w-input poste-intitule intitule heading-23" value="${Perso.esc(p.intitule)}" placeholder="Intitulé du ministère">
+      </div>
+      ${secteursLies ? `
+      <div class="_3-gov-line-0">
+        <h3 class="heading-23 _2">${secteursLies}</h3>
+        <a href="#" class="_2-code-link-button w-inline-block btn-edit-fusion"><div>modifier</div></a>
+      </div>` : ''}
+      <div class="_3-gov-line-2">
+        <div class="_3-sous-secteur poste-sous-secteurs">${sous || '<em>Aucun sous-secteur</em>'}</div>
+        <a href="#" class="_2-code-link-button w-inline-block btn-edit-sous"><div>modifier</div></a>
+      </div>
+      ${ligne1}
+    </div>`;
+    }
+    // Délégué
+    return `
+    <div class="poste-bloc poste-delegue _3-bloc-del-nr-step2" id="poste-${p.uid}">
+      <div class="_3-gov-line-2">
+        <input type="text" class="mon-input3 w-input poste-intitule intitule heading-23" value="${Perso.esc(p.intitule)}" placeholder="Intitulé du délégué">
+      </div>
+      <input type="hidden" class="poste-fonction" value="${Perso.esc(p.fonction || '')}">
+      ${ligne1}
     </div>`;
   },
 
@@ -304,12 +323,25 @@ const Gouv = {
       timer = setTimeout(() => showResults(this.searchPersos(q).slice(0, 8)), 150);
     });
 
-    // Loupe : parcourir toutes les personnalités
+    // Loupe : modal liste des personnalités
     const loupe = bloc.querySelector('.btn-loupe');
     if (loupe) loupe.addEventListener('click', (e) => {
       e.preventDefault();
-      if (results.style.display === 'block') { results.style.display = 'none'; return; }
-      showResults((this.persosCache || []).slice());
+      this.openListePerso(p.uid);
+    });
+
+    // Bouton personne : modal d'ajout d'une nouvelle personnalité
+    const addPerso = bloc.querySelector('.btn-add-perso');
+    if (addPerso) addPerso.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.openAddPersoModal(p.uid);
+    });
+
+    // Modifier les secteurs liés (fusion) d'un ministère
+    const editFusion = bloc.querySelector('.btn-edit-fusion');
+    if (editFusion) editFusion.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.openMinistereModal('edit', p.uid);
     });
     document.addEventListener('click', (e) => {
       if (!bloc.contains(e.target)) results.style.display = 'none';
@@ -320,31 +352,44 @@ const Gouv = {
   openSousSecteursModal(p) {
     const cont = document.getElementById('sous-secteurs-contenu');
     if (!cont) return;
-    const render = () => {
-      cont.innerHTML =
-        '<h4>Sous-secteurs : ' + Perso.esc(p.secteur ? p.secteur.nom : p.intitule) + '</h4>' +
-        (p.sousSecteurs.length
-          ? p.sousSecteurs.map((s, i) =>
-              '<div class="sous-item">' + Perso.esc(s.nom) +
-              ' <button class="btn-mini btn-del-sous" data-i="' + i + '">supprimer</button></div>'
-            ).join('')
-          : '<em>Aucun sous-secteur</em>') +
-        '<div class="sous-add-row"><input type="text" id="newSousSecteur" class="champ-texte" placeholder="Ajouter un sous-secteur…">' +
-        '<button class="btn-mini" id="btnAddSous">ajouter</button></div>';
-      cont.querySelectorAll('.btn-del-sous').forEach(btn => {
-        btn.addEventListener('click', () => {
-          p.sousSecteurs.splice(Number(btn.dataset.i), 1);
-          render();
-        });
-      });
-      cont.querySelector('#btnAddSous').addEventListener('click', () => {
-        const val = cont.querySelector('#newSousSecteur').value.trim();
-        if (val) { p.sousSecteurs.push({ id: null, nom: val }); render(); }
-      });
-    };
-    render();
+    const actifs = (p.sousSecteurs || []).map(s => s.id).filter(Boolean);
+    const nomsActifs = (p.sousSecteurs || []).map(s => s.nom);
+    // Tous les sous-secteurs connus + ceux ajoutés manuellement à ce poste (id null)
+    cont.innerHTML = (this.sousSecteursTous || []).map(s =>
+      this._checkboxHTML(s.id, Perso.esc(s.nom), actifs.includes(s.id))
+    ).join('') + (p.sousSecteurs || []).filter(s => !s.id).map(s =>
+      this._checkboxHTML('manuel:' + s.nom, Perso.esc(s.nom), true)
+    ).join('');
+    this._bindChecks(cont, false);
+    const champ = document.getElementById('ssNouveau');
+    if (champ) champ.value = '';
     const closeBtn = document.getElementById('btnCloseSous');
-    if (closeBtn) closeBtn.onclick = () => { UI.closeModals(); this.renderComposer(); };
+    if (closeBtn) closeBtn.onclick = async (e) => {
+      e.preventDefault();
+      const coches = Array.from(cont.querySelectorAll('input:checked')).map(ck => ck.dataset.value);
+      const liste = [];
+      coches.forEach(v => {
+        if (v.startsWith('manuel:')) liste.push({ id: null, nom: v.slice(7) });
+        else {
+          const s = (this.sousSecteursTous || []).find(x => x.id === v);
+          if (s) liste.push(s);
+        }
+      });
+      const nouveau = champ ? champ.value.trim() : '';
+      if (nouveau) {
+        try {
+          const { data: created, error } = await sb.from('sous_secteurs').insert({ nom: nouveau }).select().single();
+          if (error) throw error;
+          this.sousSecteursTous.push(created);
+          liste.push(created);
+        } catch (err) {
+          liste.push({ id: null, nom: nouveau });
+        }
+      }
+      p.sousSecteurs = liste;
+      UI.closeModals();
+      this.renderComposer();
+    };
     UI.openModal('modal-sous-secteurs');
   },
 
@@ -360,32 +405,251 @@ const Gouv = {
       .filter(s => { if (vus.has(s.id)) return false; vus.add(s.id); return true; });
   },
 
-  addMinistere() {
-    if (!this.composerState) return;
-    if (!this.nonRegaliens().length) return UI.toast('Aucun secteur non-régalien disponible.');
-    this.composerState.postes.push({
-      uid: 'min-' + Date.now(),
-      type: 'non_regalien',
-      secteur: null,
-      intitule: '',
-      personnalite: null,
-      sousSecteurs: []
+  // ---------- Modaux du composer ----------
+  _checkboxHTML(value, label, checked, name) {
+    return '<label class="w-checkbox _w-checkbox">' +
+      '<div class="w-checkbox-input w-checkbox-input--inputType-custom checkbox' + (checked ? ' w--redirected-checked' : '') + '"></div>' +
+      '<input type="checkbox" data-value="' + value + '"' + (checked ? ' checked' : '') + (name ? ' data-groupe="' + name + '"' : '') + ' style="opacity:0;position:absolute;z-index:-1"/>' +
+      '<span class="checkbox-label-2 w-form-label">' + label + '</span></label>';
+  },
+
+  _bindChecks(cont, single) {
+    cont.querySelectorAll('input[type="checkbox"]').forEach(ck => {
+      ck.addEventListener('change', () => {
+        if (single && ck.checked) {
+          cont.querySelectorAll('input[type="checkbox"]').forEach(autre => {
+            if (autre !== ck) {
+              autre.checked = false;
+              const v = autre.parentElement.querySelector('.w-checkbox-input');
+              if (v) v.classList.remove('w--redirected-checked');
+            }
+          });
+        }
+        const visu = ck.parentElement.querySelector('.w-checkbox-input');
+        if (visu) visu.classList.toggle('w--redirected-checked', ck.checked);
+      });
     });
+  },
+
+  addMinistere() {
+    this.openMinistereModal('add');
+  },
+
+  openMinistereModal(mode, uid) {
+    if (!this.composerState) return;
+    this._ministereMode = mode || 'add';
+    this._posteEnCours = uid || null;
+    const cont = document.getElementById('mmSecteurs');
+    const manuel = document.getElementById('mmManuel');
+    if (!cont) return;
+    if (mode === 'edit') {
+      const p = this.composerState.postes.find(x => x.uid === uid);
+      if (!p) return;
+      const lies = [p.secteur, ...(p.fusion || [])].filter(Boolean).map(s => s.id);
+      cont.innerHTML = this.nonRegaliens().map(s =>
+        this._checkboxHTML(s.id, Perso.esc(s.nom), lies.includes(s.id))
+      ).join('') || '<span class="esp-vide">Aucun secteur disponible.</span>';
+      if (manuel) manuel.parentElement.style.display = 'none';
+    } else {
+      const dejaPris = this.composerState.postes
+        .filter(p => p.type === 'non_regalien' && p.secteur)
+        .flatMap(p => [p.secteur.id, ...(p.fusion || []).map(f => f.id)]);
+      const dispo = this.nonRegaliens().filter(s => !dejaPris.includes(s.id));
+      cont.innerHTML = dispo.map(s =>
+        this._checkboxHTML(s.id, Perso.esc(s.nom), false)
+      ).join('') || '<span class="esp-vide">Tous les secteurs sont déjà dans votre gouvernement.</span>';
+      if (manuel) { manuel.parentElement.style.display = ''; manuel.value = ''; }
+    }
+    this._bindChecks(cont, false);
+    UI.openModal('modal-ministere');
+  },
+
+  validerMinistere() {
+    const cont = document.getElementById('mmSecteurs');
+    const manuel = document.getElementById('mmManuel');
+    const coches = Array.from(cont.querySelectorAll('input:checked')).map(ck => ck.dataset.value);
+    if (this._ministereMode === 'edit') {
+      const p = this.composerState.postes.find(x => x.uid === this._posteEnCours);
+      if (!p) return;
+      const secteurs = coches.map(id => this.nonRegaliens().find(s => s.id === id)).filter(Boolean);
+      if (!secteurs.length) return UI.toast('Choisissez au moins un secteur.');
+      p.secteur = secteurs[0];
+      p.fusion = secteurs.slice(1);
+      this.recomputeFusion(p);
+    } else {
+      const aAjouter = coches.map(id => this.nonRegaliens().find(s => s.id === id)).filter(Boolean);
+      const titreManuel = manuel ? manuel.value.trim() : '';
+      if (!aAjouter.length && !titreManuel) return UI.toast('Choisissez un secteur ou saisissez un intitulé.');
+      aAjouter.forEach(s => {
+        this.composerState.postes.push({
+          uid: 'min-' + Date.now() + '-' + s.id.slice(0, 6),
+          type: 'non_regalien',
+          secteur: s,
+          fusion: [],
+          intitule: s.intitule_poste_defaut || s.nom,
+          personnalite: null,
+          sousSecteurs: (this.sousSecteursDefaut[s.id] || []).slice()
+        });
+      });
+      if (titreManuel) {
+        this.composerState.postes.push({
+          uid: 'min-' + Date.now() + '-manuel',
+          type: 'non_regalien',
+          secteur: null,
+          fusion: [],
+          intitule: titreManuel,
+          personnalite: null,
+          sousSecteurs: []
+        });
+      }
+    }
+    UI.closeModals();
     this.renderComposer();
   },
 
   addDelegue() {
+    this.openDelegueModal();
+  },
+
+  openDelegueModal() {
     if (!this.composerState) return;
+    const cont = document.getElementById('mdMinisteres');
+    const selSous = document.getElementById('mdSousSecteur');
+    const fonction = document.getElementById('mdFonction');
+    if (!cont) return;
+    const ministeres = this.composerState.postes.filter(p => p.type !== 'delegue');
+    cont.innerHTML = ministeres.map(p =>
+      this._checkboxHTML(p.uid, Perso.esc(p.intitule || (p.secteur ? p.secteur.nom : 'Ministère')), false, 'md')
+    ).join('');
+    this._bindChecks(cont, true); // choix unique
+    if (selSous) {
+      selSous.innerHTML = '<option value="" selected>aucun sous-secteur</option>' +
+        (this.sousSecteursTous || []).map(s => '<option value="' + s.id + '">' + Perso.esc(s.nom) + '</option>').join('');
+    }
+    if (fonction) fonction.value = '';
+    UI.openModal('modal-delegue');
+  },
+
+  validerDelegue() {
+    const cont = document.getElementById('mdMinisteres');
+    const coche = cont.querySelector('input:checked');
+    if (!coche) return UI.toast('Sélectionnez le ministère de rattachement.');
+    const ministre = this.composerState.postes.find(p => p.uid === coche.dataset.value);
+    if (!ministre) return;
+    const fonction = (document.getElementById('mdFonction').value || '').trim();
+    const sousId = document.getElementById('mdSousSecteur').value;
+    const sousSec = (this.sousSecteursTous || []).find(s => s.id === sousId);
+    const nomMin = ministre.intitule || (ministre.secteur ? ministre.secteur.nom : '');
     this.composerState.postes.push({
       uid: 'del-' + Date.now(),
       type: 'delegue',
-      secteur: null,
-      intitule: 'Délégué ministériel',
-      fonction: '',
+      secteur: ministre.secteur || null,
+      intitule: 'Délégué auprès du ' + nomMin + (fonction ? ', chargé de ' + fonction : ''),
+      fonction: fonction,
       personnalite: null,
-      sousSecteurs: []
+      sousSecteurs: sousSec ? [sousSec] : []
     });
+    UI.closeModals();
     this.renderComposer();
+  },
+
+  // ---------- Modal liste des personnalités (loupe) ----------
+  openListePerso(uid) {
+    this._posteEnCours = uid;
+    this._mlpOrdre = this._mlpOrdre || 'alpha';
+    this.renderListePerso();
+    UI.openModal('modal-liste-perso');
+  },
+
+  renderListePerso() {
+    const cont = document.getElementById('mlpListe');
+    if (!cont) return;
+    const persos = (this.persosCache || []).slice();
+    let html = '';
+    if (this._mlpOrdre === 'metier') {
+      persos.sort((a, b) => ((a.metiers || [])[0] || '').localeCompare((b.metiers || [])[0] || '', 'fr'));
+      let groupe = null;
+      persos.forEach(x => {
+        const m = ((x.metiers || [])[0] || 'Autre');
+        if (m !== groupe) { groupe = m; html += '<div class="mlp-lettre">' + Perso.esc(m) + '</div>'; }
+        html += this._lignePerso(x);
+      });
+    } else {
+      persos.sort((a, b) => (a.nom || '').localeCompare(b.nom || '', 'fr'));
+      let lettre = null;
+      persos.forEach(x => {
+        const l = (x.nom || '?').charAt(0).toUpperCase();
+        if (l !== lettre) { lettre = l; html += '<div class="mlp-lettre">' + l + '</div>'; }
+        html += this._lignePerso(x);
+      });
+    }
+    cont.innerHTML = html || '<div class="empty-msg">Aucune personnalité dans la base.</div>';
+    cont.querySelectorAll('.div-block-296').forEach(ligne => ligne.addEventListener('click', (e) => {
+      e.preventDefault();
+      const found = (this.persosCache || []).find(x => x.id === ligne.dataset.id);
+      if (!found) return;
+      this.assignPerso(this._posteEnCours, found);
+      UI.closeModals();
+    }));
+  },
+
+  _lignePerso(x) {
+    return '<div class="div-block-296" data-id="' + x.id + '">' +
+      '<a href="#" class="_w-courant _w-bold _w-maj">' + Perso.esc(x.nom) + '</a>' +
+      '<div class="_w-courant">' + Perso.esc(x.prenom || '') + '</div>' +
+      '<div class="_w-courant grey-courant">' + Perso.esc((x.metiers || []).join(', ')) + '</div>' +
+      '</div>';
+  },
+
+  assignPerso(uid, perso) {
+    const p = (this.composerState && this.composerState.postes || []).find(x => x.uid === uid);
+    if (!p) return;
+    p.personnalite = perso;
+    this.renderComposer();
+  },
+
+  // ---------- Modal ajout d'une personnalité depuis le composer ----------
+  openAddPersoModal(uid) {
+    this._posteEnCours = uid;
+    ['mapNom', 'mapPrenom', 'mapMetier', 'mapShortBio', 'mapVideo', 'mapDoc'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const opts = document.getElementById('mapOptions');
+    if (opts) opts.style.display = 'none';
+    UI.openModal('modal-add-perso');
+  },
+
+  async validerAddPerso() {
+    if (!Auth.isLoggedIn()) return UI.toast('Connectez-vous pour ajouter une personnalité.');
+    const nom = document.getElementById('mapNom').value.trim();
+    const prenom = document.getElementById('mapPrenom').value.trim();
+    if (!nom || !prenom) return UI.toast('Nom et prénom sont obligatoires.');
+    const metier = document.getElementById('mapMetier').value.trim();
+    const shortBio = document.getElementById('mapShortBio').value.trim();
+    const video = document.getElementById('mapVideo').value.trim();
+    const doc = document.getElementById('mapDoc').value.trim();
+    const liens = [];
+    if (video) liens.push({ type: 'video', titre: 'Vidéo', url: video });
+    if (doc) liens.push({ type: 'lien', titre: 'Document', url: doc });
+    try {
+      const { data: created, error } = await sb.from('personnalites').insert({
+        nom, prenom,
+        metiers: metier ? [metier] : [],
+        short_bio: shortBio || null,
+        liens,
+        statut: 0,
+        ajoute_par: Auth.currentUser.id
+      }).select().single();
+      if (error) throw error;
+      this.persosCache = null;
+      await this.loadPersosCache();
+      if (window.Perso) { Perso.all = []; }
+      if (this._posteEnCours) this.assignPerso(this._posteEnCours, created);
+      UI.closeModals();
+      UI.toast('Personnalité « ' + prenom + ' ' + nom + ' » ajoutée' + (this._posteEnCours ? ' et affectée au poste.' : '.'));
+      this.renderComposer();
+    } catch (err) { UI.toast('Erreur : ' + err.message); }
   },
 
   // ---------- Sauvegarde ----------
@@ -853,6 +1117,25 @@ const Gouv = {
     if (btnMin) btnMin.addEventListener('click', (e) => { e.preventDefault(); this.addMinistere(); });
     const btnDel = document.getElementById('btnAddDelegue');
     if (btnDel) btnDel.addEventListener('click', (e) => { e.preventDefault(); this.addDelegue(); });
+
+    // Boutons de validation des modaux du composer
+    const mmValider = document.getElementById('mmValider');
+    if (mmValider) mmValider.addEventListener('click', (e) => { e.preventDefault(); this.validerMinistere(); });
+    const mdValider = document.getElementById('mdValider');
+    if (mdValider) mdValider.addEventListener('click', (e) => { e.preventDefault(); this.validerDelegue(); });
+    const mapAjouter = document.getElementById('mapAjouter');
+    if (mapAjouter) mapAjouter.addEventListener('click', (e) => { e.preventDefault(); this.validerAddPerso(); });
+    const mapPlus = document.getElementById('mapPlus');
+    if (mapPlus) mapPlus.addEventListener('click', (e) => {
+      e.preventDefault();
+      const opts = document.getElementById('mapOptions');
+      if (opts) opts.style.display = opts.style.display === 'none' ? 'flex' : 'none';
+    });
+    const mlpOrdre = document.getElementById('mlpOrdre');
+    if (mlpOrdre) mlpOrdre.addEventListener('change', () => {
+      this._mlpOrdre = mlpOrdre.value;
+      this.renderListePerso();
+    });
     const btnDraft = document.getElementById('btnBrouillon');
     if (btnDraft) btnDraft.addEventListener('click', (e) => { e.preventDefault(); this.save(false); });
     const btnPub = document.getElementById('btnPublier');

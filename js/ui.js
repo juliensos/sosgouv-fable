@@ -396,14 +396,73 @@ const UI = {
           .filter(ss => !assoc.some(l => l.sous_secteur_id === ss.id))
           .map(ss => '<option value="' + ss.id + '">' + esc(ss.nom) + '</option>').join('');
         return '<div class="admin-secteur-bloc">' +
+          '<div class="as-titre-ligne">' +
           '<h4 class="fiche-h">' + esc(s.nom) + ' <span class="as-type">' + (s.type === 'regalien' ? 'régalien' : 'non régalien') + '</span></h4>' +
+          '<a href="#" class="_2-mini-bouton w-inline-block as-rename" data-id="' + s.id + '" data-nom="' + esc(s.nom) + '" title="Renommer"><div class="_2-picto-fontello-bouton">' + ICO.edit + '</div></a>' +
+          (s.type !== 'regalien'
+            ? '<a href="#" class="_2-mini-bouton w-inline-block as-del-secteur" data-id="' + s.id + '" data-nom="' + esc(s.nom) + '" title="Supprimer ce secteur"><div class="_2-picto-fontello-bouton">' + ICO.trash + '</div></a>'
+            : '') +
+          '</div>' +
           '<div class="as-tags">' + (tags || '<span class="esp-vide">aucun sous-secteur par défaut</span>') + '</div>' +
           '<div class="as-form">' +
           '<select class="as-select mon-inputdrop" data-secteur="' + s.id + '"><option value="" disabled selected>associer un sous-secteur…</option>' + options + '</select>' +
           '<input type="text" class="mon-input5 w-input as-new" data-secteur="' + s.id + '" placeholder="ou créer : nom du nouveau sous-secteur"/>' +
           '<a href="#" class="_2-mini-bouton w-inline-block as-add" data-secteur="' + s.id + '"><div class="_2-picto-fontello-bouton">' + ICO.addMin + '</div></a>' +
           '</div></div>';
-      }).join('');
+      }).join('') +
+        '<div class="admin-secteur-bloc as-creation">' +
+        '<h4 class="fiche-h">Créer un secteur</h4>' +
+        '<div class="as-form">' +
+        '<input type="text" class="mon-input5 w-input" id="asNewNom" placeholder="nom du secteur (ex : Culture)"/>' +
+        '<input type="text" class="mon-input5 w-input" id="asNewIntitule" placeholder="intitulé du poste par défaut (ex : Ministre de la Culture)"/>' +
+        '<select id="asNewType" class="as-select mon-inputdrop"><option value="non_regalien" selected>non régalien</option><option value="regalien">régalien</option></select>' +
+        '<a href="#" class="_2-mini-bouton w-inline-block" id="asCreate"><div class="_2-picto-fontello-bouton">' + ICO.addMin + '</div></a>' +
+        '</div></div>';
+
+      // Renommer un secteur
+      cont.querySelectorAll('.as-rename').forEach(btn => btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const nouveau = window.prompt('Nouveau nom du secteur :', btn.dataset.nom);
+        if (!nouveau || !nouveau.trim() || nouveau.trim() === btn.dataset.nom) return;
+        try {
+          const { error } = await sb.from('secteurs').update({ nom: nouveau.trim() }).eq('id', btn.dataset.id);
+          if (error) throw error;
+          if (window.Gouv) Gouv.referentielsCharges = false;
+          this.loadAdminSecteurs();
+        } catch (err) { this.toast('Erreur : ' + err.message); }
+      }));
+
+      // Supprimer un secteur (non régalien uniquement)
+      cont.querySelectorAll('.as-del-secteur').forEach(btn => btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (!window.confirm('Supprimer le secteur « ' + btn.dataset.nom + ' » ? Les postes des gouvernements existants qui l\'utilisent perdront leur référence de secteur (le nom du poste est conservé). Définitif.')) return;
+        try {
+          const { error } = await sb.from('secteurs').delete().eq('id', btn.dataset.id);
+          if (error) throw error;
+          if (window.Gouv) Gouv.referentielsCharges = false;
+          this.toast('Secteur supprimé.');
+          this.loadAdminSecteurs();
+        } catch (err) { this.toast('Erreur : ' + err.message); }
+      }));
+
+      // Créer un secteur
+      const asCreate = document.getElementById('asCreate');
+      if (asCreate) asCreate.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const nom = document.getElementById('asNewNom').value.trim();
+        const intitule = document.getElementById('asNewIntitule').value.trim();
+        const type = document.getElementById('asNewType').value;
+        if (!nom) return this.toast('Donnez un nom au secteur.');
+        try {
+          const { error } = await sb.from('secteurs').insert({
+            nom, type, intitule_poste_defaut: intitule || ('Ministre : ' + nom)
+          });
+          if (error) throw error;
+          if (window.Gouv) Gouv.referentielsCharges = false;
+          this.toast('Secteur « ' + nom + ' » créé.');
+          this.loadAdminSecteurs();
+        } catch (err) { this.toast('Erreur : ' + err.message); }
+      });
 
       // Retirer une association
       cont.querySelectorAll('.as-del').forEach(btn => btn.addEventListener('click', async (e) => {
