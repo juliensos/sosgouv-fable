@@ -111,6 +111,7 @@ const UI = {
     if (oldLabel) oldLabel.textContent = logged ? Auth.currentUser.username : '';
 
     // Footer admin (jaune) visible uniquement pour les admins
+    document.body.classList.toggle('admin-connecte', Auth.isAdmin());
     const adminFooter = document.getElementById('adminFooter');
     if (adminFooter) {
       const admin = Auth.isAdmin();
