@@ -34,12 +34,20 @@
   width: auto !important;
   height: auto !important;
 }
-._3-fond-modal { position: fixed; inset: 0; z-index: 1500; background: rgba(0,0,0,0.45); }
+#fondModal { position: fixed; inset: 0; z-index: 1500; background: rgba(0,0,0,0.45); }
 .bm-parent .cont-flex-50-50 { position: relative; width: min(94vw, 640px); }
 .pm-parent .cont-flex-50-50 { position: relative; }
 .bm-parent .cont-flex-50-50 { width: min(94vw, 760px); }
 ._3-small-modal-stroke, ._3-big-modal-stroke { background: var(--sos-white, #fff); border: 1px solid var(--black-100, #000); padding: 16px; max-height: 82vh; overflow-y: auto; }
-._3-close-bouton { position: absolute; right: -6px; top: -14px; z-index: 10; background: var(--sos-white, #fff); border: 1px solid var(--black-100, #000); border-radius: 20px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
+.pm-parent ._3-close-bouton, .bm-parent ._3-close-bouton {
+  top: 0;
+  right: 0;
+  left: auto;
+  z-index: 10;
+  border-bottom: 5px solid #000;
+  border-left: 5px solid #000;
+  border-right: none;
+}
 
 /* ---- Toast ---- */
 .toast, #sosgouv-toast {
@@ -357,4 +365,17 @@ body { scroll-padding-bottom: 50px; }
 ._w-link-bloc-button-square { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; background: var(--sos-green, #5ac6b1); flex: none; }
 
 /* Bouton d'ouverture du guide dans le footer */
-.foot-public-liens { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0; }
+.foot-public-liens {
+  position: fixed;
+  right: 12px;
+  bottom: 8px;
+  z-index: 1990;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  background: var(--sos-white, #fff);
+  padding: 4px 10px;
+  border: 1px solid var(--black-100, #000);
+}
+body.admin-connecte .foot-public-liens { bottom: 46px; }
