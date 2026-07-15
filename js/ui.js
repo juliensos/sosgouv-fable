@@ -319,15 +319,29 @@ const UI = {
     if (saveInfoBtn) saveInfoBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       if (!Auth.isLoggedIn()) return this.toast('Vous devez être connecté.');
+      const username = document.getElementById('diUsername').value.trim();
+      const password = document.getElementById('diPassword').value;
+      if (!username) return this.toast('Le nom d\'utilisateur est obligatoire.');
+      if (!password) return this.toast('Le mot de passe ne peut pas être vide.');
       try {
         await Auth.updateProfile({
+          username,
+          password,
+          afficher_username: document.getElementById('diAffUser').checked,
           nom: document.getElementById('infoNom').value || '',
           prenom: document.getElementById('infoPrenom').value || '',
           email: document.getElementById('infoEmail').value || ''
         });
+        this.updateMenu();
         this.toast('Informations enregistrées.');
         this.closeModals();
       } catch (err) { this.toast('Erreur : ' + err.message); }
+    });
+    // Case à cocher visuelle Webflow
+    const diAff = document.getElementById('diAffUser');
+    if (diAff) diAff.addEventListener('change', () => {
+      const visu = document.getElementById('diAffVisu');
+      if (visu) visu.classList.toggle('w--redirected-checked', diAff.checked);
     });
 
     // Ouverture données personnelles
@@ -335,18 +349,25 @@ const UI = {
     if (openInfos) openInfos.addEventListener('click', async (e) => {
       e.preventDefault();
       if (!Auth.isLoggedIn()) return this.openModal('modal-connect');
-      document.getElementById('infoNom').value = Auth.currentUser.nom || '';
-      document.getElementById('infoPrenom').value = Auth.currentUser.prenom || '';
-      document.getElementById('infoEmail').value = Auth.currentUser.email || '';
+      const remplir = (u) => {
+        document.getElementById('diUsername').value = u.username || '';
+        document.getElementById('diPassword').value = u.password || '';
+        const aff = u.afficher_username !== false;
+        document.getElementById('diAffUser').checked = aff;
+        const visu = document.getElementById('diAffVisu');
+        if (visu) visu.classList.toggle('w--redirected-checked', aff);
+        document.getElementById('infoNom').value = u.nom || '';
+        document.getElementById('infoPrenom').value = u.prenom || '';
+        document.getElementById('infoEmail').value = u.email || '';
+      };
+      remplir(Auth.currentUser);
       this.openModal('modal-infos');
       // Valeurs fraîches depuis la base (la session locale peut être en retard)
       try {
-        const { data } = await sb.from('users').select('nom, prenom, email')
+        const { data } = await sb.from('users').select('username, password, afficher_username, nom, prenom, email')
           .eq('id', Auth.currentUser.id).maybeSingle();
         if (data) {
-          document.getElementById('infoNom').value = data.nom || '';
-          document.getElementById('infoPrenom').value = data.prenom || '';
-          document.getElementById('infoEmail').value = data.email || '';
+          remplir(data);
           Object.assign(Auth.currentUser, data);
           Auth.saveSession(Auth.currentUser);
         }
@@ -549,45 +570,86 @@ const UI = {
       const el = document.getElementById(id);
       if (el) el.innerHTML = html || '<div class="esp-vide">Rien pour le moment.</div>';
     };
+    const dateFr = d => d ? new Date(d).toLocaleDateString('fr-FR') : '';
     try {
-      const [likes, epP, epG, votes, comms, persos, gouvs] = await Promise.all([
+      const [likes, epP, epG, votes, comms, persos, gouvs, stats, users] = await Promise.all([
         sb.from('personnalites_likes').select('personnalite_id').eq('user_id', uid),
         sb.from('personnalites_epingles').select('personnalite_id').eq('user_id', uid),
         sb.from('gouvernements_epingles').select('gouvernement_id').eq('user_id', uid),
         sb.from('gouvernements_votes').select('gouvernement_id, note').eq('user_id', uid),
         sb.from('commentaires').select('*').eq('user_id', uid),
-        sb.from('personnalites').select('id, nom, prenom'),
-        sb.from('gouvernements').select('id, titre, is_published, created_by')
+        sb.from('personnalites').select('id, nom, prenom, ajoute_par'),
+        sb.from('gouvernements').select('id, titre, is_published, created_by, created_at'),
+        sb.from('v_gouvernements_stats').select('*'),
+        sb.from('users').select('id, username')
       ]);
+      const gById = id => (gouvs.data || []).find(x => x.id === id);
+      const statsById = id => (stats.data || []).find(x => x.id === id) || {};
+      const userName = id => ((users.data || []).find(u => u.id === id) || {}).username || '?';
+      const pById = id => (persos.data || []).find(x => x.id === id);
+
+      const icones = (g, opts) => {
+        const st = statsById(g.id);
+        const note = st.note_moyenne != null ? String(st.note_moyenne).replace('.', ',') : '–';
+        let h = '';
+        if (opts.vote != null) {
+          h += '<div class="like-bloc esp-votation" data-esp-vote="' + esc(g.id) + '">' +
+            [1, 2, 3, 4, 5].map(n =>
+              '<span class="etoile fontello-icon esp-etoile ' + (opts.vote >= n ? 'pleine' : '') + '" data-note="' + n + '" title="' + n + '/5">' +
+              (opts.vote >= n ? ICO.starFull : ICO.starEmpty) + '</span>').join('') + '</div>';
+        } else {
+          h += '<div class="like-bloc"><div class="_2-picto-fontello-bouton black-stroke yellow">' + ICO.starFull + '</div>' +
+            '<div class="_w-courant _w-bold yellow"><sup>' + note + '</sup></div></div>';
+        }
+        h += '<div class="like-bloc"><div class="_2-picto-fontello-bouton black-stroke">' + ICO.cond + '</div>' +
+          '<div class="_w-courant _w-bold"><sup>' + (st.nb_commentaires || 0) + '</sup></div></div>';
+        if (opts.editable) {
+          h += '<a href="#" class="_2-mini-bouton mini w-inline-block" data-esp-edit="' + esc(g.id) + '" title="Modifier">' +
+            '<div class="_2-picto-fontello-bouton">' + ICO.edit + '</div></a>';
+          h += '<a href="#" class="_2-mini-bouton mini w-inline-block" data-esp-del="' + esc(g.id) + '" title="Supprimer">' +
+            '<div class="fontello-icon pink">' + ICO.cross + '</div></a>';
+        }
+        return h;
+      };
+
+      const ligneGouv = (g, opts) => {
+        if (!g) return '';
+        const meta = (g.is_published ? 'publié le ' : 'le ') + dateFr(g.created_at) +
+          (opts.auteur ? ' par <code class="code-13">' + esc(userName(g.created_by)) + '</code>' : '');
+        return '<div class="div-block-331">' +
+          '<div class="text-block-75"><a href="#" data-esp-gouv="' + esc(g.id) + '">' + esc(g.titre || 'Sans titre') + '</a></div>' +
+          '<div class="text-block-77">' + meta + '</div>' +
+          '<div class="div-block-334">' + icones(g, opts) + '</div></div>';
+      };
+
+      const lignePerso = (id, ico) => {
+        const p = pById(id);
+        if (!p) return '';
+        return '<div class="div-block-331">' +
+          '<div class="text-block-75"><a href="#" data-esp-perso="' + esc(p.id) + '">' + esc((p.prenom ? p.prenom + ' ' : '') + p.nom) + '</a></div>' +
+          '<div class="text-block-77">ajouté par <code class="code-13">' + esc(userName(p.ajoute_par)) + '</code></div>' +
+          '<div class="div-block-334"><div class="like-bloc"><div class="_2-picto-fontello-bouton black-stroke pink">' + ico + '</div></div></div></div>';
+      };
+
+      const mesPublies = (gouvs.data || []).filter(g => g.created_by === uid && g.is_published);
       const mesBrouillons = (gouvs.data || []).filter(g => g.created_by === uid && !g.is_published);
-      const pName = id => {
-        const p = (persos.data || []).find(x => x.id === id);
-        return p ? ((p.prenom ? p.prenom + ' ' : '') + p.nom) : null;
-      };
-      const gTitre = id => {
-        const g = (gouvs.data || []).find(x => x.id === id);
-        return g ? (g.titre || 'Sans titre') : null;
-      };
-      const persoItem = id => {
-        const n = pName(id);
-        return n ? '<a href="#" class="esp-item" data-esp-perso="' + esc(id) + '">' + esc(n) + '</a>' : '';
-      };
-      const gouvItem = (id, extra) => {
-        const t = gTitre(id);
-        return t ? '<a href="#" class="esp-item" data-esp-gouv="' + esc(id) + '">' + esc(t) + (extra || '') + '</a>' : '';
-      };
-      set('esp-likes', (likes.data || []).map(l => persoItem(l.personnalite_id)).filter(Boolean).join(''));
-      set('esp-epingles-perso', (epP.data || []).map(l => persoItem(l.personnalite_id)).filter(Boolean).join(''));
-      set('esp-epingles-gouv', (epG.data || []).map(l => gouvItem(l.gouvernement_id)).filter(Boolean).join(''));
-      set('esp-brouillons', mesBrouillons.map(g =>
-        '<a href="#" class="esp-item esp-brouillon" data-esp-brouillon="' + esc(g.id) + '">&#128221; ' + esc(g.titre || 'Sans titre') + '</a>'
-      ).join(''));
-      set('esp-votes', (votes.data || []).map(v => gouvItem(v.gouvernement_id, ' <span class="esp-note">' + '&#9733;'.repeat(v.note) + '</span>')).filter(Boolean).join(''));
+
+      set('esp-publies', mesPublies.map(g => ligneGouv(g, { editable: true })).join(''));
+      set('esp-brouillons', mesBrouillons.map(g => ligneGouv(g, { editable: true })).join(''));
+      set('esp-epingles-gouv', (epG.data || []).map(l => ligneGouv(gById(l.gouvernement_id), { auteur: true })).filter(Boolean).join(''));
+      set('esp-votes', (votes.data || []).map(v => ligneGouv(gById(v.gouvernement_id), { auteur: true, vote: v.note })).filter(Boolean).join(''));
       set('esp-commentaires', (comms.data || []).map(c => {
-        const cible = c.gouvernement_id ? gTitre(c.gouvernement_id) : null;
-        return '<div class="esp-comm">' + (cible ? '<span class="esp-comm-cible">sur ' + esc(cible) + ' :</span> ' : '') + esc(c.contenu) + '</div>';
+        const g = c.gouvernement_id ? gById(c.gouvernement_id) : null;
+        return '<div class="div-block-331">' +
+          '<div>&quot;' + esc(c.contenu) + '&quot;</div>' +
+          (g ? '<div class="text-block-77 mini">sur <a href="#" data-esp-gouv="' + esc(g.id) + '">' + esc(g.titre || 'Sans titre') + '</a>' +
+            ' publié par <code class="code-13">' + esc(userName(g.created_by)) + '</code></div>' : '') +
+          '</div>';
       }).join(''));
-      // Navigation vers les fiches et détails
+      set('esp-likes', (likes.data || []).map(l => lignePerso(l.personnalite_id, ICO.likeFull)).filter(Boolean).join(''));
+      set('esp-epingles-perso', (epP.data || []).map(l => lignePerso(l.personnalite_id, ICO.pin)).filter(Boolean).join(''));
+
+      // Navigation et actions
       document.querySelectorAll('[data-esp-perso]').forEach(a => a.addEventListener('click', async (e) => {
         e.preventDefault();
         this.closeModals();
@@ -602,10 +664,31 @@ const UI = {
         this.showSection(1);
         if (window.Gouv && Gouv.openDetail) Gouv.openDetail(a.dataset.espGouv);
       }));
-      document.querySelectorAll('[data-esp-brouillon]').forEach(a => a.addEventListener('click', (e) => {
+      document.querySelectorAll('[data-esp-edit]').forEach(a => a.addEventListener('click', (e) => {
         e.preventDefault();
         this.closeModals();
-        if (window.Gouv && Gouv.loadDraft) Gouv.loadDraft(a.dataset.espBrouillon);
+        if (window.Gouv) Gouv.editGouvernement(a.dataset.espEdit);
+      }));
+      document.querySelectorAll('[data-esp-del]').forEach(a => a.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (window.Gouv) {
+          await Gouv.deleteGouv(a.dataset.espDel);
+          this.loadEspacePerso();
+        }
+      }));
+      // Votation directe dans "Mes votes"
+      document.querySelectorAll('.esp-votation .esp-etoile').forEach(et => et.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const gid = et.closest('[data-esp-vote]').dataset.espVote;
+        const note = Number(et.dataset.note);
+        try {
+          const { data: existant } = await sb.from('gouvernements_votes')
+            .select('id').eq('gouvernement_id', gid).eq('user_id', uid).maybeSingle();
+          if (existant) await sb.from('gouvernements_votes').update({ note }).eq('id', existant.id);
+          else await sb.from('gouvernements_votes').insert({ gouvernement_id: gid, user_id: uid, note });
+          if (window.Gouv) Gouv.votesUser[gid] = note;
+          this.loadEspacePerso();
+        } catch (err) { this.toast('Erreur : ' + err.message); }
       }));
     } catch (err) {
       set('esp-likes', '<div class="esp-vide">Erreur de chargement : ' + esc(err.message) + '</div>');
@@ -613,5 +696,14 @@ const UI = {
   }
 };
 
+
+// Nom affiché selon la préférence utilisateur (données personnelles)
+window.displayUser = function(u) {
+  if (!u) return '?';
+  if (u.afficher_username === false && ((u.prenom || '') + (u.nom || '')).trim()) {
+    return ((u.prenom || '') + ' ' + (u.nom || '')).trim();
+  }
+  return u.username || '?';
+};
 window.UI = UI;
 document.addEventListener('DOMContentLoaded', () => UI.init());

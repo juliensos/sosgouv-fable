@@ -107,6 +107,20 @@ const Gouv = {
     this.initComposer();
   },
 
+  // Modifier un gouvernement (brouillon, ou publié tant que personne n'a voté)
+  async editGouvernement(id) {
+    try {
+      const { data: votes } = await sb.from('gouvernements_votes').select('id').eq('gouvernement_id', id).limit(1);
+      const { data: g } = await sb.from('gouvernements').select('is_published, created_by').eq('id', id).single();
+      if (!g) return UI.toast('Gouvernement introuvable.');
+      if (!Auth.isAdmin() && (!Auth.isLoggedIn() || g.created_by !== Auth.currentUser.id))
+        return UI.toast('Vous ne pouvez modifier que vos propres gouvernements.');
+      if (g.is_published && votes && votes.length)
+        return UI.toast('Ce gouvernement a déjà reçu des votes : il n\'est plus modifiable.');
+      await this.loadDraft(id);
+    } catch (err) { UI.toast('Erreur : ' + err.message); }
+  },
+
   // Reprendre un brouillon existant dans le composer
   async loadDraft(id) {
     UI.showSection(2);
@@ -115,7 +129,7 @@ const Gouv = {
       await this.loadPersosCache();
       const [gRes, ssRes, fusRes, allSous] = await Promise.all([
         sb.from('gouvernements')
-          .select('*, users!created_by(username), postes_gouvernement(*, personnalites!personnalite_id(id, nom, prenom, statut), secteurs!secteur_id(nom))')
+          .select('*, users!created_by(username, nom, prenom, afficher_username), postes_gouvernement(*, personnalites!personnalite_id(id, nom, prenom, statut), secteurs!secteur_id(nom))')
           .eq('id', id).single(),
         sb.from('postes_sous_secteurs').select('*'),
         sb.from('postes_secteurs_fusionnes').select('*'),
@@ -757,6 +771,13 @@ const Gouv = {
       // 1. Gouvernement (création, ou mise à jour si on édite un brouillon)
       let gouv;
       if (this.composerState.editingId) {
+        const { data: votesActuels } = await sb.from('gouvernements_votes')
+          .select('id').eq('gouvernement_id', this.composerState.editingId).limit(1);
+        const { data: gActuel } = await sb.from('gouvernements')
+          .select('is_published').eq('id', this.composerState.editingId).single();
+        if (gActuel && gActuel.is_published && votesActuels && votesActuels.length) {
+          return UI.toast('Ce gouvernement a reçu des votes entre-temps : il n\'est plus modifiable.');
+        }
         const { data, error: uErr } = await sb
           .from('gouvernements')
           .update({ titre, description, is_published: !!publish })
@@ -826,11 +847,16 @@ const Gouv = {
 
       UI.toast(publish
         ? 'Gouvernement publié : « ' + titre + ' » (' + postesRows.length + ' postes)'
-        : 'Brouillon enregistré : « ' + titre + ' »');
-      document.getElementById('gouvTitre').value = '';
-      document.getElementById('gouvDescription').value = '';
-      this.resetComposer();
-      if (publish) UI.showSection(1);
+        : 'Brouillon enregistré : « ' + titre + ' » — vous pouvez continuer à le modifier.');
+      if (publish) {
+        document.getElementById('gouvTitre').value = '';
+        document.getElementById('gouvDescription').value = '';
+        this.resetComposer();
+        UI.showSection(1);
+      } else {
+        // Le composer reste tel quel ; la prochaine sauvegarde mettra à jour ce même brouillon
+        this.composerState.editingId = gouv.id;
+      }
     } catch (err) {
       UI.toast('Erreur lors de la sauvegarde : ' + err.message);
     }
@@ -845,7 +871,7 @@ const Gouv = {
       await this.loadReferentiels();
       const [gRes, statsRes] = await Promise.all([
         sb.from('gouvernements')
-          .select('*, users!created_by(username), postes_gouvernement(*, personnalites!personnalite_id(id, nom, prenom, statut), secteurs!secteur_id(nom))')
+          .select('*, users!created_by(username, nom, prenom, afficher_username), postes_gouvernement(*, personnalites!personnalite_id(id, nom, prenom, statut), secteurs!secteur_id(nom))')
           .eq('is_published', true)
           .order('created_at', { ascending: false }),
         sb.from('gouvernements_stats').select('*')
@@ -974,7 +1000,7 @@ const Gouv = {
         </div>
         <div class="cr-e-par">
           <div class="_w-courant _w-mini-grey">gouvernement créé par</div>
-          <a href="#" class="_w-courant _w-bold cap gouv-auteur">${Perso.esc(g.users ? g.users.username : '?')}</a>
+          <a href="#" class="_w-courant _w-bold cap gouv-auteur">${Perso.esc(displayUser(g.users))}</a>
           <div class="_w-courant _w-mini-grey">&bull; ${st.nb_commentaires || 0} commentaire(s)</div>
         </div>
         <div class="gouv-membres membres-regaliens">${regs.map(ligne).join('')}</div>
@@ -1079,45 +1105,97 @@ const Gouv = {
     const cont = document.getElementById('detail-contenu');
     if (!cont) return;
 
-    // Secteurs fusionnés éventuels
+    // Secteurs fusionnés et sous-secteurs de chaque poste
     let fusionsParPoste = {};
+    let sousParPoste = {};
     try {
-      const { data: fus } = await sb.from('postes_secteurs_fusionnes').select('*');
-      (fus || []).forEach(r => {
+      const [fusRes, pssRes, ssRes] = await Promise.all([
+        sb.from('postes_secteurs_fusionnes').select('*'),
+        sb.from('postes_sous_secteurs').select('*'),
+        sb.from('sous_secteurs').select('*')
+      ]);
+      (fusRes.data || []).forEach(r => {
         const s = this.secteurs.find(x => x.id === r.secteur_id);
         if (!s) return;
         (fusionsParPoste[r.poste_id] = fusionsParPoste[r.poste_id] || []).push(s.nom);
       });
+      const ssById = {};
+      (ssRes.data || []).forEach(s => ssById[s.id] = s.nom);
+      (pssRes.data || []).forEach(r => {
+        const nom = ssById[r.sous_secteur_id];
+        if (!nom) return;
+        (sousParPoste[r.poste_id] = sousParPoste[r.poste_id] || []).push(nom);
+      });
     } catch (err) { /* facultatif */ }
 
+    const st = (this.stats && this.stats[g.id]) || {};
+    const note = st.note_moyenne != null ? String(st.note_moyenne).replace('.', ',') : null;
+    const maNote = this.votesUser[g.id] || 0;
+    const pinned = this.epingles.has(g.id);
     const postes = (g.postes_gouvernement || []).slice().sort((a, b) => a.ordre - b.ordre);
-    const bloc = (label, list) => list.length
-      ? '<h4>' + label + '</h4>' + list.map(p => {
-          const perso = p.personnalites;
-          const fusion = (fusionsParPoste[p.id] || []).map(n => ' + ' + Perso.esc(n)).join('');
-          return '<div class="detail-poste"><span class="dp-intitule">' +
-            Perso.esc(p.nom_poste_personnalise || (p.secteurs ? p.secteurs.nom : '')) + fusion +
-            (p.fonction_delegue ? ', ' + Perso.esc(p.fonction_delegue) : '') +
-            '</span><span class="dp-perso">' +
-            (perso ? Perso.esc((perso.prenom || '') + ' ' + perso.nom) : '<em>non attribué</em>') +
-            '</span></div>';
-        }).join('')
-      : '';
+
+    const blocPoste = (p) => {
+      const perso = p.personnalites;
+      const fusion = (fusionsParPoste[p.id] || []).map(n => ' + ' + Perso.esc(n)).join('');
+      const secteurNom = p.secteurs ? Perso.esc(p.secteurs.nom) + fusion : '';
+      const sous = (sousParPoste[p.id] || []).map(n =>
+        '<div class="h1-grey _2-soussect">' + Perso.esc(n) + '</div>').join('');
+      const intitule = p.nom_poste_personnalise || (p.secteurs ? p.secteurs.nom : '') || '';
+      return '<div class="bloc-poste-gov-detail">' +
+        '<div class="div-block-336">' +
+        (perso
+          ? '<a href="#" class="nom-prenom-gov-detail membre-fiche" data-perso-id="' + perso.id + '">' + Perso.esc((perso.prenom || '') + ' ' + perso.nom) + '</a>'
+          : '<div class="nom-prenom-gov-detail non-attribue"><em>non attribué</em></div>') +
+        '<h3 class="h1-color">' + Perso.esc(intitule) + (p.fonction_delegue ? ', ' + Perso.esc(p.fonction_delegue) : '') + '</h3>' +
+        '</div>' +
+        ((secteurNom || sous)
+          ? '<div class="secteur-sous-secteurs">' +
+            (secteurNom ? '<div class="h1-grey bold">' + secteurNom + '</div>' : '') +
+            (sous ? '<div class="div-block-317">' + sous + '</div>' : '') +
+            '</div>'
+          : '') +
+        '</div>';
+    };
+
+    const regs = postes.filter(p => p.type === 'regalien');
+    const autres = postes.filter(p => p.type !== 'regalien');
 
     cont.innerHTML =
-      '<h1 class="detail-titre">' + Perso.esc(g.titre) + '</h1>' +
-      '<div class="vote gouv-vote detail-vote">' +
-      [1,2,3,4,5].map(n =>
-        '<span class="etoile detail-etoile fontello-icon ' + ((this.votesUser[g.id] || 0) >= n ? 'pleine active' : '') + '" data-note="' + n + '" title="' + n + '/5">' + ((this.votesUser[g.id] || 0) >= n ? ICO.starFull : ICO.starEmpty) + '</span>'
-      ).join('') + '</div>' +
-      '<div class="cr-e-par"><span class="_w-courant _w-mini-grey">créé par</span> <span class="_w-courant _w-bold cap">' + Perso.esc(g.users ? g.users.username : '?') + '</span></div>' +
+      '<div class="_4-content-gm"><div class="gov-compact-bloc detail2">' +
+      '<div class="gov-title">' +
+        '<div class="filet govlinedetails"><h1 class="heading-4-nom-prenom d">' + Perso.esc(g.titre) + '</h1></div>' +
+        '<div class="bouton-gov-detail">' +
+          '<a href="#" class="_2-mini-bouton w-inline-block" id="detailShare"><div class="_2-picto-fontello-bouton">' + ICO.send + '</div><h6 class="heading-dyn"><strong class="heading-bold-text">faire suivre</strong></h6></a>' +
+          '<a href="#" class="_2-mini-bouton w-inline-block ' + (pinned ? 'active' : '') + '" id="detailPin"><div class="_2-picto-fontello-bouton">' + ICO.pin + '</div><h6 class="heading-dyn"><strong class="heading-bold-text">' + (pinned ? 'épinglé' : 'épingler') + '</strong></h6></a>' +
+        '</div>' +
+        '<div class="vote-bloc-detail">' +
+          '<div class="div-block-323">' +
+          [1,2,3,4,5].map(n =>
+            '<span class="radio-button-3 w-radio-input etoile ' + (maNote >= n ? 'pleine active w--redirected-checked' : '') + '" data-note="' + n + '" title="' + n + '/5"></span>'
+          ).join('') + '</div>' +
+          '<div class="_w-courant mini-jaune">Votre note <span class="gouv-nbvotes">(' + (st.nb_votes || 0) + ')</span></div>' +
+        '</div>' +
+        '<div class="_3-star-bloc">' +
+        (note != null
+          ? '<svg class="note-star" viewBox="0 0 300 300" width="54" height="54" xmlns="http://www.w3.org/2000/svg">' +
+            '<polygon points="150 41.3 190.19 0 204.35 55.86 259.81 40.19 244.14 95.65 300 109.81 258.7 150 300 190.19 244.14 204.35 259.81 259.81 204.35 244.14 190.19 300 150 258.7 109.81 300 95.65 244.14 40.19 259.81 55.86 204.35 0 190.19 41.3 150 0 109.81 55.86 95.65 40.19 40.19 95.65 55.86 109.81 0 150 41.3" fill="#ffbb47"/>' +
+            '<text x="150" y="150" text-anchor="middle" dominant-baseline="central" font-size="88" font-weight="900" fill="#ffffff" font-family="Pinokiosanstrial, Arial, sans-serif">' + note + '</text></svg>'
+          : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="cr-e-par"><span class="_w-courant _w-mini-grey">gouvernement créé par</span> <span class="_w-courant _w-bold cap">' + Perso.esc(displayUser(g.users)) + '</span></div>' +
       (g.description ? '<p class="detail-desc">' + Perso.esc(g.description) + '</p>' : '') +
-      bloc('Ministres régaliens', postes.filter(p => p.type === 'regalien')) +
-      bloc('Ministres', postes.filter(p => p.type === 'non_regalien')) +
-      bloc('Délégués ministériels', postes.filter(p => p.type === 'delegue')) +
+      '<div class="note-comment">' +
+        '<div class="bouton-comment">' +
+        '<span class="_2-mini-bouton _2"><span class="_2-picto-fontello-bouton">' + ICO.starFull + '</span><span class="mini-current mini-bold">' + (st.nb_votes || 0) + '</span></span>' +
+        '<span class="_2-mini-bouton _2"><span class="_2-picto-fontello-bouton">' + ICO.cond + '</span><span class="mini-current mini-bold">' + (st.nb_commentaires || 0) + ' commentaires</span></span>' +
+        '</div></div>' +
+      regs.map(blocPoste).join('') +
+      (autres.length ? '<div class="div-block-337"></div>' + autres.map(blocPoste).join('') : '') +
       '<h4>Commentaires</h4><div id="detail-commentaires"><div class="loading">Chargement…</div></div>' +
       '<div class="comm-add-row"><input type="text" id="newComment" class="mon-input5 w-input champ-texte" placeholder="Votre commentaire…">' +
-      '<a href="#" class="_2-mini-bouton w-inline-block btn-envoyer-comm" id="btnAddComment"><div class="_2-picto-fontello-bouton">' + ICO.send + '</div></a></div>';
+      '<a href="#" class="_2-mini-bouton w-inline-block btn-envoyer-comm" id="btnAddComment"><div class="_2-picto-fontello-bouton">' + ICO.send + '</div></a></div>' +
+      '</div></div>';
 
     UI.openModal('modal-detail');
     this.loadComments(id);
@@ -1125,6 +1203,22 @@ const Gouv = {
     cont.querySelectorAll('.etoile').forEach(star => {
       star.addEventListener('click', () => this.vote(id, Number(star.dataset.note)));
     });
+    const dShare = cont.querySelector('#detailShare');
+    if (dShare) dShare.addEventListener('click', (e) => { e.preventDefault(); this.share(id); });
+    const dPin = cont.querySelector('#detailPin');
+    if (dPin) dPin.addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (!UI.requireAuth()) return;
+      await this.togglePin(id, dPin);
+      this.openDetail(id);
+    });
+    cont.querySelectorAll('.membre-fiche').forEach(a => a.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const pid = a.dataset.persoId;
+      if (!pid || !window.Perso) return;
+      if (!Perso.all || !Perso.all.length) await Perso.loadList();
+      Perso.openFiche(pid);
+    }));
   },
 
   async loadComments(gouvId) {
@@ -1133,7 +1227,7 @@ const Gouv = {
     try {
       const { data, error } = await sb
         .from('commentaires')
-        .select('*, users!user_id(username)')
+        .select('*, users!user_id(username, nom, prenom, afficher_username)')
         .eq('gouvernement_id', gouvId)
         .order('created_at', { ascending: true });
       if (error) throw error;
@@ -1142,7 +1236,7 @@ const Gouv = {
       const reponsesDe = pid => tous.filter(c => c.parent_id === pid);
       const rend = (c, prof) =>
         '<div class="comm-item' + (prof ? ' comm-reponse' : '') + '">' +
-        '<span class="comm-auteur">' + Perso.esc(c.users ? c.users.username : '?') + '</span> ' +
+        '<span class="comm-auteur">' + Perso.esc(displayUser(c.users)) + '</span> ' +
         Perso.esc(c.contenu) +
         ' <a href="#" class="comm-repondre">répondre</a>' +
         '<div class="comm-reponse-form" style="display:none">' +

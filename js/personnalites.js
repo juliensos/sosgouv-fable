@@ -275,25 +275,43 @@ const Perso = {
     } catch (err) { /* section facultative */ }
   },
 
-  // ---------- Ajout simple (section 3) ----------
+  // ---------- Ajout simple (section 3, clone du modal du composer) ----------
   async addSimple() {
-    if (!Auth.isLoggedIn()) return UI.toast('Connectez-vous pour ajouter une personnalité.');
-    const nom = document.getElementById('addNom').value.trim();
-    const prenom = document.getElementById('addPrenom').value.trim();
-    const metier = document.getElementById('addMetier').value.trim();
-    if (!nom) return UI.toast('Le nom est requis.');
+    if (!UI.requireAuth()) return;
+    const nom = document.getElementById('pNom').value.trim();
+    const prenom = document.getElementById('pPrenom').value.trim();
+    if (!nom || !prenom) return UI.toast('Nom et prénom sont obligatoires.');
+    const metier = document.getElementById('pMetier').value.trim();
+    const wiki = document.getElementById('pWiki').value.trim();
+    const liens = [];
+    document.querySelectorAll('#pVideoRows .map-video-input').forEach(inp => {
+      const v = inp.value.trim();
+      if (v) liens.push({ type: 'video', titre: 'Vidéo', url: v });
+    });
+    document.querySelectorAll('#pLienRows .map-lien-input').forEach(inp => {
+      const v = inp.value.trim();
+      if (v) liens.push({ type: 'lien', titre: 'Document', url: v });
+    });
+    if (wiki) liens.push({ type: 'lien', titre: 'Fiche Wikipédia', url: wiki });
     try {
       const { error } = await sb.from('personnalites').insert({
         nom, prenom,
         metiers: metier ? [metier] : [],
+        liens,
         statut: 0,
         ajoute_par: Auth.currentUser.id
       });
       if (error) throw error;
-      document.getElementById('addNom').value = '';
-      document.getElementById('addPrenom').value = '';
-      document.getElementById('addMetier').value = '';
-      UI.toast('Personnalité ajoutée !');
+      ['pNom', 'pPrenom', 'pMetier', 'pWiki'].forEach(id => { document.getElementById(id).value = ''; });
+      ['pVideoRows', 'pLienRows'].forEach(id => {
+        const zone = document.getElementById(id);
+        zone.querySelectorAll('.div-block-332').forEach((row, i) => { if (i > 0) row.remove(); });
+        const premier = zone.querySelector('input');
+        if (premier) premier.value = '';
+      });
+      if (window.Gouv) Gouv.persosCache = null;
+      this.all = [];
+      UI.toast('Personnalité « ' + prenom + ' ' + nom + ' » ajoutée !');
     } catch (err) { UI.toast('Erreur : ' + err.message); }
   },
 
@@ -416,8 +434,26 @@ const Perso = {
   init() {
     if (this._initDone) return;
     this._initDone = true;
-    const btnAdd = document.getElementById('btnAddPerso');
+    const btnAdd = document.getElementById('pAjouter');
     if (btnAdd) btnAdd.addEventListener('click', (e) => { e.preventDefault(); this.addSimple(); });
+    // Boutons + : lignes de liens supplémentaires
+    const dupliqueRow = (zoneId) => (e) => {
+      e.preventDefault();
+      const zone = document.getElementById(zoneId);
+      if (!zone) return;
+      const modele = zone.querySelector('.div-block-332');
+      const copie = modele.cloneNode(true);
+      const inp = copie.querySelector('input');
+      inp.value = '';
+      const btn = copie.querySelector('a');
+      if (btn) btn.remove();
+      zone.appendChild(copie);
+      inp.focus();
+    };
+    const pAddVideo = document.getElementById('pAddVideo');
+    if (pAddVideo) pAddVideo.addEventListener('click', dupliqueRow('pVideoRows'));
+    const pAddLien = document.getElementById('pAddLien');
+    if (pAddLien) pAddLien.addEventListener('click', dupliqueRow('pLienRows'));
 
     const selStatut = document.getElementById('filtreStatut');
     if (selStatut && selStatut.tagName === 'SELECT') selStatut.addEventListener('change', () => {
