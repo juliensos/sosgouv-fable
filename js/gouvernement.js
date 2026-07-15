@@ -88,7 +88,7 @@ const Gouv = {
           personnalite: null,
           sousSecteurs: (this.sousSecteursDefaut[s.id] || []).slice()
         })),
-        ...this.nonRegaliens().map((s, i) => ({
+        ...this.nonRegaliens().filter(s => s.affiche_defaut !== false).map((s, i) => ({
           uid: 'nr-' + i,
           type: 'non_regalien',
           secteur: s,
@@ -164,10 +164,12 @@ const Gouv = {
             suffixe,
             fonction: po.fonction_delegue || '',
             personnalite: po.personnalites || null,
+            secteurManuelNom: po.secteur_personnalise || null,
             sousSecteurs: (ssRes.data || [])
               .filter(r => r.poste_id === po.id)
               .map(r => sousById[r.sous_secteur_id])
-              .filter(Boolean),
+              .filter(Boolean)
+              .concat((po.sous_secteurs_personnalises || []).map(nom => ({ id: null, nom }))),
             fusion: (fusRes.data || [])
               .filter(r => r.poste_id === po.id)
               .map(r => this.secteurs.find(s => s.id === r.secteur_id))
@@ -409,16 +411,7 @@ const Gouv = {
         }
       });
       const nouveau = champ ? champ.value.trim() : '';
-      if (nouveau) {
-        try {
-          const { data: created, error } = await sb.from('sous_secteurs').insert({ nom: nouveau }).select().single();
-          if (error) throw error;
-          this.sousSecteursTous.push(created);
-          liste.push(created);
-        } catch (err) {
-          liste.push({ id: null, nom: nouveau });
-        }
-      }
+      if (nouveau) liste.push({ id: null, nom: nouveau }); // personnalisation du poste, hors référentiel
       p.sousSecteurs = liste;
       UI.closeModals();
       this.renderComposer();
@@ -615,6 +608,8 @@ const Gouv = {
         (this.sousSecteursTous || []).map(s => '<option value="' + s.id + '">' + Perso.esc(s.nom) + '</option>').join('');
     }
     if (fonction) fonction.value = '';
+    const champNouveau = document.getElementById('mdSousNouveau');
+    if (champNouveau) champNouveau.value = '';
     UI.openModal('modal-delegue');
   },
 
@@ -626,7 +621,10 @@ const Gouv = {
     if (!ministre) return;
     const fonction = (document.getElementById('mdFonction').value || '').trim();
     const sousId = document.getElementById('mdSousSecteur').value;
-    const sousSec = (this.sousSecteursTous || []).find(s => s.id === sousId);
+    const champNouveau = document.getElementById('mdSousNouveau');
+    const sousNouveau = champNouveau ? champNouveau.value.trim() : '';
+    let sousSec = (this.sousSecteursTous || []).find(s => s.id === sousId);
+    if (sousNouveau) sousSec = { id: null, nom: sousNouveau }; // personnalisation du poste
     const nomMin = ministre.intitule || (ministre.secteur ? ministre.secteur.nom : '');
     this.composerState.postes.push({
       uid: 'del-' + Date.now(),
@@ -787,7 +785,8 @@ const Gouv = {
         if (uErr) throw uErr;
         gouv = data;
         // On repart de zéro sur les postes du brouillon
-        await sb.from('postes_gouvernement').delete().eq('gouvernement_id', gouv.id);
+        const { error: dErr } = await sb.from('postes_gouvernement').delete().eq('gouvernement_id', gouv.id);
+        if (dErr) throw new Error('Impossible de remplacer les postes existants : ' + dErr.message);
       } else {
         const { data, error: gErr } = await sb
           .from('gouvernements')
@@ -811,6 +810,8 @@ const Gouv = {
         nom_poste_personnalise: (p.type === 'regalien'
           ? (p.intitule + (p.suffixe && p.suffixe.trim() ? ' ' + p.suffixe.trim() : ''))
           : p.intitule) || null,
+        secteur_personnalise: p.secteurManuelNom || null,
+        sous_secteurs_personnalises: (p.sousSecteurs || []).filter(s => !s.id && s.nom).map(s => s.nom),
         fonction_delegue: p.type === 'delegue' ? (p.fonction || null) : null,
         ordre: i
       }));
@@ -828,12 +829,8 @@ const Gouv = {
         const p = this.composerState.postes[i];
         (p.fusion || []).forEach(s => fusionRows.push({ poste_id: row.id, secteur_id: s.id }));
         for (const s of (p.sousSecteurs || [])) {
-          if (!s.id && s.nom) {
-            const { data: created, error: cErr } = await sb
-              .from('sous_secteurs').insert({ nom: s.nom }).select().single();
-            if (!cErr && created) s.id = created.id;
-          }
           if (s.id) sousRows.push({ poste_id: row.id, sous_secteur_id: s.id });
+          // Les sous-secteurs personnalisés (sans id) sont déjà portés par la colonne du poste
         }
       }
       if (sousRows.length) {
@@ -1137,8 +1134,9 @@ const Gouv = {
     const blocPoste = (p) => {
       const perso = p.personnalites;
       const fusion = (fusionsParPoste[p.id] || []).map(n => ' + ' + Perso.esc(n)).join('');
-      const secteurNom = p.secteurs ? Perso.esc(p.secteurs.nom) + fusion : '';
-      const sous = (sousParPoste[p.id] || []).map(n =>
+      const secteurNom = p.secteurs ? Perso.esc(p.secteurs.nom) + fusion
+        : (p.secteur_personnalise ? Perso.esc(p.secteur_personnalise) : '');
+      const sous = (sousParPoste[p.id] || []).concat(p.sous_secteurs_personnalises || []).map(n =>
         '<div class="h1-grey _2-soussect">' + Perso.esc(n) + '</div>').join('');
       const intitule = p.nom_poste_personnalise || (p.secteurs ? p.secteurs.nom : '') || '';
       return '<div class="bloc-poste-gov-detail">' +

@@ -572,7 +572,7 @@ const UI = {
     };
     const dateFr = d => d ? new Date(d).toLocaleDateString('fr-FR') : '';
     try {
-      const [likes, epP, epG, votes, comms, persos, gouvs, stats, users] = await Promise.all([
+      const [likes, epP, epG, votes, comms, persos, gouvs, postesPerso, stats, users] = await Promise.all([
         sb.from('personnalites_likes').select('personnalite_id').eq('user_id', uid),
         sb.from('personnalites_epingles').select('personnalite_id').eq('user_id', uid),
         sb.from('gouvernements_epingles').select('gouvernement_id').eq('user_id', uid),
@@ -580,6 +580,7 @@ const UI = {
         sb.from('commentaires').select('*').eq('user_id', uid),
         sb.from('personnalites').select('id, nom, prenom, ajoute_par'),
         sb.from('gouvernements').select('id, titre, is_published, created_by, created_at'),
+        sb.from('postes_gouvernement').select('gouvernement_id, secteur_personnalise, sous_secteurs_personnalises'),
         sb.from('v_gouvernements_stats').select('*'),
         sb.from('users').select('id, username')
       ]);
@@ -646,6 +647,20 @@ const UI = {
             ' publié par <code class="code-13">' + esc(userName(g.created_by)) + '</code></div>' : '') +
           '</div>';
       }).join(''));
+      // Mes secteurs et sous-secteurs personnalisés (portés par mes postes)
+      const mesGouvIds = (gouvs.data || []).filter(g => g.created_by === uid).map(g => g.id);
+      const persoLignes = [];
+      (postesPerso.data || []).filter(p => mesGouvIds.includes(p.gouvernement_id)).forEach(p => {
+        const g = gById(p.gouvernement_id);
+        if (p.secteur_personnalise) persoLignes.push({ type: 'secteur', nom: p.secteur_personnalise, g });
+        (p.sous_secteurs_personnalises || []).forEach(nom => persoLignes.push({ type: 'sous-secteur', nom, g }));
+      });
+      set('esp-personnalisations', persoLignes.map(l =>
+        '<div class="div-block-331">' +
+        '<div class="text-block-75">' + esc(l.nom) + '</div>' +
+        '<div class="text-block-77">' + l.type + ' créé dans <a href="#" data-esp-gouv="' + esc(l.g ? l.g.id : '') + '">' + esc(l.g ? (l.g.titre || 'Sans titre') : '?') + '</a></div>' +
+        '</div>').join(''));
+
       set('esp-likes', (likes.data || []).map(l => lignePerso(l.personnalite_id, ICO.likeFull)).filter(Boolean).join(''));
       set('esp-epingles-perso', (epP.data || []).map(l => lignePerso(l.personnalite_id, ICO.pin)).filter(Boolean).join(''));
 
