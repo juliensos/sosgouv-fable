@@ -379,3 +379,19 @@ body { scroll-padding-bottom: 50px; }
   border: 1px solid var(--black-100, #000);
 }
 body.admin-connecte .foot-public-liens { bottom: 46px; }
+
+/* ---- v25 : activité, données perso, détail v2 ---- */
+/* Votation directe dans "Mes votes" */
+.esp-votation { display: inline-flex; gap: 3px; align-items: center; }
+.esp-etoile { cursor: pointer; font-size: 15px; color: var(--sos-grey-1, #aca69a); }
+.esp-etoile.pleine { color: var(--sos-yellow, #ffbb47); }
+.div-block-334 { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.div-block-331 { padding: 4px 0; }
+.div-block-331 .text-block-75 a { color: inherit; text-decoration: none; }
+.div-block-331 .text-block-75 a:hover { text-decoration: underline; }
+
+/* Détail v2 */
+.vote-bloc-detail { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.gov-compact-bloc.detail2 { border: none; }
+.detail2 .bouton-gov-detail { display: flex; gap: 10px; margin: 8px 0; }
+.detail2 .non-attribue { color: var(--sos-grey-1, #aca69a); }
