@@ -407,3 +407,13 @@ body.admin-connecte .foot-public-liens { bottom: 46px; }
 .prop-sources { font-size: 11px; margin-top: 6px; opacity: 0.7; }
 .prop-source { margin-right: 6px; }
 .prop-actions { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+
+/* ---- v28 : propositions IA éditables, prévisualisation façon fiche ---- */
+.prop-champ textarea, .prop-champ input.mon-input5 { width: 100%; box-sizing: border-box; }
+.prop-hint { font-size: 11px; opacity: 0.6; margin-bottom: 3px; }
+.prop-lien-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+.prop-lien-row select { flex: none; width: 70px; }
+.prop-lien-row .prop-lien-titre { flex: 1; min-width: 0; }
+.prop-lien-row .prop-lien-url { flex: 2; min-width: 0; }
+.prop-lien-del { flex: none; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; background: var(--black-100, #000); color: #fff; font-family: Fontello; font-size: 11px; cursor: pointer; }
+.prop-lien-add { font-size: 12px; color: var(--sos-link2, #c2815c); text-decoration: underline; display: inline-block; margin-top: 2px; }
