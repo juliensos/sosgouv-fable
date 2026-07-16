@@ -395,3 +395,15 @@ body.admin-connecte .foot-public-liens { bottom: 46px; }
 .gov-compact-bloc.detail2 { border: none; }
 .detail2 .bouton-gov-detail { display: flex; gap: 10px; margin: 8px 0; }
 .detail2 .non-attribue { color: var(--sos-grey-1, #aca69a); }
+
+/* ---- v27 : validation des propositions de l'agent IA ---- */
+.badge-compteur { display: inline-block; background: var(--red, #b81515); color: #fff; border-radius: 10px; padding: 0 6px; font-size: 11px; margin-left: 4px; }
+.prop-bloc { border: 1px solid var(--black-100, #000); padding: 12px; margin-bottom: 14px; }
+.prop-champ { margin: 8px 0; }
+.prop-label { font-weight: 900; text-transform: uppercase; font-size: 11px; color: var(--sos-grey-1, #aca69a); }
+.prop-avant { opacity: 0.55; text-decoration: line-through; font-size: 13px; }
+.prop-apres { color: var(--sos-green, #5ac6b1); font-size: 13px; }
+.prop-lien { font-size: 12px; }
+.prop-sources { font-size: 11px; margin-top: 6px; opacity: 0.7; }
+.prop-source { margin-right: 6px; }
+.prop-actions { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
