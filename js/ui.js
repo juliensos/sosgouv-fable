@@ -22,7 +22,8 @@ window.ICO = {
   trash: '\uf083',      // icon-trash, corbeille
   edit: '\ue83e',       // icon-pencil, modifier
   starFull: '\ue806',   // icon-star
-  starEmpty: '\ue807'   // icon-star-empty
+  starEmpty: '\ue807',  // icon-star-empty
+  flecheDeleg: '\ue815' // icon-right-thin, petite flèche devant le nom d'un délégué
 };
 
 // ============================================================

@@ -942,14 +942,6 @@ const Gouv = {
       const postes = (g.postes_gouvernement || []).slice()
         .sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
       const pret = this.estPret(g);
-      const membres = postes.map(p => {
-        const perso = p.personnalites;
-        const role = p.secteurs ? p.secteurs.nom
-          : (p.type === 'delegue' ? (p.fonction_delegue || 'Délégué') : (p.nom_poste_personnalise || ''));
-        return '<div class="gouv-membre"><span class="gm-nom">' +
-          (perso ? Perso.esc((perso.prenom || '') + ' ' + perso.nom) : '<em>non attribué</em>') +
-          '</span><span class="gm-secteur">' + Perso.esc(role) + '</span></div>';
-      }).join('');
       const pinned = this.epingles.has(g.id);
       const note = st.note_moyenne != null ? String(st.note_moyenne).replace('.', ',') : null;
       const pourvus = postes.filter(p => p.personnalites);
@@ -957,12 +949,18 @@ const Gouv = {
       const autres = pourvus.filter(p => p.type !== 'regalien');
       const ligne = p => {
         const perso = p.personnalites;
-        const role = p.secteurs ? p.secteurs.nom
-          : (p.type === 'delegue' ? (p.fonction_delegue || 'délégué') : (p.nom_poste_personnalise || ''));
-        return '<div class="fonction-perso gouv-membre">' +
-          '<a href="#" class="w-inline-block membre-fiche" data-perso-id="' + (perso ? perso.id : '') + '"><div class="_3-name-gov-pub gm-nom">' +
+        const estDelegue = p.type === 'delegue';
+        // Pour un délégué, l'intitulé de son poste remplace le secteur ;
+        // pour les autres, le secteur prime, sinon l'intitulé personnalisé.
+        const role = estDelegue
+          ? (p.nom_poste_personnalise || p.fonction_delegue || 'Délégué')
+          : (p.secteurs ? p.secteurs.nom : (p.nom_poste_personnalise || ''));
+        return '<div class="fonction-perso gouv-membre' + (estDelegue ? ' delegu' : '') + '">' +
+          '<a href="#" class="w-inline-block membre-fiche" data-perso-id="' + (perso ? perso.id : '') + '">' +
+          '<div class="_3-name-gov-pub gm-nom' + (estDelegue ? ' delegu' : '') + '">' +
+          (estDelegue ? '<code class="fleche-fontello">' + ICO.flecheDeleg + '</code> ' : '') +
           Perso.esc((perso.prenom || '') + ' ' + perso.nom) +
-          '</div></a> <div class="secteurs gm-secteur">' + Perso.esc(role) + '</div></div>';
+          '</div></a> <div class="secteurs gm-secteur' + (estDelegue ? ' delegue' : '') + '">' + Perso.esc(role) + '</div></div>';
       };
       const maNote = this.votesUser[g.id] || 0;
       return `
@@ -1000,15 +998,26 @@ const Gouv = {
           <a href="#" class="_w-courant _w-bold cap gouv-auteur">${Perso.esc(displayUser(g.users))}</a>
           <div class="_w-courant _w-mini-grey">&bull; ${st.nb_commentaires || 0} commentaire(s)</div>
         </div>
+        ${g.description ? '<p class="paragraph-7 gouv-desc">' + Perso.esc(g.description) + ' <code class="code-14 btn-desc-toggle">+</code></p>' : ''}
         <div class="gouv-membres membres-regaliens">${regs.map(ligne).join('')}</div>
         ${autres.length ? '<div class="filet pointille"></div><div class="gouv-membres membres-autres">' + autres.map(ligne).join('') + '</div>' : ''}
-        ${g.description ? '<p class="gouv-desc">' + Perso.esc(g.description) + '</p>' : ''}
       </div>`;
     }).join('');
     this.bindPublished(cont);
   },
 
   bindPublished(cont) {
+    // Description : le "+" ne s'affiche que si le texte dépasse réellement 2 lignes
+    cont.querySelectorAll('.gouv-desc').forEach(p => {
+      const toggle = p.querySelector('.btn-desc-toggle');
+      if (!toggle) return;
+      if (p.scrollHeight <= p.clientHeight + 1) { toggle.style.display = 'none'; return; }
+      toggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        const ouvert = p.classList.toggle('expanded');
+        toggle.textContent = ouvert ? '−' : '+';
+      });
+    });
     cont.querySelectorAll('.gouv-card').forEach(card => {
       const id = card.dataset.id;
       card.querySelectorAll('.etoile').forEach(star => {
@@ -1133,16 +1142,22 @@ const Gouv = {
 
     const blocPoste = (p) => {
       const perso = p.personnalites;
+      const estDelegue = p.type === 'delegue';
       const fusion = (fusionsParPoste[p.id] || []).map(n => ' + ' + Perso.esc(n)).join('');
-      const secteurNom = p.secteurs ? Perso.esc(p.secteurs.nom) + fusion
-        : (p.secteur_personnalise ? Perso.esc(p.secteur_personnalise) : '');
+      // Pour un délégué, l'intitulé du poste remplace déjà le secteur (même principe
+      // que sur la carte de la liste publiée) : on ne réaffiche pas le secteur brut.
+      const secteurNom = estDelegue ? ''
+        : (p.secteurs ? Perso.esc(p.secteurs.nom) + fusion
+          : (p.secteur_personnalise ? Perso.esc(p.secteur_personnalise) : ''));
       const sous = (sousParPoste[p.id] || []).concat(p.sous_secteurs_personnalises || []).map(n =>
         '<div class="h1-grey _2-soussect">' + Perso.esc(n) + '</div>').join('');
       const intitule = p.nom_poste_personnalise || (p.secteurs ? p.secteurs.nom : '') || '';
-      return '<div class="bloc-poste-gov-detail">' +
+      return '<div class="bloc-poste-gov-detail' + (estDelegue ? ' delegue-bloc' : '') + '">' +
         '<div class="div-block-336">' +
         (perso
-          ? '<a href="#" class="nom-prenom-gov-detail membre-fiche" data-perso-id="' + perso.id + '">' + Perso.esc((perso.prenom || '') + ' ' + perso.nom) + '</a>'
+          ? '<a href="#" class="nom-prenom-gov-detail membre-fiche" data-perso-id="' + perso.id + '">' +
+            (estDelegue ? '<code class="fleche-fontello">' + ICO.flecheDeleg + '</code> ' : '') +
+            Perso.esc((perso.prenom || '') + ' ' + perso.nom) + '</a>'
           : '<div class="nom-prenom-gov-detail non-attribue"><em>non attribué</em></div>') +
         '<h3 class="h1-color">' + Perso.esc(intitule) + (p.fonction_delegue ? ', ' + Perso.esc(p.fonction_delegue) : '') + '</h3>' +
         '</div>' +
