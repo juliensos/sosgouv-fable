@@ -116,6 +116,7 @@ const UI = {
     if (adminFooter) {
       const admin = Auth.isAdmin();
       adminFooter.style.display = admin ? 'flex' : 'none';
+      if (admin) this.refreshBadgePropositionsIA();
       // Le conteneur parent peut être masqué par le CSS Webflow : on force aussi
       let parent = adminFooter.parentElement;
       while (parent && parent !== document.body) {
@@ -305,6 +306,13 @@ const UI = {
       this.openModal('modal-admin-secteurs');
       this.loadAdminSecteurs();
     });
+    const admPropositions = document.getElementById('openPropositionsIA');
+    if (admPropositions) admPropositions.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!Auth.isAdmin()) return;
+      this.openModal('modal-propositions-ia');
+      this.loadPropositionsIA();
+    });
     const logoutMenu = document.getElementById('btnLogoutMenu');
     if (logoutMenu) logoutMenu.addEventListener('click', (e) => {
       e.preventDefault();
@@ -426,6 +434,111 @@ const UI = {
     } catch (err) {
       cont.innerHTML = '<div class="error-msg">Erreur : ' + esc(err.message) + '</div>';
     }
+  },
+
+  // ---------- Admin : propositions de l'agent d'enrichissement IA ----------
+  async refreshBadgePropositionsIA() {
+    const badge = document.getElementById('badgePropositionsIA');
+    if (!badge) return;
+    try {
+      const { data } = await sb.from('personnalites_propositions_ia').select('id').eq('statut', 'en_attente');
+      const n = (data || []).length;
+      badge.textContent = String(n);
+      badge.style.display = n > 0 ? 'inline-block' : 'none';
+    } catch (err) { /* silencieux : simple compteur */ }
+  },
+
+  async loadPropositionsIA() {
+    const cont = document.getElementById('propositions-ia-liste');
+    if (!cont) return;
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    try {
+      const [{ data: props }, { data: persos }] = await Promise.all([
+        sb.from('personnalites_propositions_ia').select('*').eq('statut', 'en_attente'),
+        sb.from('personnalites').select('id, nom, prenom, metiers, short_bio, bio, liens')
+      ]);
+      if (!props || !props.length) {
+        cont.innerHTML = '<div class="esp-vide">Aucune proposition en attente.</div>';
+        return;
+      }
+      const champLigne = (label, avant, apres) => {
+        if ((avant || '') === (apres || '')) return '';
+        return '<div class="prop-champ"><div class="prop-label">' + label + '</div>' +
+          '<div class="prop-avant"><em>avant :</em> ' + (esc(avant) || '<em>vide</em>') + '</div>' +
+          '<div class="prop-apres"><em>proposé :</em> ' + esc(apres) + '</div></div>';
+      };
+      cont.innerHTML = props.map(prop => {
+        const p = (persos || []).find(x => x.id === prop.personnalite_id);
+        const nomComplet = p ? esc((p.prenom ? p.prenom + ' ' : '') + p.nom) : '(personnalité supprimée)';
+        const metiersAvant = p ? (p.metiers || []).join(', ') : '';
+        const metiersApres = (prop.metiers || []).join(', ');
+        const liensHtml = (prop.liens || []).map(l =>
+          '<div class="prop-lien">' + esc(l.titre || l.type) + ' : <a href="' + esc(l.url) + '" target="_blank" rel="noopener">' + esc(l.url) + '</a></div>').join('');
+        const sourcesHtml = (prop.sources || []).map(u =>
+          '<a href="' + esc(u) + '" target="_blank" rel="noopener" class="prop-source">' + esc(u) + '</a>').join(' · ');
+        return '<div class="prop-bloc" data-prop-id="' + prop.id + '">' +
+          '<h4>' + nomComplet + '</h4>' +
+          champLigne('Métiers', metiersAvant, metiersApres) +
+          champLigne('Bio courte', p ? p.short_bio : '', prop.short_bio) +
+          champLigne('Biographie', p ? p.bio : '', prop.bio) +
+          (liensHtml ? '<div class="prop-champ"><div class="prop-label">Liens proposés</div>' + liensHtml + '</div>' : '') +
+          (sourcesHtml ? '<div class="prop-sources"><em>Sources consultées :</em> ' + sourcesHtml + '</div>' : '') +
+          '<div class="prop-actions">' +
+            '<a href="#" class="_w-link-bloc-button publier w-inline-block btn-valider-prop" data-id="' + prop.id + '"><div>valider</div></a>' +
+            '<a href="#" class="_2-mini-bouton mini w-inline-block btn-rejeter-prop" data-id="' + prop.id + '" title="Rejeter"><div class="fontello-icon pink">' + ICO.cross + '</div></a>' +
+          '</div></div>';
+      }).join('');
+
+      cont.querySelectorAll('.btn-valider-prop').forEach(btn => btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        await this.validerPropositionIA(btn.dataset.id);
+      }));
+      cont.querySelectorAll('.btn-rejeter-prop').forEach(btn => btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        await this.rejeterPropositionIA(btn.dataset.id);
+      }));
+    } catch (err) {
+      cont.innerHTML = '<div class="error-msg">Erreur : ' + esc(err.message) + '</div>';
+    }
+  },
+
+  async validerPropositionIA(propId) {
+    if (!Auth.isAdmin()) return;
+    try {
+      const { data: prop, error: e1 } = await sb.from('personnalites_propositions_ia')
+        .select('*').eq('id', propId).single();
+      if (e1 || !prop) throw new Error('Proposition introuvable.');
+      const { data: perso } = await sb.from('personnalites').select('metiers').eq('id', prop.personnalite_id).maybeSingle();
+      const champs = { enrichi_par_ia_le: new Date().toISOString() };
+      if (prop.metiers && prop.metiers.length) champs.metiers = prop.metiers;
+      else if (perso) champs.metiers = perso.metiers;
+      if (prop.short_bio) champs.short_bio = prop.short_bio;
+      if (prop.bio) champs.bio = prop.bio;
+      if (prop.liens && prop.liens.length) champs.liens = prop.liens;
+      const { error: e2 } = await sb.from('personnalites').update(champs).eq('id', prop.personnalite_id);
+      if (e2) throw e2;
+      await sb.from('personnalites_propositions_ia').update({
+        statut: 'validee', valide_par: Auth.currentUser.id, valide_le: new Date().toISOString()
+      }).eq('id', propId);
+      this.toast('Proposition validée et appliquée à la fiche.');
+      this.loadPropositionsIA();
+      this.refreshBadgePropositionsIA();
+      if (window.Perso) { Perso.all = []; }
+    } catch (err) { this.toast('Erreur : ' + err.message); }
+  },
+
+  async rejeterPropositionIA(propId) {
+    if (!Auth.isAdmin()) return;
+    try {
+      const { error } = await sb.from('personnalites_propositions_ia').update({
+        statut: 'rejetee', valide_par: Auth.currentUser.id, valide_le: new Date().toISOString()
+      }).eq('id', propId);
+      if (error) throw error;
+      this.toast('Proposition rejetée.');
+      this.loadPropositionsIA();
+      this.refreshBadgePropositionsIA();
+    } catch (err) { this.toast('Erreur : ' + err.message); }
   },
 
   // ---------- Admin : secteurs et sous-secteurs par défaut ----------
