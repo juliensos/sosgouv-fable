@@ -220,13 +220,23 @@ const Perso = {
     const liens = autres.map(l =>
       '<a class="fiche-lien" href="' + this.esc(l.url || l) + '" target="_blank" rel="noopener">&#128279; ' + this.esc(l.titre || l.url || l) + '</a>'
     ).join('');
-    // Découpage de la bio en sections (format des fiches importées)
-    let expertise = '', engagements = '', bioLibre = '';
+    // Découpage de la bio en sections : récit narratif éventuel, puis les deux
+    // sections structurées. On repère les marqueurs par leur position dans le
+    // texte, sans exiger de ligne vide entre eux (l'agent d'enrichissement
+    // écrit tout en un seul bloc continu).
+    let expertise = '', engagements = '', bioNarrative = '', bioLibre = '';
     if (p.bio) {
-      const m = p.bio.match(/Domaines de recherche et expertise\s*:\s*([\s\S]*?)(?:\n\s*\n|$)(?:Engagements et positionnements politiques\s*:\s*([\s\S]*))?/);
-      if (m) {
-        expertise = (m[1] || '').trim();
-        engagements = (m[2] || '').trim();
+      const idxExp = p.bio.search(/Domaines de recherche et expertise\s*:/);
+      if (idxExp !== -1) {
+        bioNarrative = p.bio.slice(0, idxExp).trim();
+        const reste = p.bio.slice(idxExp).replace(/^Domaines de recherche et expertise\s*:\s*/, '');
+        const idxEng = reste.search(/Engagements et positionnements politiques\s*:/);
+        if (idxEng !== -1) {
+          expertise = reste.slice(0, idxEng).trim();
+          engagements = reste.slice(idxEng).replace(/^Engagements et positionnements politiques\s*:\s*/, '').trim();
+        } else {
+          expertise = reste.trim();
+        }
       } else {
         bioLibre = p.bio;
       }
@@ -238,6 +248,7 @@ const Perso = {
         <span class="fontello-statut _${p.statut}" title="${this.STATUTS[p.statut] || ''}">${[ICO.cross, ICO.cross, ICO.cond, ICO.check2][p.statut] || ''}</span>
       </div>
       ${p.short_bio ? '<p class="fiche-para">' + this.esc(p.short_bio) + '</p>' : ''}
+      ${bioNarrative ? '<p class="fiche-para">' + this.esc(bioNarrative) + '</p>' : ''}
       ${expertise ? '<h4 class="fiche-h">Domaines de recherche et expertise</h4><p class="fiche-para">' + this.esc(expertise) + '</p>' : ''}
       ${engagements ? '<h4 class="fiche-h">Engagements et positionnements politiques</h4><p class="fiche-para">' + this.esc(engagements) + '</p>' : ''}
       ${bioLibre ? '<p class="fiche-para">' + this.esc(bioLibre) + '</p>' : ''}
