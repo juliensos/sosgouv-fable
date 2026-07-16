@@ -1,0 +1,33 @@
+name: Agent d'enrichissement des personnalités
+
+on:
+  schedule:
+    # Tous les jours à 4h du matin (UTC) — reste modeste en volume et en coût
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+    inputs:
+      max_personnes:
+        description: "Nombre de fiches à traiter cette exécution"
+        required: false
+        default: '5'
+
+jobs:
+  enrichir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Installer les dépendances
+        run: npm install @supabase/supabase-js @anthropic-ai/sdk
+
+      - name: Lancer l'agent
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AGENT_MAX_PERSONNES: ${{ github.event.inputs.max_personnes || '5' }}
+        run: node tools/agent-enrichissement.js
