@@ -141,6 +141,10 @@ const Gouv = {
       const sousById = {};
       (allSous.data || []).forEach(s => sousById[s.id] = s);
       const postes = (g.postes_gouvernement || []).slice().sort((a, b) => (a.ordre || 0) - (b.ordre || 0));
+      // Correspondance id réel (base) -> uid synthétique du composer, pour
+      // retrouver quel ministre porte chaque délégué une fois rechargé.
+      const idVersUid = {};
+      postes.forEach((po, i) => { idVersUid[po.id] = 'load-' + i; });
       this.composerState = {
         editingId: g.id,
         titre: g.titre || '',
@@ -163,6 +167,7 @@ const Gouv = {
             intitule,
             suffixe,
             fonction: po.fonction_delegue || '',
+            attacheAUid: po.delegue_de_poste_id ? (idVersUid[po.delegue_de_poste_id] || null) : null,
             personnalite: po.personnalites || null,
             secteurManuelNom: po.secteur_personnalise || null,
             sousSecteurs: (ssRes.data || [])
@@ -625,13 +630,15 @@ const Gouv = {
     const sousNouveau = champNouveau ? champNouveau.value.trim() : '';
     let sousSec = (this.sousSecteursTous || []).find(s => s.id === sousId);
     if (sousNouveau) sousSec = { id: null, nom: sousNouveau }; // personnalisation du poste
-    const nomMin = ministre.intitule || (ministre.secteur ? ministre.secteur.nom : '');
     this.composerState.postes.push({
       uid: 'del-' + Date.now(),
       type: 'delegue',
       secteur: ministre.secteur || null,
-      intitule: 'Délégué auprès du ' + nomMin + (fonction ? ', chargé de ' + fonction : ''),
+      // Le ministère de rattachement est déjà visible par la position du délégué
+      // juste en dessous de lui : l'intitulé n'a plus besoin de le nommer.
+      intitule: 'Délégué' + (fonction ? ' chargé de ' + fonction : ''),
       fonction: fonction,
+      attacheAUid: ministre.uid,
       personnalite: null,
       sousSecteurs: sousSec ? [sousSec] : []
     });
@@ -821,6 +828,23 @@ const Gouv = {
         .select();
       if (pErr) throw pErr;
 
+      // 2bis. Rattachement réel des délégués à leur ministre (par id de base,
+      // pas par ordre de sauvegarde) : deux postes ne partagent le même index
+      // que dans ce même tableau, on peut donc les recroiser par position.
+      const uidVersId = {};
+      this.composerState.postes.forEach((p, i) => { if (postes[i]) uidVersId[p.uid] = postes[i].id; });
+      const rattachements = [];
+      this.composerState.postes.forEach((p, i) => {
+        if (p.type === 'delegue' && p.attacheAUid && uidVersId[p.attacheAUid] && postes[i]) {
+          rattachements.push({ id: postes[i].id, parentId: uidVersId[p.attacheAUid] });
+        }
+      });
+      for (const r of rattachements) {
+        const { error: rErr } = await sb.from('postes_gouvernement')
+          .update({ delegue_de_poste_id: r.parentId }).eq('id', r.id);
+        if (rErr) throw rErr;
+      }
+
       // 3. Sous-secteurs de chaque poste (création des nouveaux si besoin)
       const sousRows = [];
       const fusionRows = [];
@@ -918,6 +942,34 @@ const Gouv = {
     this.published.sort((a, b) => epingleDabord(a, b) || cmp(a, b));
   },
 
+  // Regroupe une liste de postes déjà triés par ordre : chaque délégué est
+  // déplacé juste après le poste (ministre) auquel il est explicitement
+  // rattaché (delegue_de_poste_id), plutôt que de rester à sa position brute
+  // de sauvegarde. Les délégués orphelins (ministre supprimé, ancien
+  // gouvernement sans rattachement enregistré) sont replacés à la fin.
+  grouperAvecDelegues(postes) {
+    const posteById = {};
+    postes.forEach(p => { if (p.id) posteById[p.id] = p; });
+    const nonDelegues = postes.filter(p => p.type !== 'delegue');
+    const delegues = postes.filter(p => p.type === 'delegue');
+    const parParent = {};
+    const orphelins = [];
+    delegues.forEach(d => {
+      const parent = d.delegue_de_poste_id ? posteById[d.delegue_de_poste_id] : null;
+      if (parent) (parParent[parent.id] = parParent[parent.id] || []).push(d);
+      else orphelins.push(d);
+    });
+    const resultat = [];
+    nonDelegues.forEach(p => {
+      resultat.push(p);
+      (parParent[p.id] || [])
+        .sort((a, b) => (a.ordre || 0) - (b.ordre || 0))
+        .forEach(d => resultat.push(d));
+    });
+    resultat.push(...orphelins);
+    return resultat;
+  },
+
   estPret(g) {
     const postes = g.postes_gouvernement || [];
     return postes.length > 0
@@ -945,8 +997,17 @@ const Gouv = {
       const pinned = this.epingles.has(g.id);
       const note = st.note_moyenne != null ? String(st.note_moyenne).replace('.', ',') : null;
       const pourvus = postes.filter(p => p.personnalites);
-      const regs = pourvus.filter(p => p.type === 'regalien');
-      const autres = pourvus.filter(p => p.type !== 'regalien');
+      const posteById = {};
+      pourvus.forEach(p => { if (p.id) posteById[p.id] = p; });
+      const parentEstRegalien = d => d.delegue_de_poste_id && posteById[d.delegue_de_poste_id]
+        && posteById[d.delegue_de_poste_id].type === 'regalien';
+      const tousDelegues = pourvus.filter(p => p.type === 'delegue');
+      const regs = this.grouperAvecDelegues(
+        pourvus.filter(p => p.type === 'regalien').concat(tousDelegues.filter(parentEstRegalien))
+      );
+      const autres = this.grouperAvecDelegues(
+        pourvus.filter(p => p.type === 'non_regalien').concat(tousDelegues.filter(d => !parentEstRegalien(d)))
+      );
       const ligne = p => {
         const perso = p.personnalites;
         const estDelegue = p.type === 'delegue';
@@ -1150,7 +1211,7 @@ const Gouv = {
         : (p.secteurs ? Perso.esc(p.secteurs.nom) + fusion
           : (p.secteur_personnalise ? Perso.esc(p.secteur_personnalise) : ''));
       const sous = (sousParPoste[p.id] || []).concat(p.sous_secteurs_personnalises || []).map(n =>
-        '<div class="h1-grey _2-soussect">' + Perso.esc(n) + '</div>').join('');
+        '<h6 class="h1-grey _2-soussect">' + Perso.esc(n) + '</h6>').join('');
       const intitule = p.nom_poste_personnalise || (p.secteurs ? p.secteurs.nom : '') || '';
       return '<div class="bloc-poste-gov-detail' + (estDelegue ? ' delegue-bloc' : '') + '">' +
         '<div class="div-block-336">' +
@@ -1163,15 +1224,24 @@ const Gouv = {
         '</div>' +
         ((secteurNom || sous)
           ? '<div class="secteur-sous-secteurs">' +
-            (secteurNom ? '<div class="h1-grey bold">' + secteurNom + '</div>' : '') +
+            (secteurNom ? '<h6 class="h1-grey bold">' + secteurNom + '</h6>' : '') +
             (sous ? '<div class="div-block-317">' + sous + '</div>' : '') +
             '</div>'
           : '') +
         '</div>';
     };
 
-    const regs = postes.filter(p => p.type === 'regalien');
-    const autres = postes.filter(p => p.type !== 'regalien');
+    const posteByIdDetail = {};
+    postes.forEach(p => { if (p.id) posteByIdDetail[p.id] = p; });
+    const parentEstRegalienDetail = d => d.delegue_de_poste_id && posteByIdDetail[d.delegue_de_poste_id]
+      && posteByIdDetail[d.delegue_de_poste_id].type === 'regalien';
+    const tousDeleguesDetail = postes.filter(p => p.type === 'delegue');
+    const regs = this.grouperAvecDelegues(
+      postes.filter(p => p.type === 'regalien').concat(tousDeleguesDetail.filter(parentEstRegalienDetail))
+    );
+    const autres = this.grouperAvecDelegues(
+      postes.filter(p => p.type === 'non_regalien').concat(tousDeleguesDetail.filter(d => !parentEstRegalienDetail(d)))
+    );
 
     cont.innerHTML =
       '<div class="_4-content-gm"><div class="gov-compact-bloc detail2">' +
