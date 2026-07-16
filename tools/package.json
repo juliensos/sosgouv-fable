@@ -1,0 +1,14 @@
+{
+  "name": "sosgouv-agent-enrichissement",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Agent autonome de recherche et de rédaction de fiches personnalités pour SOSGOUV, en staging pour validation admin.",
+  "main": "agent-enrichissement.js",
+  "scripts": {
+    "start": "node agent-enrichissement.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "@anthropic-ai/sdk": "^0.32.0"
+  }
+}
