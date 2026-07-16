@@ -221,26 +221,9 @@ const Perso = {
       '<a class="fiche-lien" href="' + this.esc(l.url || l) + '" target="_blank" rel="noopener">&#128279; ' + this.esc(l.titre || l.url || l) + '</a>'
     ).join('');
     // Découpage de la bio en sections : récit narratif éventuel, puis les deux
-    // sections structurées. On repère les marqueurs par leur position dans le
-    // texte, sans exiger de ligne vide entre eux (l'agent d'enrichissement
-    // écrit tout en un seul bloc continu).
-    let expertise = '', engagements = '', bioNarrative = '', bioLibre = '';
-    if (p.bio) {
-      const idxExp = p.bio.search(/Domaines de recherche et expertise\s*:/);
-      if (idxExp !== -1) {
-        bioNarrative = p.bio.slice(0, idxExp).trim();
-        const reste = p.bio.slice(idxExp).replace(/^Domaines de recherche et expertise\s*:\s*/, '');
-        const idxEng = reste.search(/Engagements et positionnements politiques\s*:/);
-        if (idxEng !== -1) {
-          expertise = reste.slice(0, idxEng).trim();
-          engagements = reste.slice(idxEng).replace(/^Engagements et positionnements politiques\s*:\s*/, '').trim();
-        } else {
-          expertise = reste.trim();
-        }
-      } else {
-        bioLibre = p.bio;
-      }
-    }
+    // sections structurées (voir Perso.decouperBio, utilisé aussi par la page
+    // de validation des propositions IA pour prévisualiser à l'identique).
+    const { narrative: bioNarrative, expertise, engagements, libre: bioLibre } = this.decouperBio(p.bio);
     cont.innerHTML = `
       <div class="fiche-entete">
         <h1 class="fiche-nom">${this.esc(p.nom)} ${this.esc(p.prenom || '')}</h1>
@@ -440,6 +423,44 @@ const Perso = {
   esc(s) {
     return String(s ?? '').replace(/[&<>"']/g, c =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  },
+
+  // Découpe une bio en {narrative, expertise, engagements, libre}. Repère les
+  // marqueurs par leur position dans le texte, sans exiger de ligne vide
+  // (l'agent d'enrichissement écrit tout en un seul bloc continu). `libre`
+  // n'est renseigné que si aucun marqueur n'est trouvé du tout.
+  decouperBio(bio) {
+    let expertise = '', engagements = '', narrative = '', libre = '';
+    if (bio) {
+      const idxExp = bio.search(/Domaines de recherche et expertise\s*:/);
+      if (idxExp !== -1) {
+        narrative = bio.slice(0, idxExp).trim();
+        const reste = bio.slice(idxExp).replace(/^Domaines de recherche et expertise\s*:\s*/, '');
+        const idxEng = reste.search(/Engagements et positionnements politiques\s*:/);
+        if (idxEng !== -1) {
+          expertise = reste.slice(0, idxEng).trim();
+          engagements = reste.slice(idxEng).replace(/^Engagements et positionnements politiques\s*:\s*/, '').trim();
+        } else {
+          expertise = reste.trim();
+        }
+      } else {
+        libre = bio;
+      }
+    }
+    return { narrative, expertise, engagements, libre };
+  },
+
+  // Réciproque de decouperBio : reconstruit une bio unique à partir des trois
+  // parties, avec les marqueurs attendus, pour l'enregistrement en base.
+  assemblerBio(narrative, expertise, engagements) {
+    let out = (narrative || '').trim();
+    if ((expertise || '').trim()) {
+      out += (out ? '\n\n' : '') + 'Domaines de recherche et expertise : ' + expertise.trim();
+    }
+    if ((engagements || '').trim()) {
+      out += (out ? '\n\n' : '') + 'Engagements et positionnements politiques : ' + engagements.trim();
+    }
+    return out;
   },
 
   init() {

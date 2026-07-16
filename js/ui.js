@@ -462,33 +462,71 @@ const UI = {
         cont.innerHTML = '<div class="esp-vide">Aucune proposition en attente.</div>';
         return;
       }
-      const champLigne = (label, avant, apres) => {
-        if ((avant || '') === (apres || '')) return '';
-        return '<div class="prop-champ"><div class="prop-label">' + label + '</div>' +
-          '<div class="prop-avant"><em>avant :</em> ' + (esc(avant) || '<em>vide</em>') + '</div>' +
-          '<div class="prop-apres"><em>proposé :</em> ' + esc(apres) + '</div></div>';
+      const ligneLien = (l) => {
+        const type = (l && l.type) || 'lien';
+        return '<div class="prop-lien-row">' +
+          '<select class="prop-lien-type"><option value="video"' + (type === 'video' ? ' selected' : '') + '>vidéo</option>' +
+          '<option value="lien"' + (type !== 'video' ? ' selected' : '') + '>lien</option></select>' +
+          '<input type="text" class="prop-lien-titre" placeholder="titre" value="' + esc(l ? l.titre : '') + '">' +
+          '<input type="text" class="prop-lien-url" placeholder="https://…" value="' + esc(l ? l.url : '') + '">' +
+          '<a href="#" class="prop-lien-del" title="Supprimer ce lien">&#xe822;</a></div>';
       };
       cont.innerHTML = props.map(prop => {
         const p = (persos || []).find(x => x.id === prop.personnalite_id);
         const nomComplet = p ? esc((p.prenom ? p.prenom + ' ' : '') + p.nom) : '(personnalité supprimée)';
         const metiersAvant = p ? (p.metiers || []).join(', ') : '';
         const metiersApres = (prop.metiers || []).join(', ');
-        const liensHtml = (prop.liens || []).map(l =>
-          '<div class="prop-lien">' + esc(l.titre || l.type) + ' : <a href="' + esc(l.url) + '" target="_blank" rel="noopener">' + esc(l.url) + '</a></div>').join('');
-        const sourcesHtml = (prop.sources || []).map(u =>
-          '<a href="' + esc(u) + '" target="_blank" rel="noopener" class="prop-source">' + esc(u) + '</a>').join(' · ');
+        const { narrative, expertise, engagements } = Perso.decouperBio(prop.bio || '');
+        const hint = (avant, apres) => (avant && avant !== apres)
+          ? '<div class="prop-hint">actuellement : ' + esc(avant) + '</div>' : '';
         return '<div class="prop-bloc" data-prop-id="' + prop.id + '">' +
           '<h4>' + nomComplet + '</h4>' +
-          champLigne('Métiers', metiersAvant, metiersApres) +
-          champLigne('Bio courte', p ? p.short_bio : '', prop.short_bio) +
-          champLigne('Biographie', p ? p.bio : '', prop.bio) +
-          (liensHtml ? '<div class="prop-champ"><div class="prop-label">Liens proposés</div>' + liensHtml + '</div>' : '') +
-          (sourcesHtml ? '<div class="prop-sources"><em>Sources consultées :</em> ' + sourcesHtml + '</div>' : '') +
+
+          '<div class="prop-champ"><div class="prop-label">Métiers</div>' +
+          hint(metiersAvant, metiersApres) +
+          '<input type="text" class="mon-input5 w-input prop-metiers" value="' + esc(metiersApres) + '" placeholder="séparés par une virgule"></div>' +
+
+          '<div class="prop-champ"><div class="prop-label">Bio courte</div>' +
+          hint(p ? p.short_bio : '', prop.short_bio) +
+          '<textarea class="mon-input2 w-input prop-shortbio" rows="2">' + esc(prop.short_bio) + '</textarea></div>' +
+
+          '<div class="prop-champ"><div class="prop-label">Récit biographique</div>' +
+          '<textarea class="mon-input2 w-input prop-narrative" rows="6">' + esc(narrative) + '</textarea></div>' +
+
+          '<div class="prop-champ"><div class="prop-label">Domaines de recherche et expertise</div>' +
+          '<textarea class="mon-input2 w-input prop-expertise" rows="3">' + esc(expertise) + '</textarea></div>' +
+
+          '<div class="prop-champ"><div class="prop-label">Engagements et positionnements politiques</div>' +
+          '<textarea class="mon-input2 w-input prop-engagements" rows="3" placeholder="laisser vide si non trouvé, ne rien supposer">' + esc(engagements) + '</textarea></div>' +
+
+          '<div class="prop-champ"><div class="prop-label">Liens proposés</div>' +
+          '<div class="prop-liens-liste">' + (prop.liens || []).map(ligneLien).join('') + '</div>' +
+          '<a href="#" class="prop-lien-add">+ ajouter un lien</a></div>' +
+
+          ((prop.sources || []).length ? '<div class="prop-sources"><em>Sources consultées, pour vérification :</em> ' +
+            prop.sources.map(u => '<a href="' + esc(u) + '" target="_blank" rel="noopener" class="prop-source">' + esc(u) + '</a>').join(' · ') + '</div>' : '') +
+
           '<div class="prop-actions">' +
             '<a href="#" class="_w-link-bloc-button publier w-inline-block btn-valider-prop" data-id="' + prop.id + '"><div>valider</div></a>' +
             '<a href="#" class="_2-mini-bouton mini w-inline-block btn-rejeter-prop" data-id="' + prop.id + '" title="Rejeter"><div class="fontello-icon pink">' + ICO.cross + '</div></a>' +
           '</div></div>';
       }).join('');
+
+      // Lien cassé ou inutile : suppression directe de sa ligne
+      cont.querySelectorAll('.prop-lien-del').forEach(a => a.addEventListener('click', (e) => {
+        e.preventDefault();
+        a.closest('.prop-lien-row').remove();
+      }));
+      // Ajouter un lien manquant que l'agent n'a pas trouvé
+      cont.querySelectorAll('.prop-lien-add').forEach(a => a.addEventListener('click', (e) => {
+        e.preventDefault();
+        const liste = a.previousElementSibling;
+        const div = document.createElement('div');
+        div.innerHTML = '<div class="prop-lien-row"><select class="prop-lien-type"><option value="video">vidéo</option><option value="lien" selected>lien</option></select><input type="text" class="prop-lien-titre" placeholder="titre"><input type="text" class="prop-lien-url" placeholder="https://…"><a href="#" class="prop-lien-del" title="Supprimer ce lien">&#xe822;</a></div>';
+        const ligne = div.firstElementChild;
+        ligne.querySelector('.prop-lien-del').addEventListener('click', (ev) => { ev.preventDefault(); ligne.remove(); });
+        liste.appendChild(ligne);
+      }));
 
       cont.querySelectorAll('.btn-valider-prop').forEach(btn => btn.addEventListener('click', async (e) => {
         e.preventDefault();
@@ -506,20 +544,39 @@ const UI = {
   async validerPropositionIA(propId) {
     if (!Auth.isAdmin()) return;
     try {
+      const bloc = document.querySelector('.prop-bloc[data-prop-id="' + propId + '"]');
+      if (!bloc) throw new Error('Bloc de proposition introuvable à l\'écran.');
+      // On applique ce que l'admin a sous les yeux, tel qu'il l'a corrigé,
+      // pas ce que l'agent avait initialement proposé.
+      const metiers = bloc.querySelector('.prop-metiers').value.split(',').map(s => s.trim()).filter(Boolean);
+      const shortBio = bloc.querySelector('.prop-shortbio').value.trim();
+      const narrative = bloc.querySelector('.prop-narrative').value;
+      const expertise = bloc.querySelector('.prop-expertise').value;
+      const engagements = bloc.querySelector('.prop-engagements').value;
+      const bio = Perso.assemblerBio(narrative, expertise, engagements);
+      const liens = Array.from(bloc.querySelectorAll('.prop-lien-row')).map(row => ({
+        type: row.querySelector('.prop-lien-type').value,
+        titre: row.querySelector('.prop-lien-titre').value.trim(),
+        url: row.querySelector('.prop-lien-url').value.trim()
+      })).filter(l => l.url);
+
       const { data: prop, error: e1 } = await sb.from('personnalites_propositions_ia')
-        .select('*').eq('id', propId).single();
+        .select('personnalite_id').eq('id', propId).single();
       if (e1 || !prop) throw new Error('Proposition introuvable.');
       const { data: perso } = await sb.from('personnalites').select('metiers').eq('id', prop.personnalite_id).maybeSingle();
+
       const champs = { enrichi_par_ia_le: new Date().toISOString() };
-      if (prop.metiers && prop.metiers.length) champs.metiers = prop.metiers;
-      else if (perso) champs.metiers = perso.metiers;
-      if (prop.short_bio) champs.short_bio = prop.short_bio;
-      if (prop.bio) champs.bio = prop.bio;
-      if (prop.liens && prop.liens.length) champs.liens = prop.liens;
+      champs.metiers = metiers.length ? metiers : (perso ? perso.metiers : []);
+      if (shortBio) champs.short_bio = shortBio;
+      if (bio) champs.bio = bio;
+      champs.liens = liens;
+
       const { error: e2 } = await sb.from('personnalites').update(champs).eq('id', prop.personnalite_id);
       if (e2) throw e2;
+      // On garde une trace de la version réellement appliquée (après tes corrections)
       await sb.from('personnalites_propositions_ia').update({
-        statut: 'validee', valide_par: Auth.currentUser.id, valide_le: new Date().toISOString()
+        statut: 'validee', valide_par: Auth.currentUser.id, valide_le: new Date().toISOString(),
+        metiers: champs.metiers, short_bio: shortBio || null, bio: bio || null, liens
       }).eq('id', propId);
       this.toast('Proposition validée et appliquée à la fiche.');
       this.loadPropositionsIA();
