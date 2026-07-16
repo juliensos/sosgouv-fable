@@ -513,6 +513,13 @@ const UI = {
       }).join('');
 
       // Lien cassé ou inutile : suppression directe de sa ligne
+      // Les champs texte grandissent avec leur contenu, pas d'ascenseur interne
+      const autoGrow = (ta) => { ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 2) + 'px'; };
+      cont.querySelectorAll('.prop-champ textarea').forEach(ta => {
+        autoGrow(ta);
+        ta.addEventListener('input', () => autoGrow(ta));
+      });
+
       cont.querySelectorAll('.prop-lien-del').forEach(a => a.addEventListener('click', (e) => {
         e.preventDefault();
         a.closest('.prop-lien-row').remove();
