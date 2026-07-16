@@ -410,6 +410,7 @@ body.admin-connecte .foot-public-liens { bottom: 46px; }
 
 /* ---- v28 : propositions IA éditables, prévisualisation façon fiche ---- */
 .prop-champ textarea, .prop-champ input.mon-input5 { width: 100%; box-sizing: border-box; }
+.prop-champ textarea { overflow: hidden; resize: none; }
 .prop-hint { font-size: 11px; opacity: 0.6; margin-bottom: 3px; }
 .prop-lien-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
 .prop-lien-row select { flex: none; width: 70px; }
