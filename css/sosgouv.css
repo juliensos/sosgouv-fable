@@ -172,7 +172,6 @@
 .mini-jaune { color: var(--sos-yellow, #ffbb47); font-size: 10px; }
 .cr-e-par { display: flex; gap: 5px; align-items: center; margin: 4px 0 8px; }
 .gouv-membres .gouv-membre { display: flex; gap: 6px; align-items: baseline; }
-.gouv-membres .gm-nom { font-weight: 900; text-transform: uppercase; }
 .gouv-membres .gm-secteur { color: var(--sos-grey-1, #aca69a); }
 .filet.pointille { border-bottom: 1px dotted var(--black-100, #000); margin: 8px 0; }
 
