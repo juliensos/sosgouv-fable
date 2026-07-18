@@ -15,13 +15,21 @@
  *
  * Variables optionnelles :
  *   AGENT_MAX_PERSONNES    nombre de fiches traitées par exécution (défaut 5)
- *   AGENT_MODEL            modèle Claude à utiliser (défaut claude-sonnet-4-6)
+ *   AGENT_MODEL            modèle Claude à utiliser (défaut claude-sonnet-5)
+ *
+ * Consignes personnalisées : le fichier tools/consignes-agent.txt (à côté de
+ * ce script) est lu à chaque exécution et ajouté aux instructions envoyées à
+ * l'agent. Modifiable directement sur GitHub, y compris depuis un téléphone,
+ * sans toucher au code ni redéployer quoi que ce soit. Vide ou absent : aucun
+ * impact, l'agent suit juste ses instructions de base.
  *
  * Exécution : node tools/agent-enrichissement.js
  */
 
 const { createClient } = require('@supabase/supabase-js');
 const Anthropic = require('@anthropic-ai/sdk');
+const fs = require('fs');
+const path = require('path');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
@@ -78,8 +86,28 @@ Règles impératives :
 - "sources" doit lister les URLs réellement consultées pour rédiger la fiche, pour permettre une vérification humaine.
 - Les liens vidéo doivent pointer vers une plateforme d'hébergement reconnue (YouTube, Vimeo, Dailymotion) si disponible.`;
 
-async function rechercherEtRediger(perso) {
+function chargerConsignesPersonnalisees() {
+  const chemin = path.join(__dirname, 'consignes-agent.txt');
+  try {
+    const contenu = fs.readFileSync(chemin, 'utf8');
+    // Les lignes commençant par # sont de simples commentaires/exemples,
+    // ignorés : tant qu'aucune vraie consigne n'est écrite, rien n'est envoyé.
+    const utile = contenu.split('\n')
+      .filter(ligne => !ligne.trim().startsWith('#'))
+      .join('\n')
+      .trim();
+    return utile || null;
+  } catch (err) {
+    return null; // fichier absent : aucune consigne supplémentaire, comportement normal
+  }
+}
+
+async function rechercherEtRediger(perso, consignes) {
   const nomComplet = `${perso.prenom || ''} ${perso.nom}`.trim();
+  const blocConsignes = consignes
+    ? `\n\nConsignes supplémentaires données par le responsable du site (à respecter, ` +
+      `sans jamais qu'elles ne t'amènent à inventer une information) :\n${consignes}`
+    : '';
   const message = await anthropic.messages.create({
     model: MODEL,
     max_tokens: 4000,
@@ -88,7 +116,7 @@ async function rechercherEtRediger(perso) {
       role: 'user',
       content: `Recherche des informations factuelles et vérifiables sur "${nomComplet}" ` +
         `(personnalité de la société civile française : chercheur, expert, praticien ou créateur). ` +
-        `Rédige une fiche pour un site citoyen de composition de gouvernements imaginaires.\n\n${SCHEMA_ATTENDU}`
+        `Rédige une fiche pour un site citoyen de composition de gouvernements imaginaires.\n\n${SCHEMA_ATTENDU}${blocConsignes}`
     }]
   });
 
@@ -129,6 +157,8 @@ async function deposerProposition(perso, proposition) {
 // ------------------------------------------------------------
 async function main() {
   console.log(`Agent d'enrichissement SOSGOUV — modèle ${MODEL}, jusqu'à ${MAX_PERSONNES} fiche(s).`);
+  const consignes = chargerConsignesPersonnalisees();
+  if (consignes) console.log(`Consignes personnalisées chargées (tools/consignes-agent.txt, ${consignes.length} caractères).`);
   const candidats = await selectionnerCandidats();
   if (!candidats.length) {
     console.log('Aucune fiche à enrichir pour le moment.');
@@ -141,7 +171,7 @@ async function main() {
     const nomComplet = `${perso.prenom || ''} ${perso.nom}`.trim();
     try {
       console.log(`→ Recherche : ${nomComplet}…`);
-      const proposition = await rechercherEtRediger(perso);
+      const proposition = await rechercherEtRediger(perso, consignes);
       await deposerProposition(perso, proposition);
       console.log(`  ✓ Proposition déposée pour ${nomComplet} (en attente de validation admin).`);
       ok++;

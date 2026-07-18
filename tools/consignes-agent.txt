@@ -1,0 +1,15 @@
+# Consignes personnalisées pour l'agent d'enrichissement
+#
+# Tout ce qui est écrit ci-dessous (hors lignes commençant par #) est ajouté
+# aux instructions de l'agent à chaque exécution. Modifie ce fichier
+# directement ici sur GitHub (même depuis un téléphone), commit, et le
+# prochain lancement de l'agent en tiendra compte automatiquement.
+# Laisse le fichier vide (ou remets juste ces commentaires) pour revenir
+# au comportement par défaut, sans aucune consigne supplémentaire.
+#
+# Quelques exemples de ce qu'on peut écrire ici (à adapter ou remplacer) :
+# - Privilégie un ton neutre et factuel, sans effet de style.
+# - Pour les universitaires, mentionne systématiquement leur institution actuelle.
+# - Pour les journalistes, précise le média principal où ils/elles interviennent.
+# - Ne mentionne jamais l'âge exact ni la date de naissance complète.
+# - Si la personne a un compte X/Twitter ou LinkedIn officiel, ajoute-le en lien.
