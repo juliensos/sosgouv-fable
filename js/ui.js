@@ -66,7 +66,7 @@ const UI = {
     } else {
       const fond = document.getElementById('fondModal');
       if (fond) fond.style.display = 'block';
-      modal.style.display = 'block';
+      modal.style.display = 'flex';
     }
   },
 
@@ -514,10 +514,19 @@ const UI = {
       }).join('');
 
       // Lien cassé ou inutile : suppression directe de sa ligne
-      // Les champs texte grandissent avec leur contenu, pas d'ascenseur interne
+      // Les champs texte grandissent avec leur contenu, pas d'ascenseur interne.
+      // La mesure est différée après le rendu complet (requestAnimationFrame) :
+      // sur mobile, mesurer immédiatement après avoir injecté le HTML peut
+      // donner un scrollHeight encore incorrect, avant que la mise en page
+      // n'ait fini de se calculer, ce qui tronquait le texte.
       const autoGrow = (ta) => { ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 2) + 'px'; };
+      const grandirTousLesChamps = () => {
+        cont.querySelectorAll('.prop-champ textarea').forEach(autoGrow);
+      };
+      (window.requestAnimationFrame || setTimeout)(() => {
+        (window.requestAnimationFrame || setTimeout)(grandirTousLesChamps);
+      });
       cont.querySelectorAll('.prop-champ textarea').forEach(ta => {
-        autoGrow(ta);
         ta.addEventListener('input', () => autoGrow(ta));
       });
 
