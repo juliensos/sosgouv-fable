@@ -144,6 +144,15 @@ const UI = {
   init() {
     if (this._initDone) return;
     this._initDone = true;
+    // ._3-cont-body (qui héberge les onglets) a un overflow:hidden dans la
+    // maquette : même en position:fixed, un modal qui reste descendant de ce
+    // conteneur se retrouve rogné visuellement (l'en-tête et le pied de page
+    // ne sont alors jamais recouverts). On sort chaque modal pour qu'il
+    // devienne enfant direct de <body>, hors de toute zone rognée, sans
+    // toucher à la structure HTML gérée dans Webflow.
+    document.querySelectorAll('.pm-parent, .bm-parent, #fondModal').forEach(el => {
+      if (el.parentElement !== document.body) document.body.appendChild(el);
+    });
     // Menus du header (compte + général), bascule manuelle
     const menus = [
       { btn: document.getElementById('btnCompte'), menu: document.getElementById('menuCompte') },
