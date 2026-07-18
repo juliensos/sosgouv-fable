@@ -518,7 +518,11 @@ const UI = {
       // La mesure est différée après le rendu complet (requestAnimationFrame) :
       // sur mobile, mesurer immédiatement après avoir injecté le HTML peut
       // donner un scrollHeight encore incorrect, avant que la mise en page
-      // n'ait fini de se calculer, ce qui tronquait le texte.
+      // n'ait fini de se calculer, ce qui tronquait le texte. Un filet de
+      // sécurité (setTimeout à 150ms) repasse une seconde fois derrière au
+      // cas où deux frames ne suffiraient pas sur certains mobiles, et un
+      // ré-ajustement sur resize/rotation couvre le changement d'orientation
+      // et la barre d'adresse mobile qui rétrécit après coup la fenêtre.
       const autoGrow = (ta) => { ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 2) + 'px'; };
       const grandirTousLesChamps = () => {
         cont.querySelectorAll('.prop-champ textarea').forEach(autoGrow);
@@ -526,6 +530,10 @@ const UI = {
       (window.requestAnimationFrame || setTimeout)(() => {
         (window.requestAnimationFrame || setTimeout)(grandirTousLesChamps);
       });
+      setTimeout(grandirTousLesChamps, 150);
+      if (this._resizePropIA) window.removeEventListener('resize', this._resizePropIA);
+      this._resizePropIA = grandirTousLesChamps;
+      window.addEventListener('resize', this._resizePropIA);
       cont.querySelectorAll('.prop-champ textarea').forEach(ta => {
         ta.addEventListener('input', () => autoGrow(ta));
       });
