@@ -62,11 +62,23 @@ const UI = {
     const head = document.querySelector('._3-cont-head');
     const basHeader = head ? Math.max(0, Math.round(head.getBoundingClientRect().bottom)) : 0;
     racine.setProperty('--sos-header-h', basHeader + 'px');
-    const cont = document.querySelector('._3-cont-body') || document.querySelector('.grid-layout');
-    if (cont) {
-      const largeur = Math.round(cont.getBoundingClientRect().width);
-      if (largeur > 0) racine.setProperty('--sos-content-w', largeur + 'px');
+    // Largeur du panneau bm : dans la maquette, il s'aligne sur les marges
+    // du header (bord gauche du logo, symétrique à droite). On mesure donc
+    // cette marge plutôt que ._3-cont-body, qui peut être plus étroit que
+    // le contenu réellement affiché (ses enfants débordent, overflow caché).
+    let largeur = 0;
+    const logo = document.querySelector('.bloclogo');
+    if (logo) {
+      const marge = logo.getBoundingClientRect().left;
+      if (marge >= 0 && marge < window.innerWidth * 0.3) {
+        largeur = Math.round(window.innerWidth - 2 * marge);
+      }
     }
+    if (!largeur) {
+      const cont = document.querySelector('._3-cont-body') || document.querySelector('.grid-layout');
+      if (cont) largeur = Math.round(cont.getBoundingClientRect().width);
+    }
+    if (largeur > 0) racine.setProperty('--sos-content-w', largeur + 'px');
   },
 
   // ---------- Modaux ----------

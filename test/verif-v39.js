@@ -172,8 +172,10 @@ async function main() {
     /\.pm-parent \._3-small-modal-stroke[^{]*\{[^}]*display\s*:\s*block\s*!important/.test(css));
 
   console.log('\n=== Cache-busting ===');
-  test('index.html référence partout ?v39',
-    (html.match(/\?v39/g) || []).length === 6 && !/\?v3[678]/.test(html));
+  const versions = [...new Set(html.match(/\?v(\d+)/g) || [])];
+  test('index.html : une seule version référencée partout (6 fois, ≥ v40)',
+    versions.length === 1 && (html.match(/\?v\d+/g) || []).length === 6
+    && Number(versions[0].slice(2)) >= 40);
 
   console.log('\n' + ok + ' OK, ' + ko + ' KO');
   process.exit(ko ? 1 : 0);
