@@ -107,13 +107,13 @@
   min-height: 34px;
   cursor: pointer;
 }
-/* pm : croix blanche sans cadre, posée sur le voile (dans le padding de
-   40px au-dessus de la boîte), alignée sur le coin droit */
+/* pm : croix blanche sur carré noir, sans contour, collée au coin
+   haut-droit de la boîte */
 .pm-parent ._3-close-bouton {
-  top: -40px !important;
+  top: 0 !important;
   right: 0 !important;
   left: auto !important;
-  background: transparent !important;
+  background: var(--black-100, #000) !important;
   border: none !important;
   box-shadow: none !important;
 }

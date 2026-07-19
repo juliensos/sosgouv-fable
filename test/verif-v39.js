@@ -114,11 +114,11 @@ async function main() {
   test('bm : le panneau défile à l\'intérieur (height 100 %, max-height none)',
     strokeBm && /height\s*:\s*100%\s*!important/.test(strokeBm) && /max-height\s*:\s*none\s*!important/.test(strokeBm));
   const croixPm = regleSeule('.pm-parent ._3-close-bouton');
-  test('pm : croix sur le voile, au-dessus du coin droit (top négatif, right 0 !important)',
-    croixPm && /top\s*:\s*-\d+px\s*!important/.test(croixPm) && /right\s*:\s*0\s*!important/.test(croixPm)
+  test('pm : croix collée au coin haut-droit de la boîte (top 0, right 0 !important)',
+    croixPm && /top\s*:\s*0\s*!important/.test(croixPm) && /right\s*:\s*0\s*!important/.test(croixPm)
     && /left\s*:\s*auto\s*!important/.test(croixPm));
-  test('pm : croix sans cadre (background transparent, border none !important)',
-    croixPm && /background\s*:\s*transparent\s*!important/.test(croixPm) && /border\s*:\s*none\s*!important/.test(croixPm));
+  test('pm : croix sur carré noir, sans contour (background noir, border none !important)',
+    croixPm && /background\s*:\s*var\(--black-100,\s*#000\)\s*!important/.test(croixPm) && /border\s*:\s*none\s*!important/.test(croixPm));
   test('pm : croix blanche', /\.pm-parent \._3-close-bouton \.croix[^{]*\{[^}]*color\s*:\s*#fff\s*!important/.test(cssSansComm));
   const croixBm = regleSeule('.bm-parent ._3-close-bouton');
   test('bm : croix en haut à GAUCHE (top 0, left 0, right auto !important)',
