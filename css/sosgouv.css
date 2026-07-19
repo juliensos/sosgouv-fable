@@ -29,14 +29,19 @@
    ils neutralisent aussi les combo-classes Webflow plus spécifiques
    (.pm-parent.connect, .bm-parent.gu, …). Seule l'esthétique intérieure
    (paddings, typo, contenus) reste pilotée par la maquette. */
-/* Deux mises en page distinctes (maquette GOVLAB de juillet, v39) :
-   - pm (petits modaux) : boîte centrée sur un voile noir à 45 %, croix
-     blanche sans cadre posée sur le voile, au-dessus du coin droit.
-   - bm (grands modaux) : panneau pleine hauteur calé sous le header
-     (variable --sos-header-h mesurée par ui.js), large comme le contenu
-     principal (--sos-content-w), fond BLANC sans voile ; il recouvre les
-     boutons d'onglets et descend jusqu'au pied de page ; croix maquette
-     en haut à GAUCHE. */
+/* Deux mises en page distinctes, conformes à la maquette (v43) :
+   - pm (petits modaux) : calque FIXE plein écran sous <body>, boîte
+     centrée (horizontalement ET verticalement), voile noir à 70 % comme
+     le fond-modal de la maquette, croix blanche sur carré noir au coin
+     haut-droit de la boîte.
+   - bm (grands modaux) : PANNEAU DANS LA PAGE, pas un calque. Le site est
+     une grille centrée (max 860 px, header 80 px / contenu / footer) ;
+     le bm reste dans ._3-cont-body, affiché en bloc il occupe toute la
+     case de contenu et pousse le menu d'onglets et les sections hors de
+     la zone visible (rognées par l'overflow hidden du conteneur). Il a
+     donc naturellement la largeur du contenu, cache les onglets, descend
+     jusqu'au footer, fond blanc sans voile, croix maquette en haut à
+     GAUCHE. Ne JAMAIS re-sortir les bm de ._3-cont-body. */
 .pm-parent {
   position: fixed !important;
   inset: 0 !important;
@@ -48,36 +53,31 @@
   display: none;
   flex-flow: row nowrap !important;
   justify-content: center !important;
-  align-items: flex-start !important;
+  align-items: center !important;
   overflow-y: auto !important;
-  padding: 40px 12px !important;
-  background: rgba(0, 0, 0, 0.45) !important;
+  padding: 12px !important;
+  background: rgba(0, 0, 0, 0.7) !important;
 }
 .bm-parent {
-  position: fixed !important;
-  top: var(--sos-header-h, 0px) !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  width: auto !important;
-  height: auto !important;
+  position: relative !important;
+  inset: auto !important;
+  z-index: 50;
+  width: 100% !important;
+  height: 100% !important;
   margin: 0 !important;
-  transform: none !important;
-  z-index: 4100 !important;
-  display: none;
-  flex-flow: row nowrap !important;
-  justify-content: center !important;
-  align-items: stretch !important;
-  overflow: hidden !important;
   padding: 0 !important;
-  background: var(--sos-white, #fff) !important;
+  transform: none !important;
+  display: none;
+  background: var(--sos-white, #fff);
+  overflow: auto !important;
 }
 /* Le voile des pm est porté par le conteneur plein écran ci-dessus, les
    bm n'en ont pas : les fonds intégrés de la maquette n'ont plus à
    s'afficher (le clic hors de la boîte ferme le modal, géré dans ui.js). */
 .pm-parent ._3-fond-modal { display: none !important; }
-#fondModal { position: fixed; inset: 0; z-index: 4000; background: rgba(0,0,0,0.45); }
-/* La boîte : un simple bloc, jamais un flex 50/50 */
+#fondModal { position: fixed; inset: 0; z-index: 4000; background: rgba(0,0,0,0.7); }
+/* La boîte : un simple bloc, jamais un flex 50/50. Pour les bm, elle
+   remplit le panneau (le 500 px de la maquette ne vaut que pour les pm). */
 .pm-parent .cont-flex-50-50, .bm-parent .cont-flex-50-50 {
   display: block !important;
   position: relative !important;
@@ -86,10 +86,16 @@
   flex: none !important;
   margin: 0 auto !important;
 }
-.pm-parent .cont-flex-50-50 { width: min(94vw, 560px) !important; height: auto !important; }
-.bm-parent .cont-flex-50-50 { width: min(var(--sos-content-w, 94vw), 100vw) !important; height: 100% !important; }
-/* Le panneau bm occupe toute la hauteur disponible et défile à l'intérieur */
+.pm-parent .cont-flex-50-50 { width: min(94vw, 500px) !important; height: auto !important; max-height: none !important; }
+.bm-parent .cont-flex-50-50 {
+  width: 100% !important;
+  max-width: none !important;
+  height: 100% !important;
+  max-height: none !important;
+}
+/* Le stroke de la maquette remplit le panneau et défile à l'intérieur */
 .bm-parent ._3-big-modal-stroke {
+  width: 100% !important;
   height: 100% !important;
   max-height: none !important;
   box-sizing: border-box !important;

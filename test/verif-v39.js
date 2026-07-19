@@ -66,15 +66,17 @@ async function main() {
   const regles = (cssSansComm.match(/[^{}]+\{[^}]*\}/g) || []);
   const regle = (motif) => regles.filter(r => r.includes(motif));
 
-  console.log('\n=== V36 : sortie des modaux de la zone rognée ===');
-  const modaux = [...doc.querySelectorAll('.pm-parent, .bm-parent')];
-  test('Des modaux existent dans la page (' + modaux.length + ')', modaux.length >= 10);
-  test('Tous les pm/bm-parent sont enfants directs de <body>',
-    modaux.every(m => m.parentElement === doc.body));
+  console.log('\n=== Placement des modaux dans le DOM (v36, revu en v43) ===');
+  const pms = [...doc.querySelectorAll('.pm-parent')];
+  const bms = [...doc.querySelectorAll('.bm-parent')];
+  test('Des modaux existent dans la page (' + (pms.length + bms.length) + ')', pms.length + bms.length >= 10);
+  test('Tous les pm-parent (calques fixes) sont enfants directs de <body>',
+    pms.every(m => m.parentElement === doc.body));
   const fond = doc.getElementById('fondModal');
   test('#fondModal est enfant direct de <body>', fond && fond.parentElement === doc.body);
-  test('Aucun modal ne reste dans ._3-cont-body',
-    !doc.querySelector('._3-cont-body .pm-parent, ._3-cont-body .bm-parent'));
+  test('Tous les bm-parent (panneaux) restent DANS ._3-cont-body',
+    bms.length > 0 && bms.every(m => m.closest('._3-cont-body')));
+  test('Aucun pm ne reste dans ._3-cont-body', !doc.querySelector('._3-cont-body .pm-parent'));
 
   console.log('\n=== V38/V39 : mécanique des modaux autonome (CSS) ===');
   const regleSeule = (sel) => regles.find(r => r.substring(0, r.indexOf('{')).trim() === sel);
@@ -85,20 +87,19 @@ async function main() {
     && /position\s*:\s*fixed\s*!important/.test(pmRule) && /inset\s*:\s*0\s*!important/.test(pmRule));
   test('pm : boîte centrée (justify-content center !important)',
     pmRule && /justify-content\s*:\s*center\s*!important/.test(pmRule));
-  test('pm : voile noir 45 % porté par le conteneur (background !important)',
-    pmRule && /background\s*:\s*rgba\(0,\s*0,\s*0,\s*0?\.45\)\s*!important/.test(pmRule));
-  test('bm : position fixed !important', bmRule && /position\s*:\s*fixed\s*!important/.test(bmRule));
-  test('bm : calé sous le header (top: var(--sos-header-h) !important)',
-    bmRule && /top\s*:\s*var\(--sos-header-h[^)]*\)\s*!important/.test(bmRule));
-  test('bm : descend jusqu\'en bas (bottom 0 !important)', bmRule && /bottom\s*:\s*0\s*!important/.test(bmRule));
-  test('bm : fond BLANC sans voile (background !important)',
-    bmRule && /background\s*:\s*var\(--sos-white,\s*#fff\)\s*!important/.test(bmRule));
-  test('bm : panneau pleine hauteur (align-items stretch !important)',
-    bmRule && /align-items\s*:\s*stretch\s*!important/.test(bmRule));
+  test('pm : voile noir 70 % comme le fond-modal maquette (background !important)',
+    pmRule && /background\s*:\s*rgba\(0,\s*0,\s*0,\s*0?\.7\)\s*!important/.test(pmRule));
+  test('pm : boîte centrée verticalement (align-items center !important)',
+    pmRule && /align-items\s*:\s*center\s*!important/.test(pmRule));
+  test('bm : PANNEAU dans la page (position relative !important, pas fixed)',
+    bmRule && /position\s*:\s*relative\s*!important/.test(bmRule) && !/fixed/.test(bmRule));
+  test('bm : remplit la case de contenu (width et height 100 % !important)',
+    bmRule && /width\s*:\s*100%\s*!important/.test(bmRule) && /height\s*:\s*100%\s*!important/.test(bmRule));
+  test('bm : fond blanc, défilement interne (overflow auto !important)',
+    bmRule && /background\s*:\s*var\(--sos-white,\s*#fff\)/.test(bmRule) && /overflow\s*:\s*auto\s*!important/.test(bmRule));
   const zPm = pmRule && pmRule.match(/z-index\s*:\s*(\d+)\s*!important/);
-  const zBm = bmRule && bmRule.match(/z-index\s*:\s*(\d+)\s*!important/);
-  test('pm et bm : z-index !important au-dessus du header/footer/admin (≥ 4000)',
-    zPm && zBm && Number(zPm[1]) >= 4000 && Number(zBm[1]) >= 4000);
+  test('pm : z-index !important au-dessus du header/footer/admin (≥ 4000)',
+    zPm && Number(zPm[1]) >= 4000);
   test('Fond intégré des pm neutralisé (le conteneur porte le voile)',
     /\.pm-parent \._3-fond-modal\s*\{\s*display\s*:\s*none\s*!important/.test(cssSansComm));
   test('Le fond intégré des bm reste neutralisé (v23)',
@@ -107,8 +108,9 @@ async function main() {
   test('Boîte : bloc simple centré (display block + margin auto !important)',
     !!boite && /margin\s*:\s*0 auto\s*!important/.test(boite));
   const largeurBm = regleSeule('.bm-parent .cont-flex-50-50');
-  test('bm : large comme le contenu principal (width var(--sos-content-w) !important)',
-    largeurBm && /width\s*:\s*min\(var\(--sos-content-w[^)]*\)[^)]*\)\s*!important/.test(largeurBm)
+  test('bm : la boîte remplit le panneau (100 %, le 500px maquette neutralisé)',
+    largeurBm && /width\s*:\s*100%\s*!important/.test(largeurBm)
+    && /max-width\s*:\s*none\s*!important/.test(largeurBm)
     && /height\s*:\s*100%\s*!important/.test(largeurBm));
   const strokeBm = regleSeule('.bm-parent ._3-big-modal-stroke');
   test('bm : le panneau défile à l\'intérieur (height 100 %, max-height none)',
@@ -142,20 +144,18 @@ async function main() {
 
   UI.openModal('modal-infos');
   const bm = doc.getElementById('modal-infos');
-  test('Grand modal (bm) ouvert en flex', bm.style.display === 'flex');
-  test('Variable --sos-header-h posée à l\'ouverture (mesure du header)',
-    /px$/.test(doc.documentElement.style.getPropertyValue('--sos-header-h')));
+  test('Grand modal (bm) ouvert en block (panneau dans la page)', bm.style.display === 'block');
   UI.closeModals();
   test('closeModals referme le bm', bm.style.display === 'none');
 
-  // Clic sur le voile sombre (le conteneur lui-même) : ferme le modal
-  UI.openModal('modal-infos');
-  bm.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
-  test('Clic sur le voile sombre : modal refermé', bm.style.display === 'none');
+  // Clic sur le voile sombre d'un pm (le conteneur lui-même) : ferme
+  UI.openModal('modal-add-perso');
+  pm.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  test('Clic sur le voile sombre : pm refermé', pm.style.display === 'none');
   // Clic à l'intérieur de la boîte : ne ferme pas
-  UI.openModal('modal-infos');
-  bm.querySelector('._3-big-modal-stroke').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
-  test('Clic dans la boîte blanche : modal toujours ouvert', bm.style.display === 'flex');
+  UI.openModal('modal-add-perso');
+  pm.querySelector('._3-small-modal-stroke').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  test('Clic dans la boîte : pm toujours ouvert', pm.style.display === 'flex');
   UI.closeModals();
 
   console.log('\n=== Navigation sections ===');

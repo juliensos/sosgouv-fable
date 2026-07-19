@@ -279,7 +279,7 @@ window.confirm = () => true;
   // Fiche
   Perso.render();
   Perso.openFiche(persoId);
-  test('Fiche personnalité ouverte', document.getElementById('modal-fiche').style.display === 'flex'
+  test('Fiche personnalité ouverte', document.getElementById('modal-fiche').style.display === 'block'
     && document.getElementById('fiche-contenu').innerHTML.includes('JANCOVICI'));
   UI.closeModals();
 
@@ -398,7 +398,7 @@ window.confirm = () => true;
   await Gouv.openDetail(gouvId);
   await wait(20);
   test('Modal détail ouvert avec les postes',
-    document.getElementById('modal-detail').style.display === 'flex'
+    document.getElementById('modal-detail').style.display === 'block'
     && document.getElementById('detail-contenu').innerHTML.includes('gouvernement créé par')
     && document.getElementById('detail-contenu').innerHTML.includes('Commentaires'));
 

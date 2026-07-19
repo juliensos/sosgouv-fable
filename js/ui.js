@@ -53,45 +53,20 @@ const UI = {
     if (n === 4 && window.Perso) Perso.loadList();
   },
 
-  // ---------- Variables de mise en page ----------
-  // Les grands modaux (bm) se calent sous le header et sur la largeur du
-  // contenu principal : on MESURE la maquette réelle au lieu de supposer
-  // des dimensions, pour rester indépendant du CSS Webflow resynchronisé.
-  syncLayoutVars() {
-    const racine = document.documentElement.style;
-    const head = document.querySelector('._3-cont-head');
-    const basHeader = head ? Math.max(0, Math.round(head.getBoundingClientRect().bottom)) : 0;
-    racine.setProperty('--sos-header-h', basHeader + 'px');
-    // Largeur du panneau bm : dans la maquette, il s'aligne sur les marges
-    // du header (bord gauche du logo, symétrique à droite). On mesure donc
-    // cette marge plutôt que ._3-cont-body, qui peut être plus étroit que
-    // le contenu réellement affiché (ses enfants débordent, overflow caché).
-    let largeur = 0;
-    const logo = document.querySelector('.bloclogo');
-    if (logo) {
-      const marge = logo.getBoundingClientRect().left;
-      if (marge >= 0 && marge < window.innerWidth * 0.3) {
-        largeur = Math.round(window.innerWidth - 2 * marge);
-      }
-    }
-    if (!largeur) {
-      const cont = document.querySelector('._3-cont-body') || document.querySelector('.grid-layout');
-      if (cont) largeur = Math.round(cont.getBoundingClientRect().width);
-    }
-    if (largeur > 0) racine.setProperty('--sos-content-w', largeur + 'px');
-  },
-
   // ---------- Modaux ----------
   openModal(id) {
     const modal = document.getElementById(id);
     if (!modal) return;
-    // v38/v39 : la mécanique (position, voile ou panneau, z-index) vit dans
-    // le CSS applicatif, indépendamment du CSS Webflow : il suffit
-    // d'afficher le conteneur. Les bm se calent sous le header, mesuré à
-    // l'instant de l'ouverture.
-    this.syncLayoutVars();
-    modal.style.display = 'flex';
+    const estBM = modal.classList.contains('bm-parent');
+    // v43, conforme à la maquette : un bm est un PANNEAU dans la page,
+    // affiché en bloc à l'intérieur de ._3-cont-body dont il occupe toute
+    // la case (le menu d'onglets et les sections sont poussés hors de la
+    // zone visible, rognés par le conteneur). Un pm est un calque fixe
+    // centré sur voile sombre, sous <body>.
+    modal.style.display = estBM ? 'block' : 'flex';
     modal.scrollTop = 0;
+    const stroke = modal.querySelector('._3-big-modal-stroke, ._3-small-modal-stroke');
+    if (stroke) stroke.scrollTop = 0;
   },
 
   closeModals() {
@@ -174,13 +149,12 @@ const UI = {
     // ne sont alors jamais recouverts). On sort chaque modal pour qu'il
     // devienne enfant direct de <body>, hors de toute zone rognée, sans
     // toucher à la structure HTML gérée dans Webflow.
-    document.querySelectorAll('.pm-parent, .bm-parent, #fondModal').forEach(el => {
+    // Seuls les pm (calques fixes) sortent de la zone rognée. Les bm
+    // restent dans ._3-cont-body : c'est leur place, ils en occupent la
+    // case entière une fois affichés (mécanique de la maquette).
+    document.querySelectorAll('.pm-parent, #fondModal').forEach(el => {
       if (el.parentElement !== document.body) document.body.appendChild(el);
     });
-    // Position des grands modaux : suit le header réel, y compris quand la
-    // fenêtre change (rotation mobile, redimensionnement).
-    this.syncLayoutVars();
-    window.addEventListener('resize', () => this.syncLayoutVars());
     // Menus du header (compte + général), bascule manuelle
     const menus = [
       { btn: document.getElementById('btnCompte'), menu: document.getElementById('menuCompte') },
