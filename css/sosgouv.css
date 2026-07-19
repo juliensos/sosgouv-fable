@@ -29,7 +29,15 @@
    ils neutralisent aussi les combo-classes Webflow plus spécifiques
    (.pm-parent.connect, .bm-parent.gu, …). Seule l'esthétique intérieure
    (paddings, typo, contenus) reste pilotée par la maquette. */
-.pm-parent, .bm-parent {
+/* Deux mises en page distinctes (maquette GOVLAB de juillet, v39) :
+   - pm (petits modaux) : boîte centrée sur un voile noir à 45 %, croix
+     blanche sans cadre posée sur le voile, au-dessus du coin droit.
+   - bm (grands modaux) : panneau pleine hauteur calé sous le header
+     (variable --sos-header-h mesurée par ui.js), large comme le contenu
+     principal (--sos-content-w), fond BLANC sans voile ; il recouvre les
+     boutons d'onglets et descend jusqu'au pied de page ; croix maquette
+     en haut à GAUCHE. */
+.pm-parent {
   position: fixed !important;
   inset: 0 !important;
   width: auto !important;
@@ -45,31 +53,51 @@
   padding: 40px 12px !important;
   background: rgba(0, 0, 0, 0.45) !important;
 }
-/* Le voile sombre est porté par le conteneur plein écran ci-dessus : les
-   fonds intégrés de la maquette n'ont plus à s'afficher (le clic hors de
-   la boîte ferme le modal, géré dans ui.js). */
+.bm-parent {
+  position: fixed !important;
+  top: var(--sos-header-h, 0px) !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  transform: none !important;
+  z-index: 4100 !important;
+  display: none;
+  flex-flow: row nowrap !important;
+  justify-content: center !important;
+  align-items: stretch !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  background: var(--sos-white, #fff) !important;
+}
+/* Le voile des pm est porté par le conteneur plein écran ci-dessus, les
+   bm n'en ont pas : les fonds intégrés de la maquette n'ont plus à
+   s'afficher (le clic hors de la boîte ferme le modal, géré dans ui.js). */
 .pm-parent ._3-fond-modal { display: none !important; }
 #fondModal { position: fixed; inset: 0; z-index: 4000; background: rgba(0,0,0,0.45); }
-/* La boîte blanche : un simple bloc centré, jamais un flex 50/50 */
+/* La boîte : un simple bloc, jamais un flex 50/50 */
 .pm-parent .cont-flex-50-50, .bm-parent .cont-flex-50-50 {
   display: block !important;
   position: relative !important;
   inset: auto !important;
   transform: none !important;
   flex: none !important;
-  height: auto !important;
   margin: 0 auto !important;
 }
-.pm-parent .cont-flex-50-50 { width: min(94vw, 560px) !important; }
-.bm-parent .cont-flex-50-50 { width: min(94vw, 760px) !important; }
-/* Croix de fermeture : toujours en haut à droite de la boîte blanche
-   (demandé en v24, la règle vit désormais ici et plus dans la maquette,
-   où elle avait disparu d'une republication à l'autre). */
+.pm-parent .cont-flex-50-50 { width: min(94vw, 560px) !important; height: auto !important; }
+.bm-parent .cont-flex-50-50 { width: min(var(--sos-content-w, 94vw), 100vw) !important; height: 100% !important; }
+/* Le panneau bm occupe toute la hauteur disponible et défile à l'intérieur */
+.bm-parent ._3-big-modal-stroke {
+  height: 100% !important;
+  max-height: none !important;
+  box-sizing: border-box !important;
+  overflow-y: auto !important;
+}
+/* Croix de fermeture (la position ne dépend plus de la maquette). */
 .pm-parent ._3-close-bouton, .bm-parent ._3-close-bouton {
   position: absolute !important;
-  top: 0 !important;
-  right: 0 !important;
-  left: auto !important;
   bottom: auto !important;
   z-index: 2;
   display: flex;
@@ -78,6 +106,25 @@
   min-width: 34px;
   min-height: 34px;
   cursor: pointer;
+}
+/* pm : croix blanche sans cadre, posée sur le voile (dans le padding de
+   40px au-dessus de la boîte), alignée sur le coin droit */
+.pm-parent ._3-close-bouton {
+  top: -40px !important;
+  right: 0 !important;
+  left: auto !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.pm-parent ._3-close-bouton .croix, .pm-parent ._3-close-bouton div {
+  color: #fff !important;
+}
+/* bm : croix de la maquette, en haut à gauche du panneau */
+.bm-parent ._3-close-bouton {
+  top: 0 !important;
+  left: 0 !important;
+  right: auto !important;
 }
 /* v37 : le padding vient de la maquette Webflow (40px 20px 20px, place pour
    le bouton de fermeture), on ne le force plus ici. On garde seulement les

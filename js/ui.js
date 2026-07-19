@@ -53,14 +53,31 @@ const UI = {
     if (n === 4 && window.Perso) Perso.loadList();
   },
 
+  // ---------- Variables de mise en page ----------
+  // Les grands modaux (bm) se calent sous le header et sur la largeur du
+  // contenu principal : on MESURE la maquette réelle au lieu de supposer
+  // des dimensions, pour rester indépendant du CSS Webflow resynchronisé.
+  syncLayoutVars() {
+    const racine = document.documentElement.style;
+    const head = document.querySelector('._3-cont-head');
+    const basHeader = head ? Math.max(0, Math.round(head.getBoundingClientRect().bottom)) : 0;
+    racine.setProperty('--sos-header-h', basHeader + 'px');
+    const cont = document.querySelector('._3-cont-body') || document.querySelector('.grid-layout');
+    if (cont) {
+      const largeur = Math.round(cont.getBoundingClientRect().width);
+      if (largeur > 0) racine.setProperty('--sos-content-w', largeur + 'px');
+    }
+  },
+
   // ---------- Modaux ----------
   openModal(id) {
     const modal = document.getElementById(id);
     if (!modal) return;
-    // v38 : un seul mécanisme pour tous les modaux. Le conteneur pm/bm-parent
-    // est fixé plein écran par le CSS applicatif (position, centrage, voile
-    // sombre, z-index), indépendamment du CSS Webflow : il suffit de
-    // l'afficher. Plus aucun fond séparé à gérer.
+    // v38/v39 : la mécanique (position, voile ou panneau, z-index) vit dans
+    // le CSS applicatif, indépendamment du CSS Webflow : il suffit
+    // d'afficher le conteneur. Les bm se calent sous le header, mesuré à
+    // l'instant de l'ouverture.
+    this.syncLayoutVars();
     modal.style.display = 'flex';
     modal.scrollTop = 0;
   },
@@ -148,6 +165,10 @@ const UI = {
     document.querySelectorAll('.pm-parent, .bm-parent, #fondModal').forEach(el => {
       if (el.parentElement !== document.body) document.body.appendChild(el);
     });
+    // Position des grands modaux : suit le header réel, y compris quand la
+    // fenêtre change (rotation mobile, redimensionnement).
+    this.syncLayoutVars();
+    window.addEventListener('resize', () => this.syncLayoutVars());
     // Menus du header (compte + général), bascule manuelle
     const menus = [
       { btn: document.getElementById('btnCompte'), menu: document.getElementById('menuCompte') },

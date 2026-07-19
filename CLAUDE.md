@@ -7,7 +7,7 @@ Ce fichier permet à Claude Cowork de reprendre le projet SOSGOUV exactement là
 1. Dans Cowork, connecter le dossier local du projet (celui extrait du zip "copie exacte du dépôt GitHub", v36, 29 fichiers). Si le dossier local n'existe pas, cloner le dépôt public : `git clone https://github.com/juliensos/sosgouv`.
 2. Placer ce fichier CLAUDE.md à la racine du dossier.
 3. Vérifier que l'état local correspond bien à la version en ligne (les `?vNN` d'index.html donnent la version, CNAME pointe sur govlab.fr).
-4. Lancer les deux suites de tests avant toute modification pour confirmer le point de départ : `node test/smoke-test.js` (94 tests) et `node test/verif-v38.js` (29 tests), tout doit être vert (jsdom + mock Supabase, `npm install jsdom` au préalable).
+4. Lancer les deux suites de tests avant toute modification pour confirmer le point de départ : `node test/smoke-test.js` (94 tests) et `node test/verif-v39.js` (38 tests), tout doit être vert (jsdom + mock Supabase, `npm install jsdom` au préalable).
 
 ## Le projet en bref
 
@@ -17,7 +17,7 @@ SOSGOUV est une application web statique (HTML/CSS/JS, sans framework ni build) 
 - Site : https://juliensos.github.io/sosgouv/ et domaine govlab.fr (fichier CNAME)
 - Hébergement : GitHub Pages, branche main, dossier racine, déploiement automatique à chaque push (délai 1 à 2 min, recharger sans cache avec Ctrl+Shift+R)
 - Base de données : Supabase, projet `lbcmwivxvzeortvftxsi`
-- Version actuelle : v38, 123 tests verts (94 smoke + 29 vérification ciblée), plus un banc de rendu Chromium ayant validé le centrage/voile/croix des modaux sur desktop et mobile
+- Version actuelle : v39, 132 tests verts (94 smoke + 38 vérification ciblée), plus un banc de rendu Chromium ayant validé les deux mises en page de modaux sur desktop et mobile
 
 ## Fonctionnalités (à préserver intégralement)
 
@@ -43,7 +43,7 @@ C'est la contrainte la plus importante : conserver le graphisme des dernières v
 ## Pièges connus, ne pas régresser
 
 1. Le conteneur `._3-cont-body` (qui héberge tous les onglets) a un `overflow: hidden` dans la maquette Webflow. Ce rognage coupe visuellement même les éléments en `position: fixed` quand un ancêtre crée un bloc conteneur. Conséquence : au chargement, `js/ui.js` déplace chaque modal (`pm-parent`, `bm-parent`, `#fondModal`) pour en faire des enfants directs de `<body>`. Ne jamais re-nicher les modaux dans `._3-cont-body`.
-2. Le CSS Webflow est resynchronisé automatiquement chaque nuit (action GitHub `webflow-css-sync` : elle lit https://sosgouv.webflow.io et remplace le hash dans index.html). Ses règles changent donc sans préavis, et ses combo-classes (`.pm-parent.connect`, `.bm-parent.gu`…) sont plus spécifiques que nos sélecteurs simples. Depuis la v38, TOUTE la mécanique des modaux (position fixe plein écran, centrage, voile sombre, z-index 4100, croix en haut à droite, fermeture au clic sur le voile) vit dans `css/sosgouv.css` avec des `!important` systématiques et ne dépend d'aucune règle de la maquette. Ne jamais réintroduire de dépendance à la maquette pour cette mécanique ; la maquette ne pilote que l'intérieur des boîtes (paddings, typo, contenus). `test/verif-v38.js` verrouille tout cela.
+2. Le CSS Webflow est resynchronisé automatiquement chaque nuit (action GitHub `webflow-css-sync` : elle lit https://sosgouv.webflow.io et remplace le hash dans index.html). Ses règles changent donc sans préavis, et ses combo-classes (`.pm-parent.connect`, `.bm-parent.gu`…) sont plus spécifiques que nos sélecteurs simples. Depuis la v38, TOUTE la mécanique des modaux vit dans `css/sosgouv.css` avec des `!important` systématiques et ne dépend d'aucune règle de la maquette. La v39 fixe les deux mises en page voulues : pm (petits modaux) = boîte centrée sur voile noir 45 %, croix blanche sans cadre posée sur le voile au-dessus du coin droit ; bm (grands modaux) = panneau pleine hauteur calé sous le header, fond blanc sans voile, large comme le contenu principal, croix maquette en haut à GAUCHE, il recouvre les onglets et descend jusqu'au pied de page. Les dimensions du header et du contenu ne sont pas supposées : `ui.js` les mesure et les pose dans les variables CSS `--sos-header-h` et `--sos-content-w` (à l'ouverture et au resize). Ne jamais réintroduire de dépendance à la maquette pour cette mécanique ; la maquette ne pilote que l'intérieur des boîtes (paddings, typo, contenus). `test/verif-v39.js` verrouille tout cela.
 3. Le smoke-test historique visait une version disparue de la page (IDs `addNom`…, sélecteur de secteur inline) : il a été réaligné en v38 sur la page actuelle (ajouts de ministères/délégués via les modaux, 8 postes initiaux). Les « 213 tests verts » des anciennes notes ne sont plus la référence ; la référence est 94 + 29.
 
 ## Méthode de travail attendue
@@ -56,4 +56,4 @@ C'est la contrainte la plus importante : conserver le graphisme des dernières v
 
 ## Historique utile
 
-Le projet a traversé plusieurs itérations dans Claude.ai : gov list 1 et 2, gov classique, authentication system, v3, v4, reconstruction complète V-5 (13 novembre 2025), puis corrections successives jusqu'à la v36 (modaux déplacés vers body), la v37 (conflits de padding/display avec la maquette) et la v38 (mécanique des modaux rendue totalement autonome du CSS Webflow : centrage, voile, croix, empilement ; smoke-test réaligné sur la page actuelle). Le fil complet est visible ici : https://claude.ai/share/3ca4b85c-93b0-4255-bbb3-0f989f797be2
+Le projet a traversé plusieurs itérations dans Claude.ai : gov list 1 et 2, gov classique, authentication system, v3, v4, reconstruction complète V-5 (13 novembre 2025), puis corrections successives jusqu'à la v36 (modaux déplacés vers body), la v37 (conflits de padding/display avec la maquette) la v38 (mécanique des modaux rendue totalement autonome du CSS Webflow ; smoke-test réaligné sur la page actuelle) et la v39 (mises en page définitives : pm centré sur voile avec croix blanche à droite, bm en panneau pleine hauteur sous le header, fond blanc, croix à gauche). Le fil complet est visible ici : https://claude.ai/share/3ca4b85c-93b0-4255-bbb3-0f989f797be2
