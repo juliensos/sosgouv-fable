@@ -196,9 +196,12 @@ const Gouv = {
     const autres = this.composerState.postes.filter(p => p.type !== 'regalien');
     const separateur = '<div class="bloc-title compo-sep"><h5 class="heading-10">Ministères par defaut<br/>' +
       '<code class="code-7">VOUS POUVEZ ajoutez, supprimer ou fusionnez les secteurs par defaut, et changeR les intitulés des ministères pour les faire correspondre à votre vision</code></h5></div>';
-    cont.innerHTML = regs.map(p => this.posteHTML(p)).join('')
-      + (autres.length ? separateur : '')
-      + autres.map(p => this.posteHTML(p)).join('');
+    // v44 : chaque groupe porte son propre trait vertical gauche, le
+    // séparateur centré s'affiche entre les deux, hors trait.
+    cont.innerHTML = '<div class="compo-groupe">' + regs.map(p => this.posteHTML(p)).join('') + '</div>'
+      + (autres.length
+        ? separateur + '<div class="compo-groupe">' + autres.map(p => this.posteHTML(p)).join('') + '</div>'
+        : '');
     this.composerState.postes.forEach(p => this.bindPoste(p));
   },
 
@@ -401,6 +404,19 @@ const Gouv = {
       this._checkboxHTML('manuel:' + s.nom, Perso.esc(s.nom), true)
     ).join('');
     this._bindChecks(cont, false);
+    // v44 : champ de recherche qui filtre les sous-secteurs (casse et
+    // accents ignorés) sans toucher aux cases déjà cochées.
+    const recherche = document.getElementById('ssRecherche');
+    if (recherche) {
+      recherche.value = '';
+      const norm = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      recherche.oninput = () => {
+        const q = norm(recherche.value.trim());
+        cont.querySelectorAll('.w-dyn-item').forEach(item => {
+          item.style.display = !q || norm(item.textContent).includes(q) ? '' : 'none';
+        });
+      };
+    }
     const champ = document.getElementById('ssNouveau');
     if (champ) champ.value = '';
     const closeBtn = document.getElementById('btnCloseSous');
@@ -604,8 +620,12 @@ const Gouv = {
     const fonction = document.getElementById('mdFonction');
     if (!cont) return;
     const ministeres = this.composerState.postes.filter(p => p.type !== 'delegue');
+    // v44 : on rattache un délégué à un MINISTÈRE, pas à un ministre :
+    // le libellé affiché transforme « Ministre de… » en « Ministère de… »
+    // (« Premier ministre » et les intitulés libres restent tels quels).
+    const enMinistere = (t) => String(t || 'Ministère').replace(/^\s*ministre\s+/i, 'Ministère ');
     cont.innerHTML = ministeres.map(p =>
-      this._checkboxHTML(p.uid, Perso.esc(p.intitule || (p.secteur ? p.secteur.nom : 'Ministère')), false, 'md')
+      this._checkboxHTML(p.uid, Perso.esc(enMinistere(p.intitule || (p.secteur ? p.secteur.nom : 'Ministère'))), false, 'md')
     ).join('');
     this._bindChecks(cont, true); // choix unique
     if (selSous) {
@@ -723,6 +743,7 @@ const Gouv = {
     const nom = document.getElementById('mapNom').value.trim();
     const prenom = document.getElementById('mapPrenom').value.trim();
     if (!nom || !prenom) return UI.toast('Nom et prénom sont obligatoires.');
+    if (window.Perso && !(await Perso.confirmerSiDoublon(nom, prenom))) return;
     const metier = document.getElementById('mapMetier').value.trim();
     const wiki = document.getElementById('mapWiki').value.trim();
     const liens = [];

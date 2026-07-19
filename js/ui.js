@@ -126,6 +126,65 @@ const UI = {
     }
   },
 
+  // ---------- Infobulles (v44) ----------
+  // Toute cible portant un attribut title voit son infobulle native
+  // remplacée par une étiquette stylée (noir, texte blanc, immédiate).
+  initInfobulles() {
+    if (document.getElementById('sos-bulle')) return;
+    const bulle = document.createElement('div');
+    bulle.id = 'sos-bulle';
+    document.body.appendChild(bulle);
+    const montrer = (el) => {
+      const txt = el.getAttribute('data-bulle');
+      if (!txt) return;
+      bulle.textContent = txt;
+      bulle.style.left = '0px';
+      bulle.style.top = '0px';
+      bulle.classList.add('visible');
+      const r = el.getBoundingClientRect();
+      const br = bulle.getBoundingClientRect();
+      let x = r.left + r.width / 2 - br.width / 2;
+      x = Math.max(4, Math.min(x, window.innerWidth - br.width - 4));
+      let y = r.top - br.height - 6;
+      if (y < 4) y = r.bottom + 6;
+      bulle.style.left = Math.round(x) + 'px';
+      bulle.style.top = Math.round(y) + 'px';
+    };
+    document.addEventListener('mouseover', (e) => {
+      if (!(e.target instanceof Element)) return;
+      const el = e.target.closest('[title], [data-bulle]');
+      if (!el) { bulle.classList.remove('visible'); return; }
+      if (el.hasAttribute('title')) {
+        // migre le title natif (et le neutralise pour éviter le doublon)
+        el.setAttribute('data-bulle', el.getAttribute('title'));
+        el.removeAttribute('title');
+      }
+      montrer(el);
+    });
+    document.addEventListener('mouseout', (e) => {
+      if (e.target instanceof Element && e.target.closest('[data-bulle]')) bulle.classList.remove('visible');
+    });
+    document.addEventListener('click', () => bulle.classList.remove('visible'), true);
+  },
+
+  // ---------- Étiquettes flottantes (v44, données personnelles) ----------
+  // Le placeholder disparaît dès qu'un champ est rempli : on affiche alors
+  // l'intitulé en petit au-dessus du champ, pour toujours savoir quoi est quoi.
+  initEtiquettes() {
+    this._etiquettes = [];
+    document.querySelectorAll('#modal-infos input[placeholder]').forEach(inp => {
+      const et = document.createElement('div');
+      et.className = 'champ-etiquette';
+      et.textContent = inp.getAttribute('placeholder').replace(/\*\s*$/, '');
+      inp.parentElement.insertBefore(et, inp);
+      const maj = () => et.classList.toggle('visible', !!inp.value);
+      inp.addEventListener('input', maj);
+      this._etiquettes.push(maj);
+      maj();
+    });
+  },
+  majEtiquettes() { (this._etiquettes || []).forEach(f => f()); },
+
   // ---------- Messages ----------
   toast(msg) {
     let t = document.getElementById('sosgouv-toast');
@@ -205,6 +264,10 @@ const UI = {
 
     // Les formulaires Webflow ne doivent jamais soumettre (rechargement de page)
     document.querySelectorAll('form').forEach(f => f.addEventListener('submit', (e) => e.preventDefault()));
+
+    // Infobulles stylées + étiquettes flottantes (v44)
+    this.initInfobulles();
+    this.initEtiquettes();
 
     // Fermeture au clic sur la croix / les boutons annuler…
     document.querySelectorAll('[data-close-modal]').forEach(el =>
@@ -386,6 +449,7 @@ const UI = {
         document.getElementById('infoEmail').value = u.email || '';
       };
       remplir(Auth.currentUser);
+      this.majEtiquettes();
       this.openModal('modal-infos');
       // Valeurs fraîches depuis la base (la session locale peut être en retard)
       try {
@@ -393,6 +457,7 @@ const UI = {
           .eq('id', Auth.currentUser.id).maybeSingle();
         if (data) {
           remplir(data);
+          this.majEtiquettes();
           Object.assign(Auth.currentUser, data);
           Auth.saveSession(Auth.currentUser);
         }

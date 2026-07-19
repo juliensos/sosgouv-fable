@@ -17,7 +17,7 @@ SOSGOUV est une application web statique (HTML/CSS/JS, sans framework ni build) 
 - Site : https://juliensos.github.io/sosgouv/ et domaine govlab.fr (fichier CNAME)
 - Hébergement : GitHub Pages, branche main, dossier racine, déploiement automatique à chaque push (délai 1 à 2 min, recharger sans cache avec Ctrl+Shift+R)
 - Base de données : Supabase, projet `lbcmwivxvzeortvftxsi`
-- Version actuelle : v43, 134 tests verts (94 smoke + 38 vérification ciblée), plus un banc de rendu Chromium ayant validé les deux mises en page de modaux sur desktop et mobile. Mécanique bm conforme à la maquette : panneau affiché en bloc DANS ._3-cont-body (pas un calque fixe).
+- Version actuelle : v44, 156 tests verts (106 smoke + 50 vérification ciblée), plus un banc de rendu Chromium ayant validé les deux mises en page de modaux sur desktop et mobile. Mécanique bm conforme à la maquette : panneau affiché en bloc DANS ._3-cont-body (pas un calque fixe). La v44 ajoute : blocs gouvernement alignés/contour 3px, onglet actif via .active (Safari ne pose pas :focus au clic), infobulles stylées (title migré vers #sos-bulle), trait vertical du composer par groupe (.compo-groupe), séparateur centré, anti-doublons à l'ajout de personnalité (Perso.chercherDoublon : casse, accents, fautes légères, inversion nom/prénom, consignes agent alignées), recherche dans les sous-secteurs (#ssRecherche), libellés « Ministère de » dans le modal délégué, ajout d'une personnalité à un brouillon enregistré avec choix du brouillon puis du poste (#brouillon-pop), étiquettes flottantes des données personnelles.
 
 ## Fonctionnalités (à préserver intégralement)
 

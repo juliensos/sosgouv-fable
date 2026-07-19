@@ -15,6 +15,15 @@
 }
 .croix { cursor: pointer; }
 
+/* ---- Onglet actif (v44) ----
+   La maquette colore l'onglet via :focus, que Safari ne pose pas au clic.
+   On accroche le même style (rose maquette --sos-rose1) à la classe
+   .active que ui.js pose sur l'onglet courant : fiable partout. */
+._2-menu-bouton.active {
+  border: 5px solid var(--sos-rose1, #ffbbad) !important;
+  background-color: var(--sos-rose1, #ffbbad) !important;
+}
+
 /* ---- Menus du header (bascule JS, sans webflow.js) ---- */
 #menuCompte, #menuGeneral { flex-direction: column; }
 .menu-link-off { opacity: 0.35; pointer-events: none; }
@@ -188,6 +197,18 @@
 .cr-e-par { margin: 4px 0 8px; }
 
 /* ---- Composer ---- */
+/* v44 : le trait noir vertical n'est plus continu sur tout le conteneur,
+   chaque groupe de postes (régaliens, puis ministères/délégués) porte son
+   propre segment, interrompu autour du séparateur « Ministères par
+   défaut ». */
+._3-bloc-minsteres { border-left: none !important; }
+.compo-groupe {
+  border-left: 3px solid var(--black-100, #000);
+  display: flex;
+  flex-flow: column;
+  grid-row-gap: 20px;
+  gap: 20px;
+}
 .poste-perso-row { position: relative; }
 ._3-gov-line-1 { display: flex; align-items: center; gap: 6px; }
 ._3-gov-line-1 .poste-perso-search { flex: 1; }
@@ -266,18 +287,28 @@
 .filet.pointille { border-bottom: 1px dotted var(--black-100, #000); margin: 8px 0; }
 
 
-/* ---- Bloc gouvernement : contour noir individuel ---- */
+/* ---- Bloc gouvernement : contour noir individuel ----
+   v44 : mêmes cotes que le ._3-gov-content de la maquette
+   (contour 3px, padding 15/20, 10px entre les blocs). */
 .gov-compact-bloc {
-  border: 2px solid var(--black-100, #000);
-  padding: 14px 16px;
-  margin-bottom: 16px;
+  border: 3px solid var(--black-100, #000);
+  padding: 15px 20px;
+  margin-bottom: 10px;
   background: var(--sos-white, #fff);
 }
 ._3-gov-content { display: flex; flex-direction: column; }
 
-/* ---- Correctifs v15 ---- */
-/* Pas de contour sur le grand conteneur de la page gouvernements */
-#section-1, #section-1 ._3-gov-content { border: none !important; }
+/* ---- Correctifs v15 (revus v44) ---- */
+/* Le conteneur des gouvernements ne porte ni contour ni retrait : chaque
+   bloc trace le sien, aligné à gauche sur le bord de la section comme
+   dans la maquette. */
+#section-1 { border: none !important; }
+#section-1 ._3-gov-content {
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+}
 
 
 /* Bouton détails : libellé visible dans son cadre */
@@ -456,8 +487,9 @@ body { scroll-padding-bottom: 50px; }
 #gouvTitre:not(:placeholder-shown) { color: var(--sos-yellow, #ffbb47) !important; }
 .poste-perso-search:not(:placeholder-shown) { color: var(--black-100, #000) !important; }
 
-/* Séparateur "Ministères par defaut" */
-.compo-sep { margin: 26px 0 12px; }
+/* Séparateur "Ministères par defaut" : centré (v44) */
+.compo-sep { margin: 26px auto 12px; text-align: center; }
+.compo-sep .heading-10 { margin-left: auto; margin-right: auto; }
 .compo-sep .code-7 { text-transform: uppercase; font-size: 10px; color: var(--sos-grey-1, #aca69a); background: none; font-family: inherit; }
 
 /* Lignes de liens du modal ajouter une personnalité */
@@ -538,3 +570,58 @@ body.admin-connecte .foot-public-liens { bottom: 46px; }
 .bloc-poste-gov-detail.delegue-bloc .nom-prenom-gov-detail,
 .bloc-poste-gov-detail.delegue-bloc .h1-color { font-size: 0.85em; }
 .bloc-poste-gov-detail.delegue-bloc .fleche-fontello { color: var(--sos-new-grey, #aca69a); padding-right: 5px; font-family: Fontello, Arial, sans-serif; }
+
+
+/* ---- v44 : infobulles stylées au survol des pictogrammes ---- */
+#sos-bulle {
+  position: fixed;
+  z-index: 6500;
+  background: var(--black-100, #000);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1.3;
+  padding: 4px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s;
+  max-width: 260px;
+  text-align: center;
+}
+#sos-bulle.visible { opacity: 1; }
+
+/* ---- v44 : choix du brouillon et du poste (liste des personnalités) ---- */
+#brouillon-pop {
+  position: fixed;
+  z-index: 6000;
+  background: var(--sos-white, #fff);
+  border: 3px solid var(--black-100, #000);
+  min-width: 240px;
+  max-width: 340px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+#brouillon-pop .bp-titre { font-weight: 900; text-transform: uppercase; font-size: 11px; padding: 8px 12px 4px; }
+#brouillon-pop .bp-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 5px 12px;
+  font-size: 12px;
+  color: var(--black-100, #000);
+  text-decoration: none;
+}
+#brouillon-pop .bp-item:hover { background: var(--light-grey, #e7e7e7); }
+#brouillon-pop .bp-occupant { color: var(--sos-grey-1, #aca69a); font-style: italic; white-space: nowrap; }
+
+/* ---- v44 : étiquettes flottantes (données personnelles) ---- */
+.champ-etiquette {
+  display: none;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--sos-grey-1, #aca69a);
+  margin: 6px 0 2px;
+}
+.champ-etiquette.visible { display: block; }

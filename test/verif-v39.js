@@ -131,6 +131,36 @@ async function main() {
   const grille = regle('.grid-collection-list').find(r => r.includes('grid-template-columns'));
   test('Grilles de cases : colonnes souples minmax(0, 1fr), 2 colonnes max',
     grille && /repeat\(2,\s*minmax\(0,\s*1fr\)\)/.test(grille));
+  console.log('\n=== V44 : onze modifications ===');
+  test('Onglet actif stylé via .active, couleur rose maquette (fiable Safari)',
+    /\._2-menu-bouton\.active\s*\{[^}]*background-color\s*:\s*var\(--sos-rose1/.test(cssSansComm));
+  test('Bloc gouvernement : contour 3px et cotes maquette',
+    /\.gov-compact-bloc\s*\{[^}]*border\s*:\s*3px solid/.test(cssSansComm));
+  test('Conteneur des gouvernements sans retrait (padding/margin 0 !important)',
+    /#section-1 \._3-gov-content\s*\{[^}]*padding\s*:\s*0\s*!important/.test(cssSansComm));
+  test('Composer : trait vertical porté par les groupes, plus par le conteneur',
+    /\.compo-groupe\s*\{[^}]*border-left\s*:\s*3px solid/.test(cssSansComm)
+    && /_3-bloc-minsteres\s*\{\s*border-left\s*:\s*none\s*!important/.test(cssSansComm));
+  test('Séparateur « Ministères par défaut » centré',
+    /\.compo-sep\s*\{[^}]*text-align\s*:\s*center/.test(cssSansComm));
+  test('Infobulles stylées (#sos-bulle) définies',
+    /#sos-bulle\s*\{[^}]*position\s*:\s*fixed/.test(cssSansComm) && !!doc.getElementById('sos-bulle'));
+  test('Menu de choix du brouillon stylé (#brouillon-pop)',
+    /#brouillon-pop\s*\{[^}]*position\s*:\s*fixed/.test(cssSansComm));
+  test('Champ de recherche des sous-secteurs présent avec la phrase demandée',
+    html.includes('id="ssRecherche"')
+    && html.includes('ou cherchez dans le champ de texte ci-dessous'));
+  const etiquettes = doc.querySelectorAll('#modal-infos .champ-etiquette');
+  test('Étiquettes flottantes injectées sur les 5 champs des données personnelles', etiquettes.length === 5);
+  const champU = doc.getElementById('diUsername');
+  champU.value = 'neville';
+  champU.dispatchEvent(new window.Event('input', { bubbles: true }));
+  test('Étiquette visible dès que le champ est rempli',
+    champU.previousElementSibling.classList.contains('visible'));
+  champU.value = '';
+  champU.dispatchEvent(new window.Event('input', { bubbles: true }));
+  test('Étiquette masquée quand le champ est vide',
+    !champU.previousElementSibling.classList.contains('visible'));
   const toast = regle('#sosgouv-toast')[0];
   const zToast = toast && toast.match(/z-index\s*:\s*(\d+)/);
   test('Toast au-dessus des modaux', zToast && zPm && Number(zToast[1]) > Number(zPm[1]));

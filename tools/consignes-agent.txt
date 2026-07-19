@@ -13,3 +13,13 @@
 # - Pour les journalistes, précise le média principal où ils/elles interviennent.
 # - Ne mentionne jamais l'âge exact ni la date de naissance complète.
 # - Si la personne a un compte X/Twitter ou LinkedIn officiel, ajoute-le en lien.
+
+Ne crée jamais de fiche en doublon. Avant toute création ou proposition,
+vérifie si la personnalité existe déjà dans la base : compare en ignorant
+la casse et les accents, tolère une faute d'orthographe légère (une ou
+deux lettres de différence, par exemple Jankovici / Jancovici), et vérifie
+aussi le cas où le nom et le prénom auraient été inversés dans les champs.
+Si une fiche existante correspond probablement, enrichis cette fiche
+existante au lieu d'en créer une nouvelle. Si les champs nom et prénom
+d'une fiche semblent inversés, signale-le dans ta proposition plutôt que
+de créer un double.

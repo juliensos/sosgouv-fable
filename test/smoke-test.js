@@ -243,6 +243,9 @@ window.confirm = () => true;
   UI.showSection(3);
   test('Navigation section 3 (ajout perso)', document.getElementById('section-3').style.display === 'block'
     && document.getElementById('section-0').style.display === 'none');
+  test('Onglet courant marqué .active (état visible sur Safari)',
+    document.querySelector('[data-section="3"]').classList.contains('active')
+    && !document.querySelector('[data-section="1"]').classList.contains('active'));
 
   console.log('\n=== 3. PERSONNALITES ===');
   document.getElementById('pNom').value = 'JANCOVICI';
@@ -259,6 +262,17 @@ window.confirm = () => true;
   await wait(20);
   test('Liste des personnalités rendue', document.querySelectorAll('.perso-card').length === 2);
   test('Groupement par lettre présent', document.querySelectorAll('.groupe-lettre').length === 2);
+  test('Picto brouillon absent tant qu\'aucun brouillon n\'existe', document.querySelectorAll('.btn-draft').length === 0);
+
+  console.log('\n=== 3b. ANTI-DOUBLONS ===');
+  const persos = mock._db.personnalites;
+  test('Doublon identique détecté (casse/accents ignorés)',
+    (Perso.chercherDoublon('jancovici', 'JEAN-MARC', persos) || {}).type === 'identique');
+  test('Doublon avec faute d\'orthographe détecté',
+    (Perso.chercherDoublon('Jankovici', 'Jean-Marc', persos) || {}).type === 'proche');
+  test('Inversion nom/prénom détectée',
+    (Perso.chercherDoublon('Virginie', 'Despentes', persos) || {}).type === 'inverse');
+  test('Personne différente non signalée', Perso.chercherDoublon('Dupont', 'Marie', persos) === null);
 
   const persoId = mock._db.personnalites[0].id;
   await Perso.toggleLike(persoId, null);
@@ -305,6 +319,9 @@ window.confirm = () => true;
   // Ajout d'un délégué : passe par le modal (choix du ministère de rattachement)
   Gouv.addDelegue();
   test('Modal délégué ouvert en flex', document.getElementById('modal-delegue').style.display === 'flex');
+  test('Modal délégué : libellés en « Ministère » et non « Ministre »',
+    [...document.querySelectorAll('#mdMinisteres .w-form-label')].length > 0
+    && [...document.querySelectorAll('#mdMinisteres .w-form-label')].every(l => !/^\s*Ministre\s/i.test(l.textContent)));
   const mdCoche = document.querySelector('#mdMinisteres input[type="checkbox"]');
   mdCoche.checked = true;
   document.getElementById('mdFonction').value = 'la cybersécurité';
@@ -611,6 +628,28 @@ window.confirm = () => true;
   await Gouv.save(true);
   await wait(20);
   test('Fusion enregistrée en base', mock._db.postes_secteurs_fusionnes.length === 1 && mock._db.postes_secteurs_fusionnes[0].secteur_id === secteursNR[1].id);
+
+  console.log('\n=== 6f. AJOUT À UN BROUILLON DEPUIS LA LISTE (v44) ===');
+  await Perso.loadList();
+  await wait(30);
+  test('Picto brouillon présent quand des brouillons existent', document.querySelectorAll('.btn-draft').length >= 1);
+  const carteDraft = document.querySelector('.perso-card .btn-draft');
+  const persoDraftId = carteDraft.closest('.perso-card').dataset.id;
+  carteDraft.click();
+  await wait(20);
+  test('Menu de choix du brouillon affiché', document.querySelectorAll('#brouillon-pop .bp-item').length >= 1);
+  const brouillonCible = mock._db.gouvernements.find(g => !g.is_published
+    && mock._db.postes_gouvernement.some(po => po.gouvernement_id === g.id));
+  document.querySelector('#brouillon-pop .bp-item[data-bid="' + brouillonCible.id + '"]').click();
+  await wait(20);
+  const itemsPostes = document.querySelectorAll('#brouillon-pop .bp-item[data-pid]');
+  test('Liste des postes du brouillon affichée', itemsPostes.length >= 1);
+  const posteChoisiId = itemsPostes[0].dataset.pid;
+  itemsPostes[0].click();
+  await wait(20);
+  test('Personnalité affectée au poste choisi du brouillon',
+    mock._db.postes_gouvernement.find(po => po.id === posteChoisiId).personnalite_id === persoDraftId);
+  test('Menu refermé après le choix', !document.getElementById('brouillon-pop'));
 
   console.log('\n=== 7. SECURITE (echappement HTML) ===');
   mock._db.personnalites.push({ id: 'xss-1', nom: '<script>alert(1)</script>', prenom: '', metiers: [], statut: 0 });

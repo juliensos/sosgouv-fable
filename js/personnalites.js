@@ -26,6 +26,7 @@ const Perso = {
         .order('nom', { ascending: true });
       if (error) throw error;
       this.all = data || [];
+      await this.loadBrouillons();
       await this.loadUserMarks();
       this.render();
     } catch (err) {
@@ -119,14 +120,88 @@ const Perso = {
         <a href="#" class="_2-mini-bouton mini w-inline-block btn-pin ${pinned ? 'active' : ''}" title="Épingler">
           <div class="_2-picto-fontello-bouton">${ICO.pin}</div>
         </a>
-        <a href="#" class="_2-mini-bouton mini w-inline-block btn-draft" title="Ajouter à mon brouillon de gouvernement">
+        ${(this._brouillons && this._brouillons.length) ? `<a href="#" class="_2-mini-bouton mini w-inline-block btn-draft" title="Ajouter à un de mes brouillons">
           <div class="_2-picto-fontello-bouton">${ICO.draft}</div>
-        </a>
+        </a>` : ''}
         ${Auth.isAdmin() ? '<a href="#" class="_2-mini-bouton mini w-inline-block btn-edit" title="Modifier (admin)"><div class="_2-picto-fontello-bouton">' + ICO.edit + '</div></a>' : ''}
         ${(Auth.isAdmin() || (Auth.isLoggedIn() && p.ajoute_par === Auth.currentUser.id)) ? '<a href="#" class="_2-mini-bouton mini w-inline-block btn-del-perso" title="Supprimer"><div class="_2-picto-fontello-bouton">' + ICO.trash + '</div></a>' : ''}
       </div>
       ${p.short_bio ? '<p class="short-bio">' + this.esc(p.short_bio) + '</p>' : ''}
     </div>`;
+  },
+
+  // ---------- v44 : ajout d'une personnalité à un brouillon enregistré ----------
+  async loadBrouillons() {
+    this._brouillons = [];
+    if (!Auth.isLoggedIn()) return;
+    try {
+      const { data } = await sb.from('gouvernements').select('id, titre')
+        .eq('created_by', Auth.currentUser.id).eq('is_published', false);
+      this._brouillons = data || [];
+    } catch (err) { /* le picto sera simplement absent */ }
+  },
+
+  fermerChoixBrouillon() {
+    const pop = document.getElementById('brouillon-pop');
+    if (pop) pop.remove();
+    if (this._fermePop) { document.removeEventListener('click', this._fermePop); this._fermePop = null; }
+  },
+
+  ouvrirChoixBrouillon(ancre, persoId) {
+    if (!Auth.isLoggedIn()) return UI.toast('Connectez-vous.');
+    if (!this._brouillons || !this._brouillons.length) return;
+    this.fermerChoixBrouillon();
+    const pop = document.createElement('div');
+    pop.id = 'brouillon-pop';
+    const r = ancre.getBoundingClientRect();
+    pop.style.top = Math.round(r.bottom + 4) + 'px';
+    pop.style.left = Math.round(Math.max(4, Math.min(r.left, (window.innerWidth || 1000) - 350))) + 'px';
+    pop.innerHTML = '<div class="bp-titre">Ajouter à quel brouillon ?</div>' +
+      this._brouillons.map(b =>
+        '<a href="#" class="bp-item" data-bid="' + this.esc(b.id) + '">' + this.esc(b.titre || 'Sans titre') + '</a>').join('');
+    document.body.appendChild(pop);
+    pop.querySelectorAll('.bp-item').forEach(a => a.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      this.choisirPosteBrouillon(pop, a.dataset.bid, persoId);
+    }));
+    this._fermePop = (ev) => { if (!pop.contains(ev.target)) this.fermerChoixBrouillon(); };
+    setTimeout(() => document.addEventListener('click', this._fermePop), 0);
+  },
+
+  async choisirPosteBrouillon(pop, brouillonId, persoId) {
+    try {
+      const { data: postes } = await sb.from('postes_gouvernement')
+        .select('id, nom_poste_personnalise, personnalite_id, ordre')
+        .eq('gouvernement_id', brouillonId).order('ordre', { ascending: true });
+      if (!postes || !postes.length) {
+        UI.toast('Ce brouillon n\'a aucun poste enregistré.');
+        return this.fermerChoixBrouillon();
+      }
+      const nomDe = (pid) => {
+        const p = (this.all || []).find(x => x.id === pid);
+        return p ? ((p.prenom || '') + ' ' + p.nom).trim() : '?';
+      };
+      pop.innerHTML = '<div class="bp-titre">À quel poste ?</div>' + postes.map(po =>
+        '<a href="#" class="bp-item" data-pid="' + this.esc(po.id) + '">' +
+        this.esc(po.nom_poste_personnalise || 'Poste') +
+        '<span class="bp-occupant">' + (po.personnalite_id ? this.esc(nomDe(po.personnalite_id)) : 'vacant') + '</span></a>').join('');
+      pop.querySelectorAll('.bp-item').forEach(a => a.addEventListener('click', async (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        try {
+          const { error } = await sb.from('postes_gouvernement')
+            .update({ personnalite_id: persoId }).eq('id', a.dataset.pid);
+          if (error) throw error;
+          const perso = (this.all || []).find(x => x.id === persoId);
+          UI.toast((perso ? ((perso.prenom || '') + ' ' + perso.nom).trim() : 'Personnalité') + ' ajouté(e) au brouillon.');
+        } catch (err) { UI.toast('Erreur : ' + err.message); }
+        this.fermerChoixBrouillon();
+      }));
+    } catch (err) {
+      UI.toast('Erreur : ' + err.message);
+      this.fermerChoixBrouillon();
+    }
   },
 
   bindCards(cont) {
@@ -136,14 +211,8 @@ const Perso = {
       const btnDraft = card.querySelector('.btn-draft');
       if (btnDraft) btnDraft.addEventListener('click', (e) => {
         e.preventDefault();
-        if (!Auth.isLoggedIn()) return UI.toast('Connectez-vous pour composer un gouvernement.');
-        if (!window.Gouv || !Gouv.composerState) return UI.toast('Ouvrez d\'abord le composer.');
-        const vacant = Gouv.composerState.postes.find(x => !x.personnalite);
-        if (!vacant) return UI.toast('Tous les postes de votre brouillon sont pourvus.');
-        const perso = (this.all || []).find(x => x.id === id) || (Gouv.persosCache || []).find(x => x.id === id);
-        if (!perso) return;
-        Gouv.assignPerso(vacant.uid, perso);
-        UI.toast(((perso.prenom || '') + ' ' + perso.nom).trim() + ' → ' + (vacant.intitule || 'poste'));
+        e.stopPropagation();
+        this.ouvrirChoixBrouillon(btnDraft, id);
       });
 
       const btnPin = card.querySelector('.btn-pin');
@@ -269,12 +338,68 @@ const Perso = {
     } catch (err) { /* section facultative */ }
   },
 
+  // ---------- Anti-doublons (v44) ----------
+  normaliserNom(s) {
+    return String(s || '').toLowerCase().normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  },
+  levenshtein(a, b) {
+    if (a === b) return 0;
+    if (!a.length) return b.length;
+    if (!b.length) return a.length;
+    let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      for (let j = 1; j <= b.length; j++) {
+        cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      }
+      prev = cur;
+    }
+    return prev[b.length];
+  },
+  // Cherche une fiche déjà existante correspondant probablement à
+  // nom/prénom : identique (casse et accents ignorés), proche (une ou
+  // deux lettres d'écart), ou inversée (nom et prénom permutés).
+  chercherDoublon(nom, prenom, liste) {
+    const n = this.normaliserNom(nom), p = this.normaliserNom(prenom);
+    const proches = (x, y) => x === y ||
+      (!!x && !!y && Math.abs(x.length - y.length) <= 2 && this.levenshtein(x, y) <= (Math.min(x.length, y.length) >= 5 ? 2 : 1));
+    for (const cand of (liste || [])) {
+      const cn = this.normaliserNom(cand.nom), cp = this.normaliserNom(cand.prenom);
+      if (proches(n, cn) && proches(p, cp)) {
+        return { type: (n === cn && p === cp) ? 'identique' : 'proche', perso: cand };
+      }
+      if ((n || p) && proches(n, cp) && proches(p, cn)) return { type: 'inverse', perso: cand };
+    }
+    return null;
+  },
+  // true = on peut créer, false = abandon demandé par l'utilisateur
+  async confirmerSiDoublon(nom, prenom) {
+    try {
+      let liste = (this.all && this.all.length) ? this.all : null;
+      if (!liste) {
+        const { data } = await sb.from('personnalites').select('id, nom, prenom');
+        liste = data || [];
+      }
+      const d = this.chercherDoublon(nom, prenom, liste);
+      if (!d) return true;
+      const existant = ((d.perso.prenom || '') + ' ' + (d.perso.nom || '')).trim();
+      const msgs = {
+        identique: 'La fiche « ' + existant + ' » existe déjà dans la base. Créer quand même un doublon ?',
+        proche: 'Une fiche très proche existe déjà : « ' + existant + ' » (faute de frappe ou d\'accent ?). Créer quand même une nouvelle fiche ?',
+        inverse: 'Attention : « ' + existant + ' » existe déjà, avec le nom et le prénom dans l\'autre sens. Vérifiez vos champs nom et prénom. Créer quand même une nouvelle fiche ?'
+      };
+      return window.confirm(msgs[d.type]);
+    } catch (err) { return true; /* en cas de pépin, ne pas bloquer l'ajout */ }
+  },
+
   // ---------- Ajout simple (section 3, clone du modal du composer) ----------
   async addSimple() {
     if (!UI.requireAuth()) return;
     const nom = document.getElementById('pNom').value.trim();
     const prenom = document.getElementById('pPrenom').value.trim();
     if (!nom || !prenom) return UI.toast('Nom et prénom sont obligatoires.');
+    if (!(await this.confirmerSiDoublon(nom, prenom))) return;
     const metier = document.getElementById('pMetier').value.trim();
     const wiki = document.getElementById('pWiki').value.trim();
     const liens = [];
