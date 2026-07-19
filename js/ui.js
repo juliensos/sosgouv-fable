@@ -57,17 +57,12 @@ const UI = {
   openModal(id) {
     const modal = document.getElementById(id);
     if (!modal) return;
-    const estPM = modal.classList.contains('pm-parent');
-    if (estPM) {
-      // Les petits modaux maquette portent leur propre fond et se centrent seuls
-      modal.style.display = 'flex';
-      const fondInterne = modal.querySelector('._3-fond-modal');
-      if (fondInterne) fondInterne.style.display = 'block';
-    } else {
-      const fond = document.getElementById('fondModal');
-      if (fond) fond.style.display = 'block';
-      modal.style.display = 'flex';
-    }
+    // v38 : un seul mécanisme pour tous les modaux. Le conteneur pm/bm-parent
+    // est fixé plein écran par le CSS applicatif (position, centrage, voile
+    // sombre, z-index), indépendamment du CSS Webflow : il suffit de
+    // l'afficher. Plus aucun fond séparé à gérer.
+    modal.style.display = 'flex';
+    modal.scrollTop = 0;
   },
 
   closeModals() {
@@ -204,9 +199,14 @@ const UI = {
     // Les formulaires Webflow ne doivent jamais soumettre (rechargement de page)
     document.querySelectorAll('form').forEach(f => f.addEventListener('submit', (e) => e.preventDefault()));
 
-    // Fond intégré des modaux maquette : ferme au clic
-    document.querySelectorAll('.pm-parent ._3-fond-modal, [data-close-modal]').forEach(el =>
+    // Fermeture au clic sur la croix / les boutons annuler…
+    document.querySelectorAll('[data-close-modal]').forEach(el =>
       el.addEventListener('click', (e) => { e.preventDefault(); this.closeModals(); }));
+    // …et au clic sur le voile sombre (le conteneur pm/bm-parent lui-même,
+    // qui porte le fond depuis la v38 ; les fonds intégrés de la maquette
+    // ne sont plus affichés).
+    document.querySelectorAll('.pm-parent, .bm-parent').forEach(m =>
+      m.addEventListener('click', (e) => { if (e.target === m) this.closeModals(); }));
 
     // Guide utilisateur (public)
     const openGuide = document.getElementById('openGuide');

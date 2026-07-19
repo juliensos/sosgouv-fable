@@ -19,24 +19,70 @@
 #menuCompte, #menuGeneral { flex-direction: column; }
 .menu-link-off { opacity: 0.35; pointer-events: none; }
 
-/* ---- Modaux : les pm/bm-parent sont cachés par défaut,
-       le JS les affiche en bloc plein écran ---- */
-.bm-parent {
+/* ---- Modaux (v38) : mécanique entièrement autonome ----
+   Le CSS Webflow est resynchronisé automatiquement à chaque republication
+   de la maquette (le hash change, une action GitHub met à jour index.html
+   chaque nuit) : la mécanique des modaux (position, centrage, voile sombre,
+   empilement, croix) ne doit donc dépendre d'AUCUNE règle de la maquette,
+   ni de la place des modaux dans le DOM (ils sont déplacés sous <body> au
+   chargement, voir ui.js). D'où les !important systématiques ci-dessous :
+   ils neutralisent aussi les combo-classes Webflow plus spécifiques
+   (.pm-parent.connect, .bm-parent.gu, …). Seule l'esthétique intérieure
+   (paddings, typo, contenus) reste pilotée par la maquette. */
+.pm-parent, .bm-parent {
   position: fixed !important;
   inset: 0 !important;
-  z-index: 1600;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  transform: none !important;
+  z-index: 4100 !important;
   display: none;
-  justify-content: center;
-  align-items: flex-start;
-  overflow-y: auto;
-  padding: 40px 12px;
-  background: rgba(0, 0, 0, 0.45);
+  flex-flow: row nowrap !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+  overflow-y: auto !important;
+  padding: 40px 12px !important;
+  background: rgba(0, 0, 0, 0.45) !important;
 }
-#fondModal { position: fixed; inset: 0; z-index: 1500; background: rgba(0,0,0,0.45); }
-.bm-parent .cont-flex-50-50 { position: relative; width: min(94vw, 640px); }
-.pm-parent .cont-flex-50-50 { position: relative; }
-.bm-parent .cont-flex-50-50 { width: min(94vw, 760px); }
-._3-small-modal-stroke, ._3-big-modal-stroke { background: var(--sos-white, #fff); border: 5px solid var(--black-100, #000); padding: 16px; max-height: 82vh; overflow-y: auto; }
+/* Le voile sombre est porté par le conteneur plein écran ci-dessus : les
+   fonds intégrés de la maquette n'ont plus à s'afficher (le clic hors de
+   la boîte ferme le modal, géré dans ui.js). */
+.pm-parent ._3-fond-modal { display: none !important; }
+#fondModal { position: fixed; inset: 0; z-index: 4000; background: rgba(0,0,0,0.45); }
+/* La boîte blanche : un simple bloc centré, jamais un flex 50/50 */
+.pm-parent .cont-flex-50-50, .bm-parent .cont-flex-50-50 {
+  display: block !important;
+  position: relative !important;
+  inset: auto !important;
+  transform: none !important;
+  flex: none !important;
+  height: auto !important;
+  margin: 0 auto !important;
+}
+.pm-parent .cont-flex-50-50 { width: min(94vw, 560px) !important; }
+.bm-parent .cont-flex-50-50 { width: min(94vw, 760px) !important; }
+/* Croix de fermeture : toujours en haut à droite de la boîte blanche
+   (demandé en v24, la règle vit désormais ici et plus dans la maquette,
+   où elle avait disparu d'une republication à l'autre). */
+.pm-parent ._3-close-bouton, .bm-parent ._3-close-bouton {
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  left: auto !important;
+  bottom: auto !important;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  min-height: 34px;
+  cursor: pointer;
+}
+/* v37 : le padding vient de la maquette Webflow (40px 20px 20px, place pour
+   le bouton de fermeture), on ne le force plus ici. On garde seulement les
+   compléments fonctionnels que la maquette ne définit pas. */
+._3-small-modal-stroke, ._3-big-modal-stroke { background: var(--sos-white, #fff); border: 5px solid var(--black-100, #000); max-height: 82vh; overflow-y: auto; }
 
 /* ---- Toast ---- */
 .toast, #sosgouv-toast {
@@ -49,7 +95,7 @@
   font-size: 12px;
   padding: 8px 16px;
   border-radius: 5px;
-  z-index: 2200;
+  z-index: 5000; /* au-dessus des modaux (4100) */
   max-width: 90vw;
 }
 
@@ -218,11 +264,19 @@
 .fp-gouv { color: var(--sos-grey-1, #aca69a); text-transform: none; }
 .fiche-lien { color: var(--sos-yellow, #ffbb47); }
 
-/* ---- v17 : modaux, admin, commentaires, dropdowns ---- */
-/* Le contenu des modaux repris de la maquette doit toujours être visible */
-.pm-parent ._3-small-modal-stroke, .pm-parent ._3-petit-modal-content,
-.pm-parent ._w-connect-bloc, .bm-parent ._3-big-modal-stroke {
+/* ---- v17 (affiné en v37) : modaux, admin, commentaires, dropdowns ---- */
+/* Le contenu des modaux repris de la maquette doit toujours être visible.
+   v37 : on garantit seulement l'opacité ; le display n'est plus forcé sur
+   ._3-petit-modal-content, dont la maquette définit un flex colonne centré
+   (le block !important de la v17 écrasait cette mise en page dans les popups,
+   d'où un rendu différent de la section 3 pleine page qui utilise la même
+   classe hors .pm-parent). */
+.pm-parent ._3-small-modal-stroke, .pm-parent ._w-connect-bloc,
+.bm-parent ._3-big-modal-stroke {
   display: block !important;
+  opacity: 1 !important;
+}
+.pm-parent ._3-petit-modal-content {
   opacity: 1 !important;
 }
 .pm-parent .w-form-done, .pm-parent .w-form-fail { display: none !important; }
@@ -398,7 +452,7 @@ body.admin-connecte .foot-public-liens { bottom: 46px; }
 
 /* ---- v28 : propositions IA éditables, prévisualisation façon fiche ---- */
 .prop-champ textarea, .prop-champ input.mon-input5 { width: 100%; box-sizing: border-box; }
-.prop-champ textarea { overflow: hidden; resize: none; }
+.prop-champ textarea { overflow: hidden; resize: none; field-sizing: content; /* auto-hauteur native (Chrome/Edge), en plus de l'ajustement JS */ }
 .prop-hint { font-size: 11px; opacity: 0.6; margin-bottom: 3px; }
 .prop-lien-row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
 .prop-lien-row select { flex: none; width: 70px; }

@@ -43,16 +43,27 @@ function makeMockSupabase() {
     });
   }
 
+  // Découpe une liste de colonnes en respectant les parenthèses imbriquées
+  function topLevelParts(columns) {
+    const parts = []; let depth = 0, cur = '';
+    for (const ch of (columns || '*')) {
+      if (ch === ',' && depth === 0) { parts.push(cur.trim()); cur = ''; continue; }
+      if (ch === '(') depth++;
+      if (ch === ')') depth--;
+      cur += ch;
+    }
+    if (cur.trim()) parts.push(cur.trim());
+    return parts.filter(p => p.includes('('));
+  }
+
   function resolveJoins(table, row, joins) {
     const out = { ...row };
     for (const j of joins) {
-      if ((j === 'users(username)' || j === 'users!created_by(username)') && table === 'gouvernements') {
-        const u = db.users.find(u => u.id === row.created_by);
-        out.users = u ? { username: u.username } : null;
-      }
-      if ((j === 'users(username)' || j === 'users!user_id(username)') && table === 'commentaires') {
-        const u = db.users.find(u => u.id === row.user_id);
-        out.users = u ? { username: u.username } : null;
+      if (j.startsWith('users')) {
+        const fkMatch = j.match(/^users!(\w+)/);
+        const fk = fkMatch ? fkMatch[1] : (table === 'commentaires' ? 'user_id' : 'created_by');
+        const u = db.users.find(u => u.id === row[fk]);
+        out.users = u ? { username: u.username, nom: u.nom, prenom: u.prenom, afficher_username: u.afficher_username } : null;
       }
       if (j.startsWith('postes_gouvernement(')) {
         out.postes_gouvernement = db.postes_gouvernement
@@ -60,7 +71,7 @@ function makeMockSupabase() {
           .map(p => ({
             ...p,
             personnalites: p.personnalite_id ? (() => { const x = db.personnalites.find(z => z.id === p.personnalite_id); return x ? { id: x.id, nom: x.nom, prenom: x.prenom, statut: x.statut } : null; })() : null,
-            secteurs: p.secteur_id ? (() => { const s = db.secteurs.find(z => z.id === p.secteur_id); return s ? { nom: s.nom } : null; })() : null
+            secteurs: p.secteur_id ? (() => { const sx = db.secteurs.find(z => z.id === p.secteur_id); return sx ? { nom: sx.nom } : null; })() : null
           }));
       }
     }
@@ -86,7 +97,7 @@ function makeMockSupabase() {
         return state.order.asc ? cmp : -cmp;
       });
       if (state.limit) rows = rows.slice(0, state.limit);
-      const joins = (columns || '*').split(',').map(s => s.trim()).filter(s => s.includes('('));
+      const joins = topLevelParts(columns);
       if (joins.length) rows = rows.map(r => resolveJoins(table, r, joins));
       return rows;
     };
@@ -234,13 +245,13 @@ window.confirm = () => true;
     && document.getElementById('section-0').style.display === 'none');
 
   console.log('\n=== 3. PERSONNALITES ===');
-  document.getElementById('addNom').value = 'JANCOVICI';
-  document.getElementById('addPrenom').value = 'Jean-Marc';
-  document.getElementById('addMetier').value = 'Ingénieur';
+  document.getElementById('pNom').value = 'JANCOVICI';
+  document.getElementById('pPrenom').value = 'Jean-Marc';
+  document.getElementById('pMetier').value = 'Ingénieur';
   await Perso.addSimple();
-  document.getElementById('addNom').value = 'DESPENTES';
-  document.getElementById('addPrenom').value = 'Virginie';
-  document.getElementById('addMetier').value = 'Autrice';
+  document.getElementById('pNom').value = 'DESPENTES';
+  document.getElementById('pPrenom').value = 'Virginie';
+  document.getElementById('pMetier').value = 'Autrice';
   await Perso.addSimple();
   test('Deux personnalités ajoutées en base', mock._db.personnalites.length === 2);
 
@@ -268,7 +279,7 @@ window.confirm = () => true;
   // Fiche
   Perso.render();
   Perso.openFiche(persoId);
-  test('Fiche personnalité ouverte', document.getElementById('modal-fiche').style.display === 'block'
+  test('Fiche personnalité ouverte', document.getElementById('modal-fiche').style.display === 'flex'
     && document.getElementById('fiche-contenu').innerHTML.includes('JANCOVICI'));
   UI.closeModals();
 
@@ -277,17 +288,34 @@ window.confirm = () => true;
   await wait(30);
   test('6 postes régaliens initialisés', document.querySelectorAll('.poste-regalien').length === 6);
 
+  test('Ministères de base pré-remplis (8 postes initiaux)', Gouv.composerState.postes.length === 8
+    && document.querySelectorAll('.poste-non_regalien').length === 2);
+
+  // Ajout d'un ministère : passe par le modal (les secteurs de base sont
+  // déjà tous pris ici → création d'un ministère personnalisé)
   Gouv.addMinistere();
-  test('Ajout d\'un ministère non-régalien', document.querySelectorAll('.poste-non_regalien').length === 1);
+  test('Modal ajout ministère ouvert en flex', document.getElementById('modal-ministere').style.display === 'flex');
+  document.getElementById('mmManuel').value = 'Mer';
+  document.getElementById('mmManuelIntitule').value = 'Ministère de la Mer';
+  Gouv.validerMinistere();
+  test('Ajout d\'un ministère personnalisé via le modal', document.querySelectorAll('.poste-non_regalien').length === 3
+    && Gouv.composerState.postes.some(p => p.secteurManuelNom === 'Mer'));
+  test('Modal refermé après validation', document.getElementById('modal-ministere').style.display === 'none');
+
+  // Ajout d'un délégué : passe par le modal (choix du ministère de rattachement)
   Gouv.addDelegue();
-  test('Ajout d\'un délégué ministériel', document.querySelectorAll('.poste-delegue').length === 1);
-  test('Total : 8 postes', Gouv.composerState.postes.length === 8);
+  test('Modal délégué ouvert en flex', document.getElementById('modal-delegue').style.display === 'flex');
+  const mdCoche = document.querySelector('#mdMinisteres input[type="checkbox"]');
+  mdCoche.checked = true;
+  document.getElementById('mdFonction').value = 'la cybersécurité';
+  Gouv.validerDelegue();
+  test('Ajout d\'un délégué ministériel via le modal', document.querySelectorAll('.poste-delegue').length === 1);
+  test('Total : 10 postes', Gouv.composerState.postes.length === 10);
 
   // Suppression d'un poste non-régalien
   const nbAvant = Gouv.composerState.postes.length;
   document.querySelector('.poste-non_regalien .btn-remove-poste').click();
   test('Suppression d\'un poste ajouté', Gouv.composerState.postes.length === nbAvant - 1);
-  Gouv.addMinistere();
 
   // Attribution de personnalités
   Gouv.composerState.postes[0].personnalite = mock._db.personnalites[0];
@@ -333,9 +361,10 @@ window.confirm = () => true;
   await Gouv.save(true);
   await wait(10);
   test('Gouvernement publié en base', mock._db.gouvernements.length === 1 && mock._db.gouvernements[0].is_published === true);
-  test('8 postes enregistrés', mock._db.postes_gouvernement.length === 8);
-  test('Sous-secteurs du poste enregistrés', mock._db.postes_sous_secteurs.length === 2);
-  test('Nouveau sous-secteur créé en base à la sauvegarde', mock._db.sous_secteurs.some(s => s.nom === 'Espace'));
+  test('9 postes enregistrés', mock._db.postes_gouvernement.length === 9);
+  test('Sous-secteur référencé enregistré (Cyberdéfense)', mock._db.postes_sous_secteurs.length === 1);
+  test('Sous-secteur inédit conservé sur le poste (Espace)',
+    mock._db.postes_gouvernement.some(p => (p.sous_secteurs_personnalises || []).includes('Espace')));
   test('Complément d\'intitulé régalien enregistré',
     mock._db.postes_gouvernement.some(p => (p.nom_poste_personnalise || '').includes('et de la Sécurité')));
   test('Composer réinitialisé après publication', document.getElementById('gouvTitre').value === '');
@@ -369,8 +398,9 @@ window.confirm = () => true;
   await Gouv.openDetail(gouvId);
   await wait(20);
   test('Modal détail ouvert avec les postes',
-    document.getElementById('modal-detail').style.display === 'block'
-    && document.getElementById('detail-contenu').innerHTML.includes('Ministres régaliens'));
+    document.getElementById('modal-detail').style.display === 'flex'
+    && document.getElementById('detail-contenu').innerHTML.includes('gouvernement créé par')
+    && document.getElementById('detail-contenu').innerHTML.includes('Commentaires'));
 
   document.getElementById('newComment').value = 'Excellent choix pour la Défense !';
   await Gouv.addComment(gouvId);
@@ -437,7 +467,7 @@ window.confirm = () => true;
   await UI.loadEspacePerso();
   await wait(20);
   test('Espace perso : personnalité likée listée', document.getElementById('esp-likes').innerHTML.includes(mock._db.personnalites[0].nom));
-  test('Espace perso : vote listé avec étoiles', document.getElementById('esp-votes').innerHTML.includes('&#9733;') || document.getElementById('esp-votes').innerHTML.includes('★'));
+  test('Espace perso : vote listé avec étoiles', document.getElementById('esp-votes').querySelectorAll('.esp-etoile').length === 5);
   test('Espace perso : commentaire listé', document.getElementById('esp-commentaires').innerHTML.length > 30);
   test('Espace perso : gouvernement épinglable listé ou vide sans erreur', !document.getElementById('esp-epingles-gouv').innerHTML.includes('Erreur'));
 
@@ -476,22 +506,30 @@ window.confirm = () => true;
   await wait(30);
   Gouv.resetComposer();
   await wait(30);
+  // Ministère personnalisé (les secteurs de base sont déjà pris) : le
+  // secteur référencé reste vide, le nom saisi est conservé
   Gouv.addMinistere();
-  const nouveauMin = Gouv.composerState.postes.find(p => p.type === 'non_regalien');
-  test('Ministère ajouté : secteur vide', nouveauMin && nouveauMin.secteur === null);
-  test('Sélecteur de secteur affiché en placeholder', !!document.querySelector('.poste-secteur-select.placeholder'));
-  // Choix d'un secteur dans le sélecteur
-  const sel = document.querySelector('.poste-secteur-select');
-  const secteurCulture = mock._db.secteurs.find(s => s.type === 'non_regalien');
-  sel.value = secteurCulture.id;
-  sel.dispatchEvent(new window.Event('change', { bubbles: true }));
-  await wait(10);
-  test('Choix du secteur : intitulé par défaut appliqué', Gouv.composerState.postes.find(p => p.type === 'non_regalien').intitule.includes(secteurCulture.nom));
+  document.getElementById('mmManuel').value = 'Artisanat';
+  document.getElementById('mmManuelIntitule').value = '';
+  Gouv.validerMinistere();
+  const nouveauMin = Gouv.composerState.postes.find(p => p.secteurManuelNom === 'Artisanat');
+  test('Ministère personnalisé : secteur référencé vide', nouveauMin && nouveauMin.secteur === null);
+  test('Ministère personnalisé : intitulé construit sur le nom saisi', nouveauMin && nouveauMin.intitule.includes('Artisanat'));
+  // On libère un secteur de base puis on le ré-ajoute par le modal :
+  // l'intitulé par défaut du secteur doit être appliqué
+  document.querySelector('.poste-non_regalien .btn-remove-poste').click();
+  Gouv.addMinistere();
+  const ckSecteur = document.querySelector('#mmSecteurs input[type="checkbox"]');
+  test('Secteur libéré proposé dans le modal', !!ckSecteur);
+  ckSecteur.checked = true;
+  Gouv.validerMinistere();
+  test('Choix du secteur : intitulé par défaut appliqué', Gouv.composerState.postes.some(p =>
+    p.secteur && p.intitule === (p.secteur.intitule_poste_defaut || p.secteur.nom)));
 
-  // Complément : placeholder "Compléter", absent sur Matignon
-  const suffixes = Array.from(document.querySelectorAll('.poste-suffixe'));
-  test('Placeholder "Compléter" sur les compléments', suffixes.length > 0 && suffixes.every(i => i.placeholder === 'Compléter'));
-  test('Pas de complément sur le Premier ministre (Matignon)', suffixes.length === 5);
+  // Maquette de juillet : intitulés régaliens verrouillés (pas de champ
+  // libre ni de suppression), croix de suppression sur les autres postes
+  test('Pas de croix de suppression sur les régaliens', document.querySelectorAll('.poste-regalien .btn-remove-poste').length === 0);
+  test('Croix de suppression présente sur les non-régaliens', document.querySelectorAll('.poste-non_regalien .btn-remove-poste').length >= 1);
 
   // Brouillons dans l'espace perso
   mock._db.gouvernements.push({ id: 'brouillon-x', titre: 'Mon brouillon perso', created_by: Auth.currentUser.id, is_published: false });
@@ -550,7 +588,7 @@ window.confirm = () => true;
   await Gouv.loadDraft(draft.id);
   await wait(30);
   test('Brouillon chargé dans le composer', Gouv.composerState.editingId === draft.id && document.getElementById('gouvTitre').value === 'Brouillon à reprendre');
-  test('Postes du brouillon restaurés avec personnalités', Gouv.composerState.postes.length === 6 && Gouv.composerState.postes.every(p => p.personnalite));
+  test('Postes du brouillon restaurés avec personnalités', Gouv.composerState.postes.length === 8 && Gouv.composerState.postes.every(p => p.personnalite));
   document.getElementById('gouvTitre').value = 'Brouillon repris et publié';
   await Gouv.save(true);
   await wait(20);
