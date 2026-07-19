@@ -107,6 +107,8 @@
   min-height: 34px;
   cursor: pointer;
 }
+/* pm : le contenu ne défile jamais horizontalement */
+.pm-parent ._3-small-modal-stroke { overflow-x: hidden !important; }
 /* pm : croix blanche sur carré noir, sans contour, collée au coin
    haut-droit de la boîte */
 .pm-parent ._3-close-bouton {
@@ -426,9 +428,13 @@ body { scroll-padding-bottom: 50px; }
 .poste-intitule.heading-23 { font-weight: 900; text-transform: uppercase; border: none; background: transparent; padding: 0; font-size: inherit; width: auto; min-width: 220px; flex: 1; }
 .heading-23._2 { color: var(--sos-grey-1, #aca69a); }
 
-/* Modaux PM : grille de checkboxes et liste des personnalités */
-.grid-collection-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 14px; }
-@media (max-width: 600px) { .grid-collection-list { grid-template-columns: 1fr 1fr; } }
+/* Modaux PM : grille de checkboxes et liste des personnalités.
+   v42 : jamais d'ascenseur horizontal. Deux colonnes souples (minmax(0,1fr)
+   les autorise à rétrécir), libellés qui reviennent à la ligne, une seule
+   colonne sur mobile. */
+.grid-collection-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 14px; }
+.grid-collection-list .w-checkbox, .grid-collection-list .w-form-label { white-space: normal; overflow-wrap: break-word; }
+@media (max-width: 600px) { .grid-collection-list { grid-template-columns: minmax(0, 1fr); } }
 .bloc-gris-2 { background: var(--light-grey, #e7e7e7); padding: 10px 12px; margin: 8px 0; }
 .mlp-liste { max-height: 55vh; overflow-y: auto; margin-top: 10px; }
 .mlp-lettre { color: var(--sos-yellow, #ffbb47); font-weight: 900; text-transform: uppercase; margin: 10px 0 3px; }

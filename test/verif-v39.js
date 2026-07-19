@@ -124,6 +124,11 @@ async function main() {
   test('bm : croix en haut à GAUCHE (top 0, left 0, right auto !important)',
     croixBm && /top\s*:\s*0\s*!important/.test(croixBm) && /left\s*:\s*0\s*!important/.test(croixBm)
     && /right\s*:\s*auto\s*!important/.test(croixBm));
+  test('pm : pas de défilement horizontal (overflow-x hidden !important)',
+    /\.pm-parent \._3-small-modal-stroke\s*\{\s*overflow-x\s*:\s*hidden\s*!important/.test(cssSansComm));
+  const grille = regle('.grid-collection-list').find(r => r.includes('grid-template-columns'));
+  test('Grilles de cases : colonnes souples minmax(0, 1fr), 2 colonnes max',
+    grille && /repeat\(2,\s*minmax\(0,\s*1fr\)\)/.test(grille));
   const toast = regle('#sosgouv-toast')[0];
   const zToast = toast && toast.match(/z-index\s*:\s*(\d+)/);
   test('Toast au-dessus des modaux', zToast && zPm && Number(zToast[1]) > Number(zPm[1]));

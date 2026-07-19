@@ -17,7 +17,7 @@ SOSGOUV est une application web statique (HTML/CSS/JS, sans framework ni build) 
 - Site : https://juliensos.github.io/sosgouv/ et domaine govlab.fr (fichier CNAME)
 - Hébergement : GitHub Pages, branche main, dossier racine, déploiement automatique à chaque push (délai 1 à 2 min, recharger sans cache avec Ctrl+Shift+R)
 - Base de données : Supabase, projet `lbcmwivxvzeortvftxsi`
-- Version actuelle : v41, 132 tests verts (94 smoke + 38 vérification ciblée), plus un banc de rendu Chromium ayant validé les deux mises en page de modaux sur desktop et mobile. Largeur des panneaux bm : viewport moins deux fois la marge gauche du logo (mesurée), comme dans la maquette.
+- Version actuelle : v42, 134 tests verts (94 smoke + 38 vérification ciblée), plus un banc de rendu Chromium ayant validé les deux mises en page de modaux sur desktop et mobile. Largeur des panneaux bm : viewport moins deux fois la marge gauche du logo (mesurée), comme dans la maquette.
 
 ## Fonctionnalités (à préserver intégralement)
 
