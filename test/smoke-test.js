@@ -308,6 +308,7 @@ window.confirm = () => true;
   // Ajout d'un ministère : passe par le modal (les secteurs de base sont
   // déjà tous pris ici → création d'un ministère personnalisé)
   Gouv.addMinistere();
+  await wait(20); // ouverture asynchrone : le référentiel est rechargé (v45)
   test('Modal ajout ministère ouvert en flex', document.getElementById('modal-ministere').style.display === 'flex');
   document.getElementById('mmManuel').value = 'Mer';
   document.getElementById('mmManuelIntitule').value = 'Ministère de la Mer';
@@ -318,6 +319,7 @@ window.confirm = () => true;
 
   // Ajout d'un délégué : passe par le modal (choix du ministère de rattachement)
   Gouv.addDelegue();
+  await wait(20); // ouverture asynchrone (v45)
   test('Modal délégué ouvert en flex', document.getElementById('modal-delegue').style.display === 'flex');
   test('Modal délégué : libellés en « Ministère » et non « Ministre »',
     [...document.querySelectorAll('#mdMinisteres .w-form-label')].length > 0
@@ -526,6 +528,7 @@ window.confirm = () => true;
   // Ministère personnalisé (les secteurs de base sont déjà pris) : le
   // secteur référencé reste vide, le nom saisi est conservé
   Gouv.addMinistere();
+  await wait(20);
   document.getElementById('mmManuel').value = 'Artisanat';
   document.getElementById('mmManuelIntitule').value = '';
   Gouv.validerMinistere();
@@ -536,6 +539,7 @@ window.confirm = () => true;
   // l'intitulé par défaut du secteur doit être appliqué
   document.querySelector('.poste-non_regalien .btn-remove-poste').click();
   Gouv.addMinistere();
+  await wait(20);
   const ckSecteur = document.querySelector('#mmSecteurs input[type="checkbox"]');
   test('Secteur libéré proposé dans le modal', !!ckSecteur);
   ckSecteur.checked = true;
@@ -628,6 +632,24 @@ window.confirm = () => true;
   await Gouv.save(true);
   await wait(20);
   test('Fusion enregistrée en base', mock._db.postes_secteurs_fusionnes.length === 1 && mock._db.postes_secteurs_fusionnes[0].secteur_id === secteursNR[1].id);
+
+  console.log('\n=== 6e2. RÉFÉRENTIEL À JOUR DANS LES MODAUX (v45) ===');
+  // Pendant qu'une composition est en cours, l'admin crée un sous-secteur
+  // et un secteur : les modaux du composer doivent les voir immédiatement.
+  mock._db.sous_secteurs.push({ id: 'ss-neuf', nom: 'Intelligence artificielle' });
+  mock._db.secteurs.push({ id: 'sec-neuf', nom: 'Espace', type: 'non_regalien', intitule_poste_defaut: 'Ministre de l\'Espace', ordre: 99 });
+  await Gouv.openSousSecteursModal(Gouv.composerState.postes[0]);
+  test('Sous-secteur créé en admin visible dans « modifier les sous-secteurs »',
+    document.getElementById('sous-secteurs-contenu').innerHTML.includes('Intelligence artificielle'));
+  UI.closeModals();
+  await Gouv.openMinistereModal('add');
+  test('Secteur créé en admin visible dans « ajouter ministère »',
+    document.getElementById('mmSecteurs').innerHTML.includes('Espace'));
+  UI.closeModals();
+  await Gouv.openDelegueModal();
+  test('Sous-secteur créé en admin visible dans le modal délégué',
+    document.getElementById('mdSousSecteur').innerHTML.includes('Intelligence artificielle'));
+  UI.closeModals();
 
   console.log('\n=== 6f. AJOUT À UN BROUILLON DEPUIS LA LISTE (v44) ===');
   await Perso.loadList();

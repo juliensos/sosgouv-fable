@@ -16,8 +16,14 @@ const Gouv = {
   refLoaded: false,
 
   // ================== REFERENTIELS ==================
-  async loadReferentiels() {
-    if (this.refLoaded && this.referentielsCharges !== false) return;
+  // force=true : recharge depuis la base même si le cache semble à jour.
+  // v45 : les modaux qui listent secteurs/sous-secteurs l'utilisent à
+  // chaque ouverture, car les ajouts faits en admin pendant qu'une
+  // composition est en cours ne repassaient jamais par initComposer
+  // (qui s'arrête dès qu'un composerState existe) : le référentiel
+  // restait figé à son état d'ouverture du composer.
+  async loadReferentiels(force) {
+    if (!force && this.refLoaded && this.referentielsCharges !== false) return;
     this.referentielsCharges = true;
     const [sec, liaison, sousSec] = await Promise.all([
       sb.from('secteurs').select('*').order('ordre', { ascending: true }),
@@ -392,9 +398,10 @@ const Gouv = {
   },
 
   // ---------- Sous-secteurs (modal) ----------
-  openSousSecteursModal(p) {
+  async openSousSecteursModal(p) {
     const cont = document.getElementById('sous-secteurs-contenu');
     if (!cont) return;
+    try { await this.loadReferentiels(true); } catch (err) { /* on affiche le cache */ }
     const actifs = (p.sousSecteurs || []).map(s => s.id).filter(Boolean);
     const nomsActifs = (p.sousSecteurs || []).map(s => s.nom);
     // Tous les sous-secteurs connus + ceux ajoutés manuellement à ce poste (id null)
@@ -506,10 +513,11 @@ const Gouv = {
   },
 
   // ---------- Modal secteurs d'un ministère (choisir-secteur) ----------
-  openSecteurEditModal(uid) {
+  async openSecteurEditModal(uid) {
     this._posteEnCours = uid;
     const p = this.composerState.postes.find(x => x.uid === uid);
     const cont = document.getElementById('mcsSecteurs');
+    try { await this.loadReferentiels(true); } catch (err) { /* on affiche le cache */ }
     const manuel = document.getElementById('mcsManuel');
     if (!p || !cont) return;
     const lies = [p.secteur, ...(p.fusion || [])].filter(Boolean).map(s => s.id);
@@ -538,11 +546,12 @@ const Gouv = {
     this.renderComposer();
   },
 
-  openMinistereModal(mode, uid) {
+  async openMinistereModal(mode, uid) {
     if (!this.composerState) return;
     this._ministereMode = mode || 'add';
     this._posteEnCours = uid || null;
     const cont = document.getElementById('mmSecteurs');
+    if (mode !== 'edit') { try { await this.loadReferentiels(true); } catch (err) { /* cache */ } }
     const manuel = document.getElementById('mmManuel');
     if (!cont) return;
     if (mode === 'edit') {
@@ -613,9 +622,10 @@ const Gouv = {
     this.openDelegueModal();
   },
 
-  openDelegueModal() {
+  async openDelegueModal() {
     if (!this.composerState) return;
     const cont = document.getElementById('mdMinisteres');
+    try { await this.loadReferentiels(true); } catch (err) { /* on affiche le cache */ }
     const selSous = document.getElementById('mdSousSecteur');
     const fonction = document.getElementById('mdFonction');
     if (!cont) return;
