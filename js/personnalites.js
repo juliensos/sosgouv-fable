@@ -375,9 +375,9 @@ const Perso = {
     if (bShare) bShare.addEventListener('click', (e) => {
       e.preventDefault();
       const nomComplet = ((p.prenom ? p.prenom + ' ' : '') + p.nom).trim();
-      const corps = 'Découvre la fiche de ' + nomComplet + ' sur GOVLAB :\n' +
+      const corps = 'Découvre la fiche de ' + nomComplet + ' sur REZEDA :\n' +
         (p.short_bio ? p.short_bio + '\n' : '') + '\nhttps://govlab.fr';
-      window.location.href = 'mailto:?subject=' + encodeURIComponent('GOVLAB, ' + nomComplet) +
+      window.location.href = 'mailto:?subject=' + encodeURIComponent('REZEDA, ' + nomComplet) +
         '&body=' + encodeURIComponent(corps);
     });
     UI.openModal('modal-fiche');

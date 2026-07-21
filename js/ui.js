@@ -355,7 +355,7 @@ const UI = {
       if (!q.trim()) { this.toast('Écrivez votre question avant d\'envoyer.'); return; }
       const corps = q.trim() + (mail.trim() ? '\n\nPour me répondre : ' + mail.trim() : '');
       window.location.href = 'mailto:etienneneville@gmail.com?subject=' +
-        encodeURIComponent('Question GOVLAB') + '&body=' + encodeURIComponent(corps);
+        encodeURIComponent('Question REZEDA') + '&body=' + encodeURIComponent(corps);
     });
 
     // Raccourci "me connecter" du modal d'exigence de connexion

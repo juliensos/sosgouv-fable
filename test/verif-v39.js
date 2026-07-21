@@ -198,8 +198,8 @@ async function main() {
   console.log('\n=== V46 : maquette 644157cc6, footer, fiche, agent ===');
   test('index.html : CSS Webflow republié (hash 644157cc6)',
     html.includes('sosgouv.webflow.shared.644157cc6.css'));
-  test('Header : logo GOVLAB et nouvelle signature',
-    /logofont">GOVLAB</.test(html) && html.includes('composez votre gouvernement idéal'));
+  test('Header : logo REZEDA et nouvelle signature',
+    /logofont">REZEDA</.test(html) && html.includes('Composez votre gouvernement idéal'));
   const btnAjout = doc.querySelector('[data-section="3"]');
   const btnListe = doc.querySelector('[data-section="4"]');
   test('Menu : « ajouter une personnalité » en bouton picto (personne + plus) avec infobulle',
