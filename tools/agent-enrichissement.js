@@ -51,7 +51,7 @@ const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 async function selectionnerCandidats() {
   const { data: persos, error } = await sb
     .from('personnalites')
-    .select('id, nom, prenom, metiers, short_bio, bio, liens');
+    .select('id, nom, prenom, metiers, short_bio, bio, liens, photo_url');
   if (error) throw error;
 
   const { data: enAttente } = await sb
@@ -62,7 +62,8 @@ async function selectionnerCandidats() {
 
   return (persos || [])
     .filter(p => !idsEnAttente.has(p.id)) // pas de doublon de proposition
-    .filter(p => !p.short_bio || !p.bio || !(p.metiers && p.metiers.length)) // fiche incomplète
+    // fiche incomplète : bio, métiers ou photo manquants (photo depuis v46)
+    .filter(p => !p.short_bio || !p.bio || !(p.metiers && p.metiers.length) || !p.photo_url)
     .slice(0, MAX_PERSONNES);
 }
 
@@ -78,10 +79,12 @@ const SCHEMA_ATTENDU = `Réponds UNIQUEMENT avec un objet JSON (aucun texte avan
     {"type": "lien", "titre": "Fiche Wikipédia", "url": "https://..."},
     {"type": "video", "titre": "Intervention ou interview", "url": "https://www.youtube.com/watch?v=..."}
   ],
+  "photo_url": "https://... (URL directe d'un fichier image, ou null si aucune photo convenable)",
   "sources": ["https://...", "https://..."]
 }
 Règles impératives :
 - N'invente RIEN. Si une information n'est pas trouvée avec certitude, omets-la plutôt que de deviner.
+- "photo_url" : uniquement une URL directe vers un fichier image (jpg, png, webp) représentant la personne, issue d'une source librement réutilisable (par exemple Wikimedia Commons, photo officielle d'une institution). Jamais de page HTML, jamais d'image dont la licence interdit la réutilisation. En cas de doute sur la licence ou sur l'identité de la personne photographiée, mets null.
 - Le champ "Engagements et positionnements politiques" doit rester factuel et sourcé (prises de position publiques documentées), jamais une supposition sur les opinions probables de la personne.
 - "sources" doit lister les URLs réellement consultées pour rédiger la fiche, pour permettre une vérification humaine.
 - Les liens vidéo doivent pointer vers une plateforme d'hébergement reconnue (YouTube, Vimeo, Dailymotion) si disponible.`;
@@ -146,6 +149,7 @@ async function deposerProposition(perso, proposition) {
     short_bio: proposition.short_bio || null,
     bio: proposition.bio || null,
     liens: proposition.liens || [],
+    photo_url: proposition.photo_url || null,
     sources: proposition.sources || [],
     statut: 'en_attente'
   });

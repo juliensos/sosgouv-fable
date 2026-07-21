@@ -497,21 +497,16 @@ body { scroll-padding-bottom: 50px; }
 .div-block-332 input { flex: 1; }
 ._w-link-bloc-button-square { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; background: var(--sos-green, #5ac6b1); flex: none; }
 
-/* Bouton d'ouverture du guide dans le footer */
+/* v46 : menu utilisateur du footer (Guide utilisateur / Faq / Médias),
+   dans le flux du footer comme la maquette (div-block-338), plus de
+   pastille fixe en bas à droite. */
 .foot-public-liens {
-  position: fixed;
-  right: 12px;
-  bottom: 8px;
-  z-index: 1990;
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 14px;
-  background: var(--sos-white, #fff);
-  padding: 4px 10px;
-  border: 1px solid var(--black-100, #000);
+  gap: 10px;
+  padding-top: 5px;
 }
-body.admin-connecte .foot-public-liens { bottom: 46px; }
 
 /* ---- v25 : activité, données perso, détail v2 ---- */
 /* Votation directe dans "Mes votes" */
@@ -625,3 +620,86 @@ body.admin-connecte .foot-public-liens { bottom: 46px; }
   margin: 6px 0 2px;
 }
 .champ-etiquette.visible { display: block; }
+
+/* ==================== v46 ==================== */
+
+/* Point 3 : gouvernement détail, noms et prénoms en majuscules
+   (la maquette n'applique pas de text-transform sur cette classe,
+   on l'impose ici conformément à la demande). */
+.nom-prenom-gov-detail { text-transform: uppercase; }
+
+/* Point 6 : boutons picto du menu (ajouter / liste des personnalités).
+   Le petit « + » (combo .menu.mini) est en position:absolute dans la
+   maquette : on ancre son parent pour qu'il reste collé au bouton. */
+._2-mini-bouton.people.menu { position: relative; }
+._2-picto-fontello-bouton.menu.mini { top: 0; right: 0; }
+/* Onglet actif, même convention que les onglets texte (v44) */
+._2-mini-bouton.people.menu.active {
+  border: 5px solid var(--sos-rose1, #ffbbad) !important;
+  background-color: var(--sos-rose1, #ffbbad) !important;
+}
+
+/* Point 4 : fiche personnalité, photo dans le carré .image-fiche */
+.image-fiche img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Les boutons d'action de la fiche restent sur une ligne compacte */
+#fiche-contenu .boutons-perso-group { display: flex; align-items: center; gap: 5px; }
+#fiche-contenu .fiche-statut { white-space: nowrap; }
+#fiche-contenu .fiche-statut > div { white-space: nowrap; }
+#fiche-contenu .div-block-339 { flex-wrap: wrap; gap: 5px; }
+#fiche-contenu .bloc-video iframe { width: 100%; aspect-ratio: 16 / 9; border: 0; }
+#fiche-contenu .bloc-links, #fiche-contenu .div-block-340 { display: flex; flex-direction: column; gap: 4px; }
+#fiche-contenu .div-block-340 a.liensimple { word-break: break-all; }
+
+/* Point 1 : page médias (toutes les vidéos des fiches) */
+#medias-contenu.bloc-video { margin-top: 10px; }
+#medias-contenu iframe { width: 100%; aspect-ratio: 16 / 9; border: 0; }
+#medias-contenu .legendesimple a { color: inherit; text-decoration: underline; }
+
+/* Point 1 : FAQ, accordéon questions/réponses */
+#modal-faq .q-r-bloc .question h3 { margin: 0; }
+#modal-faq .q-r-bloc { cursor: pointer; }
+#modal-faq .reponses { padding: 4px 0 8px; }
+#modal-faq ._3-form-gap-10 { display: flex; flex-direction: column; gap: 7px; margin-bottom: 15px; }
+
+/* Point 2 : guide utilisateur, lignes fonction = picto + explication */
+.gu-ligne { display: flex; align-items: baseline; gap: 10px; margin: 4px 0; }
+.gu-icone {
+  font-family: Fontello, Arial, sans-serif;
+  flex: none;
+  min-width: 58px;
+  text-align: center;
+  font-size: 14px;
+  border: 2px solid var(--black-100, #000);
+  border-radius: 5px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+.gu-icone.gu-lien {
+  font-family: inherit;
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 700;
+  border-style: dashed;
+}
+.gu-rose { color: var(--sos-rose1, #ffbbad); }
+.gu-vert { color: var(--sos-green, #47b21a); }
+.gu-jaune { color: var(--sos-yellow, #ffd400); }
+.gu-texte { flex: 1; }
+.titre-para-gu h5 { margin-bottom: 5px; }
+
+/* Point 5 : le lien admin « lancer l'agent IA » se distingue légèrement */
+.admine-part .link-admin[target="_blank"]::after { content: " ↗"; font-size: 9px; }
+
+/* Propositions IA (admin) : aperçu de la photo proposée par l'agent */
+.prop-photo-apercu img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border: 2px solid var(--black-100, #000);
+  margin-bottom: 4px;
+}

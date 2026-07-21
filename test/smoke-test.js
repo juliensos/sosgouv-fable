@@ -673,6 +673,92 @@ window.confirm = () => true;
     mock._db.postes_gouvernement.find(po => po.id === posteChoisiId).personnalite_id === persoDraftId);
   test('Menu refermé après le choix', !document.getElementById('brouillon-pop'));
 
+  console.log('\n=== 8. V46 : header, footer, fiche enrichie, medias ===');
+  // Bouton compte : « connexion » par défaut, pseudo quand connecté
+  const etaitConnecte = Auth.currentUser;
+  Auth.currentUser = null;
+  UI.updateMenu();
+  test('Bouton compte : « connexion » affiché quand personne n\'est connecté',
+    document.querySelector('.connected-username').textContent === 'connexion');
+  Auth.currentUser = etaitConnecte;
+  UI.updateMenu();
+  test('Bouton compte : pseudo affiché une fois connecté',
+    document.querySelector('.connected-username').textContent === (etaitConnecte ? etaitConnecte.username : 'connexion'));
+
+  // Fiche enrichie : photo, mention IA, sources, boutons d'action
+  const persoRiche = mock._db.personnalites.find(p => p.id !== 'xss-1' && p.nom && p.nom.length > 2) || mock._db.personnalites[0];
+  persoRiche.photo_url = 'https://exemple.org/photo-test.jpg';
+  persoRiche.sources = ['https://fr.wikipedia.org/wiki/Test', 'https://exemple.org/interview'];
+  persoRiche.enrichi_par_ia_le = '2026-07-20T00:00:00Z';
+  persoRiche.liens = [{ type: 'video', titre: 'Conférence', url: 'https://www.youtube.com/watch?v=v46video01' }];
+  Perso.all = mock._db.personnalites.slice();
+  Perso.openFiche(persoRiche.id);
+  const fiche46 = document.getElementById('fiche-contenu');
+  test('Fiche : photo affichée dans le carré image-fiche',
+    !!fiche46.querySelector('.image-fiche img[src="https://exemple.org/photo-test.jpg"]'));
+  test('Fiche : mention d\'assistance IA avec le contact administrateur',
+    fiche46.innerHTML.includes('assistée par une IA')
+    && fiche46.innerHTML.includes('etienneneville@gmail.com'));
+  test('Fiche : les sources sont listées en liens',
+    fiche46.querySelectorAll('.div-block-340 a.liensimple[target="_blank"]').length === 2);
+  test('Fiche : vidéo dans la grille bloc-video avec légende',
+    !!fiche46.querySelector('.bloc-video .div-block-341 iframe[src*="v46video01"]')
+    && fiche46.querySelector('.div-block-341 .legendesimple').textContent === 'Conférence');
+  test('Fiche : boutons like / épingler / faire suivre présents',
+    !!fiche46.querySelector('.fiche-btn-like') && !!fiche46.querySelector('.fiche-btn-pin')
+    && !!fiche46.querySelector('.fiche-btn-share'));
+  const likesAvantFiche = mock._db.personnalites_likes.length;
+  fiche46.querySelector('.fiche-btn-like').click();
+  await wait(20);
+  test('Fiche : le like fonctionne depuis la fiche',
+    mock._db.personnalites_likes.length !== likesAvantFiche);
+  UI.closeModals();
+
+  // Fiche sans enrichissement : pas de mention IA
+  const persoNue = { id: 'nu-1', nom: 'Simple', prenom: 'Fiche', metiers: [], statut: 0, liens: [] };
+  mock._db.personnalites.push(persoNue);
+  Perso.all = mock._db.personnalites.slice();
+  Perso.openFiche('nu-1');
+  test('Fiche sans enrichissement : aucune mention IA',
+    !document.getElementById('fiche-contenu').innerHTML.includes('assistée par une IA'));
+  UI.closeModals();
+
+  // Page médias : toutes les vidéos de toutes les fiches sur une page
+  const autreAvecVideo = mock._db.personnalites.find(p => p.id !== persoRiche.id && p.id !== 'xss-1' && p.id !== 'nu-1');
+  autreAvecVideo.liens = [{ type: 'video', titre: 'Interview', url: 'https://vimeo.com/98765432' },
+                          { type: 'lien', titre: 'Article', url: 'https://exemple.org/article' }];
+  Perso.all = mock._db.personnalites.slice();
+  document.getElementById('openMedias').click();
+  await wait(20);
+  const mediasCont = document.getElementById('medias-contenu');
+  test('Footer : « Médias » ouvre le grand modal',
+    document.getElementById('modal-medias').style.display === 'block');
+  test('Page médias : les vidéos de toutes les fiches sont réunies',
+    !!mediasCont.querySelector('iframe[src*="v46video01"]')
+    && !!mediasCont.querySelector('iframe[src*="98765432"]'));
+  test('Page médias : les liens non-vidéo n\'y figurent pas',
+    !mediasCont.innerHTML.includes('exemple.org/article'));
+  test('Page médias : légende = personnalité + titre de la vidéo',
+    [...mediasCont.querySelectorAll('.legendesimple')].some(l => l.textContent.includes('Interview')));
+  UI.closeModals();
+
+  // Footer : FAQ (accordéon + envoi)
+  document.getElementById('openFaq').click();
+  test('Footer : « Faq » ouvre le grand modal', document.getElementById('modal-faq').style.display === 'block');
+  const q1 = document.querySelector('#modal-faq .q-r-bloc .question');
+  const r1 = q1.parentElement.querySelector('.reponses');
+  q1.click();
+  test('FAQ : la réponse s\'ouvre au clic sur la question', r1.style.display === 'block');
+  q1.click();
+  test('FAQ : la réponse se referme au second clic', r1.style.display === 'none');
+  UI.closeModals();
+
+  // Guide utilisateur : toujours accessible depuis le footer
+  document.getElementById('openGuide').click();
+  test('Footer : « Guide utilisateur » ouvre le grand modal',
+    document.getElementById('modal-gu').style.display === 'block');
+  UI.closeModals();
+
   console.log('\n=== 7. SECURITE (echappement HTML) ===');
   mock._db.personnalites.push({ id: 'xss-1', nom: '<script>alert(1)</script>', prenom: '', metiers: [], statut: 0 });
   await Perso.loadList();

@@ -23,3 +23,14 @@ Si une fiche existante correspond probablement, enrichis cette fiche
 existante au lieu d'en créer une nouvelle. Si les champs nom et prénom
 d'une fiche semblent inversés, signale-le dans ta proposition plutôt que
 de créer un double.
+
+Photo de la fiche : cherche une photo de la personne réutilisable
+librement (Wikimedia Commons en priorité, sinon photo officielle d'une
+institution publique). Fournis l'URL DIRECTE du fichier image dans le
+champ photo_url. Ne propose jamais une image dont la licence est
+douteuse, ni une image où l'identité de la personne n'est pas certaine :
+dans ces cas, laisse photo_url à null.
+
+Sources : liste systématiquement dans le champ sources les URLs
+réellement consultées pour rédiger la fiche. Elles sont affichées
+publiquement en bas de la fiche avec la mention d'assistance par IA.

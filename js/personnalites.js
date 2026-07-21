@@ -273,6 +273,9 @@ const Perso = {
   },
 
   // ---------- Fiche détaillée ----------
+  // v46 : mise en page reprise de la maquette (blocbio avec photo,
+  // boutons d'action, sections en boldsimple, médias en bloc-video,
+  // liens en bloc-links, mention d'assistance IA et sources).
   openFiche(id) {
     const p = this.all.find(x => x.id === id);
     if (!p) return;
@@ -283,32 +286,100 @@ const Perso = {
     const autres = liensArr.filter(l => l && l.type !== 'video' && !this.videoEmbedUrl(l.url));
     const videosHtml = videos.map(l => {
       const embed = this.videoEmbedUrl(l.url);
-      if (embed) return '<div class="fiche-video"><iframe src="' + this.esc(embed) + '" frameborder="0" allowfullscreen loading="lazy"></iframe><div class="fiche-video-titre">' + this.esc(l.titre || '') + '</div></div>';
-      return '<a class="fiche-lien fiche-lien-video" href="' + this.esc(l.url) + '" target="_blank" rel="noopener">&#127916; ' + this.esc(l.titre || l.url) + '</a>';
+      if (embed) return '<div class="div-block-341"><div class="w-video w-embed fiche-video"><iframe src="' + this.esc(embed) + '" frameborder="0" allowfullscreen loading="lazy"></iframe></div><div class="legendesimple">' + this.esc(l.titre || '') + '</div></div>';
+      return '<a class="liensimple" href="' + this.esc(l.url) + '" target="_blank" rel="noopener">' + this.esc(l.titre || l.url) + '</a>';
     }).join('');
     const liens = autres.map(l =>
-      '<a class="fiche-lien" href="' + this.esc(l.url || l) + '" target="_blank" rel="noopener">&#128279; ' + this.esc(l.titre || l.url || l) + '</a>'
+      '<a class="liensimple" href="' + this.esc(l.url || l) + '" target="_blank" rel="noopener">' + this.esc(l.titre || l.url || l) + '</a>'
     ).join('');
     // Découpage de la bio en sections : récit narratif éventuel, puis les deux
     // sections structurées (voir Perso.decouperBio, utilisé aussi par la page
     // de validation des propositions IA pour prévisualiser à l'identique).
     const { narrative: bioNarrative, expertise, engagements, libre: bioLibre } = this.decouperBio(p.bio);
+    const titreSection = (t) => '<div class="_3-title-bloc-padd-10-left"><h5><strong class="boldsimple">' + t + '</strong></h5></div>';
+    const liked = this.likes.has(p.id);
+    const pinned = this.epingles.has(p.id);
+    const sources = Array.isArray(p.sources) ? p.sources.filter(Boolean) : [];
+    const mentionIA = (sources.length || p.enrichi_par_ia_le)
+      ? '<div class="filet _2v"></div><div class="div-block-340">' +
+        '<div>La rédaction de cette fiche a été assistée par une IA' +
+        (sources.length ? ' en utilisant les sources mentionnées ci-dessous' : '') +
+        '. Si des informations vous semblent fausses, incomplètes ou erronées, merci de le signaler à l\'administrateur du site ' +
+        '<a class="liensimple" href="mailto:etienneneville@gmail.com">etienneneville@gmail.com</a></div>' +
+        sources.map(u => '<a class="liensimple" href="' + this.esc(u) + '" target="_blank" rel="noopener">' + this.esc(u) + '</a>').join('') +
+        '</div>'
+      : '';
     cont.innerHTML = `
-      <div class="fiche-entete">
-        <h1 class="fiche-nom">${this.esc(p.nom)} ${this.esc(p.prenom || '')}</h1>
-        <span class="fiche-metier-grey">${this.esc((p.metiers || []).join(', '))}</span>
-        <span class="fontello-statut _${p.statut}" title="${this.STATUTS[p.statut] || ''}">${[ICO.cross, ICO.cross, ICO.cond, ICO.check2][p.statut] || ''}</span>
+      <div class="item">
+        <div class="_3-title-bloc-padd-10-left">
+          <div class="blocbio">
+            <div class="image-fiche">${p.photo_url ? '<img src="' + this.esc(p.photo_url) + '" alt="' + this.esc((p.prenom ? p.prenom + ' ' : '') + p.nom) + '" loading="lazy"/>' : ''}</div>
+            <div class="infobio">
+              <div class="div-block-339">
+                <div class="flex---gap-5">
+                  <div class="flex---gap-0">
+                    <h2 class="heading-4-nom-prenom">${this.esc(p.nom)}</h2>
+                    <h2 class="heading-4-nom-prenom">${this.esc(p.prenom || '')}</h2>
+                  </div>
+                  <h2 class="heading-4-nom-prenom grey">${this.esc((p.metiers || []).join(', '))}</h2>
+                </div>
+                <div class="flex---gap-10">
+                  <div class="flex---gap-5 fiche-statut">
+                    <div>Statut :</div>
+                    <div>${this.esc(this.STATUTS[p.statut] || 'néant')}</div>
+                    <div class="fontello-statut _${p.statut}">${[ICO.cross, ICO.cross, ICO.cond, ICO.check2][p.statut] || ''}</div>
+                  </div>
+                  <div class="boutons-perso-group">
+                    <a href="#" class="like-bloc fiche-btn-like ${liked ? 'active' : ''}" data-bulle="Like">
+                      <div class="_2-picto-fontello-bouton black-stroke">${liked ? ICO.likeFull : ICO.like}</div>
+                      <div class="_w-courant _w-bold _w-pink"><sup class="like-count">${(this.likesCount || {})[p.id] || 0}</sup></div>
+                    </a>
+                    <a href="#" class="_2-mini-bouton mini w-inline-block fiche-btn-pin ${pinned ? 'active' : ''}" data-bulle="Épingler dans mon activité">
+                      <div class="_2-picto-fontello-bouton">${ICO.pin}</div>
+                      <h6 class="heading-dyn mini">épingler</h6>
+                    </a>
+                    ${(this._brouillons && this._brouillons.length) ? `<a href="#" class="_2-mini-bouton mini w-inline-block fiche-btn-draft" data-bulle="Ajouter à un de mes brouillons">
+                      <div class="_2-picto-fontello-bouton">${ICO.draft}</div>
+                      <h6 class="heading-dyn mini">brouillon</h6>
+                    </a>` : ''}
+                    <a href="#" class="_2-mini-bouton mini w-inline-block fiche-btn-share" data-bulle="Faire suivre par email">
+                      <div class="_2-picto-fontello-bouton">${ICO.shareMini}</div>
+                      <h6 class="heading-dyn mini">faire suivre</h6>
+                    </a>
+                  </div>
+                </div>
+              </div>
+              ${p.short_bio ? '<p>' + this.esc(p.short_bio) + '</p>' : ''}
+              ${bioNarrative ? '<p>' + this.esc(bioNarrative) + '</p>' : ''}
+            </div>
+          </div>
+        </div>
+        ${expertise ? titreSection('Domaines de recherche et expertise') + '<p>' + this.esc(expertise) + '</p>' : ''}
+        ${engagements ? titreSection('Engagements et positionnements politiques') + '<p>' + this.esc(engagements) + '</p>' : ''}
+        ${bioLibre ? '<p>' + this.esc(bioLibre) + '</p>' : ''}
+        <div id="fiche-propositions"></div>
+        ${(videosHtml || liens) ? '<div class="filet _2v"></div>' + titreSection('médias') : ''}
+        ${videosHtml ? '<div class="bloc-video">' + videosHtml + '</div>' : ''}
+        ${liens ? '<div class="bloc-links">' + liens + '</div>' : ''}
+        ${mentionIA}
       </div>
-      ${p.short_bio ? '<p class="fiche-para">' + this.esc(p.short_bio) + '</p>' : ''}
-      ${bioNarrative ? '<p class="fiche-para">' + this.esc(bioNarrative) + '</p>' : ''}
-      ${expertise ? '<h4 class="fiche-h">Domaines de recherche et expertise</h4><p class="fiche-para">' + this.esc(expertise) + '</p>' : ''}
-      ${engagements ? '<h4 class="fiche-h">Engagements et positionnements politiques</h4><p class="fiche-para">' + this.esc(engagements) + '</p>' : ''}
-      ${bioLibre ? '<p class="fiche-para">' + this.esc(bioLibre) + '</p>' : ''}
-      <div id="fiche-propositions"></div>
-      ${(videosHtml || liens) ? '<div class="fiche-filet"></div><h4 class="fiche-h">Médias</h4>' : ''}
-      ${videosHtml ? '<div class="grid-video fiche-videos">' + videosHtml + '</div>' : ''}
-      ${liens ? '<div class="fiche-liens">' + liens + '</div>' : ''}
     `;
+    // Boutons d'action de la fiche : mêmes mécaniques que sur les cartes
+    const bLike = cont.querySelector('.fiche-btn-like');
+    if (bLike) bLike.addEventListener('click', (e) => { e.preventDefault(); this.toggleLike(p.id, bLike); });
+    const bPin = cont.querySelector('.fiche-btn-pin');
+    if (bPin) bPin.addEventListener('click', (e) => { e.preventDefault(); this.togglePin(p.id, bPin); });
+    const bDraft = cont.querySelector('.fiche-btn-draft');
+    if (bDraft) bDraft.addEventListener('click', (e) => { e.preventDefault(); this.ouvrirChoixBrouillon(bDraft, p.id); });
+    const bShare = cont.querySelector('.fiche-btn-share');
+    if (bShare) bShare.addEventListener('click', (e) => {
+      e.preventDefault();
+      const nomComplet = ((p.prenom ? p.prenom + ' ' : '') + p.nom).trim();
+      const corps = 'Découvre la fiche de ' + nomComplet + ' sur GOVLAB :\n' +
+        (p.short_bio ? p.short_bio + '\n' : '') + '\nhttps://govlab.fr';
+      window.location.href = 'mailto:?subject=' + encodeURIComponent('GOVLAB, ' + nomComplet) +
+        '&body=' + encodeURIComponent(corps);
+    });
     UI.openModal('modal-fiche');
     this.loadPropositions(id);
   },
@@ -328,12 +399,16 @@ const Perso = {
         if (!g) return null;
         const u = (users.data || []).find(x => x.id === g.created_by);
         const role = po.nom_poste_personnalise || po.fonction_delegue || 'Membre';
-        return '<div class="fiche-proposition"><span class="fp-poste">' + this.esc(role) + '</span>' +
-          ' <span class="fp-par">par</span> <span class="fp-user">' + this.esc(u ? u.username : '?') + '</span>' +
-          ' <span class="fp-gouv">(' + this.esc(g.titre || 'Sans titre') + ')</span></div>';
+        return '<div class="flex---gap-5"><div class="_w-courant">' + this.esc(role) + '</div>' +
+          '<div class="_w-courant _w-mini">par</div>' +
+          '<div class="_w-courant _2-code-link-button">' + this.esc(u ? u.username : '?') + '</div>' +
+          '<div class="_w-courant _w-mini">(' + this.esc(g.titre || 'Sans titre') + ')</div></div>';
       }).filter(Boolean);
       if (items.length) {
-        cont.innerHTML = '<div class="fiche-filet"></div><h4 class="fiche-h">Personnalité proposée au poste de</h4>' + items.join('');
+        // v46 : bloc-proposition conforme à la maquette
+        cont.innerHTML = '<div class="filet _2v"></div><div class="bloc-proposition">' +
+          '<div class="_3-title-bloc-padd-10-left"><h5><strong class="boldsimple">Personnalité proposée au poste de</strong></h5></div>' +
+          items.join('') + '</div>';
       }
     } catch (err) { /* section facultative */ }
   },
@@ -515,6 +590,8 @@ const Perso = {
     document.getElementById('admNom').value = p.nom || '';
     document.getElementById('admPrenom').value = p.prenom || '';
     document.getElementById('admMetiers').value = (p.metiers || []).join(', ');
+    const admPhoto = document.getElementById('admPhoto');
+    if (admPhoto) admPhoto.value = p.photo_url || '';
     document.getElementById('admShortBio').value = p.short_bio || '';
     document.getElementById('admBio').value = p.bio || '';
     document.getElementById('admStatut').value = String(p.statut ?? 0);
@@ -532,6 +609,7 @@ const Perso = {
         nom: document.getElementById('admNom').value.trim(),
         prenom: document.getElementById('admPrenom').value.trim(),
         metiers: document.getElementById('admMetiers').value.split(',').map(s => s.trim()).filter(Boolean),
+        photo_url: (document.getElementById('admPhoto') || { value: '' }).value.trim() || null,
         short_bio: document.getElementById('admShortBio').value,
         bio: document.getElementById('admBio').value,
         liens: this._admLiens,

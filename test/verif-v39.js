@@ -194,6 +194,84 @@ async function main() {
   test('Section 0 masquée', doc.getElementById('section-0').style.display === 'none');
   UI.showSection(0);
 
+
+  console.log('\n=== V46 : maquette 644157cc6, footer, fiche, agent ===');
+  test('index.html : CSS Webflow republié (hash 644157cc6)',
+    html.includes('sosgouv.webflow.shared.644157cc6.css'));
+  test('Header : logo GOVLAB et nouvelle signature',
+    /logofont">GOVLAB</.test(html) && html.includes('composez votre gouvernement idéal'));
+  const btnAjout = doc.querySelector('[data-section="3"]');
+  const btnListe = doc.querySelector('[data-section="4"]');
+  test('Menu : « ajouter une personnalité » en bouton picto (personne + plus) avec infobulle',
+    !!btnAjout && btnAjout.classList.contains('_2-mini-bouton')
+    && btnAjout.classList.contains('people') && btnAjout.classList.contains('menu')
+    && btnAjout.textContent.includes('') && btnAjout.textContent.includes('')
+    && (btnAjout.getAttribute('data-bulle') || '').includes('ajouter'));
+  test('Menu : « liste des personnalités » en bouton picto (groupe) avec infobulle',
+    !!btnListe && btnListe.classList.contains('_2-mini-bouton')
+    && btnListe.textContent.includes('')
+    && (btnListe.getAttribute('data-bulle') || '').includes('liste'));
+  test('Onglet actif des boutons picto stylé comme les onglets texte',
+    /\._2-mini-bouton\.people\.menu\.active\s*\{[^}]*background-color\s*:\s*var\(--sos-rose1/.test(cssSansComm));
+  const foot338 = doc.querySelector('.div-block-338');
+  test('Footer : bloc div-block-338 avec Guide utilisateur / Faq / Médias (linkblack)',
+    !!foot338 && !!doc.getElementById('openGuide') && !!doc.getElementById('openFaq')
+    && !!doc.getElementById('openMedias')
+    && foot338.querySelectorAll('a.linkblack').length === 3);
+  const lienAgent = doc.querySelector('#adminFooter a[href*="agent-enrichissement.yml"]');
+  test('Footer admin : lien « lancer l\'agent IA » vers le workflow GitHub (nouvel onglet)',
+    !!lienAgent && lienAgent.getAttribute('target') === '_blank');
+  const faqModal = doc.getElementById('modal-faq');
+  test('Modal FAQ : bm-parent avec formulaire de question et accordéon',
+    !!faqModal && faqModal.classList.contains('bm-parent')
+    && !!doc.getElementById('faqQuestion') && !!doc.getElementById('faqEnvoyer')
+    && faqModal.querySelectorAll('.q-r-bloc').length >= 3);
+  const mediasModal = doc.getElementById('modal-medias');
+  test('Modal Médias : bm-parent avec grille bloc-video',
+    !!mediasModal && mediasModal.classList.contains('bm-parent')
+    && !!doc.getElementById('medias-contenu')
+    && doc.getElementById('medias-contenu').classList.contains('bloc-video'));
+  const gu = doc.getElementById('modal-gu');
+  const guTitres = gu ? [...gu.querySelectorAll('.titre-para-gu h5')].map(h => h.textContent) : [];
+  test('Guide : 5 sections dans l\'ordre demandé',
+    guTitres.length === 5
+    && /Composer un gouvernement/.test(guTitres[0]) && /Gouvernements publiés/.test(guTitres[1])
+    && /Ajouter une personnalité/.test(guTitres[2]) && /Liste des personnalités/.test(guTitres[3])
+    && /Mon activité/.test(guTitres[4]));
+  test('Guide : chaque fonctionnalité listée avec son picto/lien (gu-ligne + gu-icone)',
+    gu && gu.querySelectorAll('.gu-ligne').length >= 20
+    && gu.querySelectorAll('.gu-icone').length === gu.querySelectorAll('.gu-ligne').length);
+  test('Gouvernement détail : noms et prénoms forcés en majuscules',
+    /\.nom-prenom-gov-detail\s*\{\s*text-transform\s*:\s*uppercase/.test(cssSansComm));
+  test('Fiche : la photo remplit le carré .image-fiche',
+    /\.image-fiche img\s*\{[^}]*object-fit\s*:\s*cover/.test(cssSansComm));
+  test('Champ photo dans l\'édition admin (admPhoto)',
+    !!doc.getElementById('admPhoto'));
+  const uiSrc = fs.readFileSync(path.join(ROOT, 'js/ui.js'), 'utf8');
+  test('Bouton compte : « connexion » par défaut quand personne n\'est connecté',
+    /:\s*'connexion'/.test(uiSrc));
+  test('Page médias : agrégation des vidéos de toutes les fiches (UI.loadMedias)',
+    /async loadMedias\(\)/.test(uiSrc) && /medias-contenu/.test(uiSrc));
+  test('Validation d\'une proposition IA : photo et sources appliquées à la fiche',
+    /champs\.photo_url\s*=\s*photo/.test(uiSrc) && /champs\.sources\s*=\s*prop\.sources/.test(uiSrc));
+  const persoSrc = fs.readFileSync(path.join(ROOT, 'js/personnalites.js'), 'utf8');
+  test('Fiche : mise en page maquette (blocbio, image-fiche, div-block-340, sources)',
+    /blocbio/.test(persoSrc) && /image-fiche/.test(persoSrc)
+    && /div-block-340/.test(persoSrc) && /etienneneville@gmail\.com/.test(persoSrc));
+  test('Fiche : postes proposés au format maquette (bloc-proposition)',
+    /bloc-proposition/.test(persoSrc));
+  const agentSrc = fs.readFileSync(path.join(ROOT, 'tools/agent-enrichissement.js'), 'utf8');
+  test('Agent : photo_url demandé, règles de licence, et déposé dans la proposition',
+    /"photo_url"/.test(agentSrc) && /Wikimedia Commons/.test(agentSrc)
+    && /photo_url:\s*proposition\.photo_url/.test(agentSrc));
+  const consignes = fs.readFileSync(path.join(ROOT, 'tools/consignes-agent.txt'), 'utf8');
+  test('Consignes de l\'agent : photo et sources documentées',
+    /photo_url/.test(consignes) && /[Ss]ources/.test(consignes));
+  const patch = fs.readFileSync(path.join(ROOT, 'sql/patch-v46-photo-sources.sql'), 'utf8');
+  test('Patch SQL v46 idempotent (sources + photo_url des propositions)',
+    /ADD COLUMN IF NOT EXISTS sources/.test(patch)
+    && /personnalites_propositions_ia\s*[\s\S]*photo_url/.test(patch));
+
   console.log('\n=== V37 : conflits CSS avec la maquette Webflow ===');
   const strokeRule = cssSansComm.match(/\._3-small-modal-stroke[^{]*\{[^}]*\}/g) || [];
   test('Plus aucun padding forcé sur ._3-small/big-modal-stroke',

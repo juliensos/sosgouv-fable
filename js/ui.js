@@ -86,11 +86,12 @@ const UI = {
   updateMenu() {
     const logged = Auth.isLoggedIn();
 
-    // Nom d'utilisateur dans le bouton compte du header
+    // Nom d'utilisateur dans le bouton compte du header.
+    // Par défaut (non connecté), le libellé affiche « connexion » (v46).
     const userLabel = document.querySelector('.connected-username');
-    if (userLabel) userLabel.textContent = logged ? Auth.currentUser.username : '';
+    if (userLabel) userLabel.textContent = logged ? Auth.currentUser.username : 'connexion';
     const siConnect = document.querySelector('.si-connect');
-    if (siConnect) siConnect.style.display = logged ? 'flex' : 'none';
+    if (siConnect) siConnect.style.display = 'flex';
 
     // Liens du menu compte selon l'état de connexion
     const openConnect = document.getElementById('openConnect');
@@ -123,6 +124,50 @@ const UI = {
         if (admin && getComputedStyle(parent).display === 'none') parent.style.display = 'block';
         parent = parent.parentElement;
       }
+    }
+  },
+
+  // ---------- Page médias (v46) : toutes les vidéos des fiches ----------
+  async loadMedias() {
+    const cont = document.getElementById('medias-contenu');
+    if (!cont) return;
+    cont.innerHTML = '<div class="loading">Chargement…</div>';
+    try {
+      let persos = (window.Perso && Perso.all && Perso.all.length) ? Perso.all : null;
+      if (!persos) {
+        const { data, error } = await sb.from('personnalites')
+          .select('id, nom, prenom, liens').order('nom', { ascending: true });
+        if (error) throw error;
+        persos = data || [];
+      }
+      const blocs = [];
+      persos.forEach(p => {
+        const liensArr = Array.isArray(p.liens) ? p.liens : [];
+        liensArr.forEach(l => {
+          const embed = l && window.Perso ? Perso.videoEmbedUrl(l.url) : null;
+          if (!embed) return;
+          const nomComplet = ((p.prenom ? p.prenom + ' ' : '') + p.nom).trim();
+          const legende = nomComplet + (l.titre ? ', ' + l.titre : '');
+          blocs.push('<div class="div-block-341">' +
+            '<div class="w-video w-embed media-video"><iframe src="' + Perso.esc(embed) +
+            '" frameborder="0" allowfullscreen loading="lazy"></iframe></div>' +
+            '<div class="legendesimple"><a href="#" class="media-perso-lien" data-perso-id="' + p.id + '">' +
+            Perso.esc(legende) + '</a></div></div>');
+        });
+      });
+      cont.innerHTML = blocs.length ? blocs.join('')
+        : '<div class="esp-vide">Aucune vidéo publiée pour le moment.</div>';
+      // La légende ramène à la fiche de la personnalité
+      cont.querySelectorAll('.media-perso-lien').forEach(a =>
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (window.Perso) {
+            if (!Perso.all.length) { Perso.loadList().then(() => Perso.openFiche(a.dataset.persoId)); }
+            else Perso.openFiche(a.dataset.persoId);
+          }
+        }));
+    } catch (err) {
+      cont.innerHTML = '<div class="error-msg">Erreur : ' + String(err.message || err) + '</div>';
     }
   },
 
@@ -278,11 +323,39 @@ const UI = {
     document.querySelectorAll('.pm-parent, .bm-parent').forEach(m =>
       m.addEventListener('click', (e) => { if (e.target === m) this.closeModals(); }));
 
-    // Guide utilisateur (public)
+    // Menu utilisateur du footer (v46) : guide, FAQ, médias
     const openGuide = document.getElementById('openGuide');
     if (openGuide) openGuide.addEventListener('click', (e) => {
       e.preventDefault();
       this.openModal('modal-gu');
+    });
+    const openFaq = document.getElementById('openFaq');
+    if (openFaq) openFaq.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.openModal('modal-faq');
+    });
+    const openMedias = document.getElementById('openMedias');
+    if (openMedias) openMedias.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.openModal('modal-medias');
+      this.loadMedias();
+    });
+    // FAQ : accordéon questions/réponses + envoi d'une question par email
+    document.querySelectorAll('#modal-faq .q-r-bloc .question').forEach(q =>
+      q.addEventListener('click', (e) => {
+        e.preventDefault();
+        const rep = q.parentElement.querySelector('.reponses');
+        if (rep) rep.style.display = rep.style.display === 'block' ? 'none' : 'block';
+      }));
+    const faqEnvoyer = document.getElementById('faqEnvoyer');
+    if (faqEnvoyer) faqEnvoyer.addEventListener('click', (e) => {
+      e.preventDefault();
+      const q = (document.getElementById('faqQuestion') || {}).value || '';
+      const mail = (document.getElementById('faqEmail') || {}).value || '';
+      if (!q.trim()) { this.toast('Écrivez votre question avant d\'envoyer.'); return; }
+      const corps = q.trim() + (mail.trim() ? '\n\nPour me répondre : ' + mail.trim() : '');
+      window.location.href = 'mailto:etienneneville@gmail.com?subject=' +
+        encodeURIComponent('Question GOVLAB') + '&body=' + encodeURIComponent(corps);
     });
 
     // Raccourci "me connecter" du modal d'exigence de connexion
@@ -564,6 +637,10 @@ const UI = {
         return '<div class="prop-bloc" data-prop-id="' + prop.id + '">' +
           '<h4>' + nomComplet + '</h4>' +
 
+          '<div class="prop-champ"><div class="prop-label">Photo (URL directe d\'une image libre de droits)</div>' +
+          (prop.photo_url ? '<div class="prop-photo-apercu"><img src="' + esc(prop.photo_url) + '" alt="" loading="lazy"></div>' : '') +
+          '<input type="text" class="mon-input5 w-input prop-photo" value="' + esc(prop.photo_url || '') + '" placeholder="https://… (jpg, png)"></div>' +
+
           '<div class="prop-champ"><div class="prop-label">Métiers</div>' +
           hint(metiersAvant, metiersApres) +
           '<input type="text" class="mon-input5 w-input prop-metiers" value="' + esc(metiersApres) + '" placeholder="séparés par une virgule"></div>' +
@@ -666,8 +743,10 @@ const UI = {
         url: row.querySelector('.prop-lien-url').value.trim()
       })).filter(l => l.url);
 
+      const photo = (bloc.querySelector('.prop-photo') || { value: '' }).value.trim();
+
       const { data: prop, error: e1 } = await sb.from('personnalites_propositions_ia')
-        .select('personnalite_id').eq('id', propId).single();
+        .select('personnalite_id, sources').eq('id', propId).single();
       if (e1 || !prop) throw new Error('Proposition introuvable.');
       const { data: perso } = await sb.from('personnalites').select('metiers').eq('id', prop.personnalite_id).maybeSingle();
 
@@ -676,13 +755,18 @@ const UI = {
       if (shortBio) champs.short_bio = shortBio;
       if (bio) champs.bio = bio;
       champs.liens = liens;
+      if (photo) champs.photo_url = photo;
+      // Sources consultées par l'agent : conservées sur la fiche pour
+      // affichage public (mention d'assistance IA, v46)
+      champs.sources = prop.sources || [];
 
       const { error: e2 } = await sb.from('personnalites').update(champs).eq('id', prop.personnalite_id);
       if (e2) throw e2;
       // On garde une trace de la version réellement appliquée (après tes corrections)
       await sb.from('personnalites_propositions_ia').update({
         statut: 'validee', valide_par: Auth.currentUser.id, valide_le: new Date().toISOString(),
-        metiers: champs.metiers, short_bio: shortBio || null, bio: bio || null, liens
+        metiers: champs.metiers, short_bio: shortBio || null, bio: bio || null, liens,
+        photo_url: photo || null
       }).eq('id', propId);
       this.toast('Proposition validée et appliquée à la fiche.');
       this.loadPropositionsIA();
